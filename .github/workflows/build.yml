@@ -1,0 +1,125 @@
+# Compilation d'ARGOS sur les serveurs GitHub.
+# Résultats : onglet « Actions » du dépôt › dernière exécution › « Artifacts » :
+#   ARGOS-macos    ARGOS.app (Apple Silicon), à décompresser puis ouvrir (clic droit › Ouvrir la première fois)
+#   ARGOS-windows  ARGOS.exe autonome (Windows 64 bits)
+#   ARGOS-server   serveur ARGOS pour Windows (à compléter avec appsettings.Local.json, voir README)
+#
+# Variables facultatives (Settings › Secrets and variables › Actions › Variables) :
+#   ARGOS_SERVER_URL  adresse du serveur intégrée aux postes (défaut http://46.105.78.32:8090)
+
+name: Build ARGOS
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "**/*.md"
+      - "docs/**"
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+  DOTNET_NOLOGO: "1"
+  SERVER_URL: ${{ vars.ARGOS_SERVER_URL || 'http://46.105.78.32:8090' }}
+
+jobs:
+  desktop-server:
+    name: Ordinateur (macOS + Windows) et serveur
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "9.0.x"
+
+      - name: Version et adresse du serveur
+        run: |
+          VERSION=$(sed -n 's:.*<Version>\(.*\)</Version>.*:\1:p' Directory.Build.props | head -1)
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+          printf '{\n  "ServerUrl": "%s"\n}\n' "$SERVER_URL" > src/ARGOS.App/client.defaults.json
+          echo "::notice::ARGOS $VERSION — serveur $SERVER_URL"
+
+      - name: Compilation (vérification)
+        run: |
+          set -o pipefail
+          for p in ARGOS.Shared ARGOS.Server ARGOS.App ARGOS.Desktop; do
+            dotnet build "src/$p/$p.csproj" -c Release 2>&1 | tee -a build.log || {
+              grep -E "error [A-Z]+[0-9]+" build.log | sort -u | head -40 | while read -r line; do echo "::error::$line"; done
+              exit 1
+            }
+          done
+
+      - name: Publication macOS (ARGOS.app)
+        run: |
+          set -e
+          dotnet publish src/ARGOS.Desktop/ARGOS.Desktop.csproj -c Release -r osx-arm64 --self-contained true -o artifacts/mac-bin
+          APP=artifacts/mac/ARGOS.app
+          mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
+          cp -R artifacts/mac-bin/. "$APP/Contents/MacOS/"
+          chmod +x "$APP/Contents/MacOS/ARGOS"
+          cat > "$APP/Contents/Info.plist" <<PLIST
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>CFBundleName</key><string>ARGOS</string>
+            <key>CFBundleDisplayName</key><string>ARGOS</string>
+            <key>CFBundleIdentifier</key><string>fr.vdms.argos</string>
+            <key>CFBundleExecutable</key><string>ARGOS</string>
+            <key>CFBundlePackageType</key><string>APPL</string>
+            <key>CFBundleShortVersionString</key><string>${VERSION}</string>
+            <key>CFBundleVersion</key><string>${{ github.run_number }}</string>
+            <key>CFBundleIconFile</key><string>ARGOS.icns</string>
+            <key>LSMinimumSystemVersion</key><string>12.0</string>
+            <key>NSHighResolutionCapable</key><true/>
+          </dict>
+          </plist>
+          PLIST
+          # Icône .icns depuis le logo (outil png2icns de libicns).
+          sudo apt-get install -y -qq icnsutils python3-pil >/dev/null
+          python3 -c "
+          from PIL import Image
+          im = Image.open('src/ARGOS.App/Assets/argos-icon.png').convert('RGBA')
+          for s in (16, 32, 128, 256, 512): im.resize((s, s), Image.LANCZOS).save(f'/tmp/icon_{s}.png')
+          "
+          png2icns "$APP/Contents/Resources/ARGOS.icns" /tmp/icon_16.png /tmp/icon_32.png /tmp/icon_128.png /tmp/icon_256.png /tmp/icon_512.png
+          (cd artifacts/mac && zip -qry "../ARGOS-$VERSION-macos.zip" ARGOS.app)
+
+      - name: Publication Windows (ARGOS.exe)
+        run: |
+          set -e
+          dotnet publish src/ARGOS.Desktop/ARGOS.Desktop.csproj -c Release -r win-x64 --self-contained true \
+            -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:EnableCompressionInSingleFile=true \
+            -o artifacts/windows
+          (cd artifacts/windows && zip -qr "../ARGOS-$VERSION-windows.zip" ARGOS.exe)
+
+      - name: Publication du serveur (Windows)
+        run: |
+          set -e
+          dotnet publish src/ARGOS.Server/ARGOS.Server.csproj -c Release -r win-x64 --self-contained true \
+            -p:PublishSingleFile=true -p:EnableCompressionInSingleFile=true -o artifacts/server
+          cp README.md artifacts/server/LISEZ-MOI.md
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ARGOS-macos
+          path: artifacts/ARGOS-*-macos.zip
+          if-no-files-found: error
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ARGOS-windows
+          path: artifacts/ARGOS-*-windows.zip
+          if-no-files-found: error
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ARGOS-server
+          path: artifacts/server/
+          if-no-files-found: error
