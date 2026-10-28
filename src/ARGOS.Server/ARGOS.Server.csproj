@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <!--
+    Serveur ARGOS : connexion Discord par rôle, temps réel (WebSocket), et plus tard
+    les données métier (engins, ordres de départ, fiches bilans…).
+    Lancement local : voir README.md.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <AssemblyName>ARGOS.Server</AssemblyName>
+    <RootNamespace>Argos.Server</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\ARGOS.Shared\ARGOS.Shared.csproj" />
+  </ItemGroup>
+</Project>

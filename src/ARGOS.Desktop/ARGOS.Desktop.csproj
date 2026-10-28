@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    ARGOS pour ordinateur : Windows + macOS (Avalonia).
+    Le cœur (écrans, bureau, connexion) est dans ARGOS.App ; ce projet n'est que le point d'entrée.
+    Lancement et publication : voir README.md (dotnet run, dotnet publish -r win-x64 / osx-arm64).
+  -->
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+    <AssemblyName>ARGOS</AssemblyName>
+    <RootNamespace>Argos.Desktop</RootNamespace>
+    <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
+  </PropertyGroup>
+
+  <!-- L'icône .exe ne peut être injectée que lors d'une compilation sous Windows. -->
+  <PropertyGroup Condition="$([MSBuild]::IsOSPlatform('Windows'))">
+    <ApplicationIcon>Assets\ARGOS.ico</ApplicationIcon>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Avalonia.Desktop" Version="$(AvaloniaVersion)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ARGOS.App\ARGOS.App.csproj" />
+  </ItemGroup>
+</Project>

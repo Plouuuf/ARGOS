@@ -1,0 +1,210 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- ===== Bouton plat de base : fond et bordure seuls, pas d'effet Fluent ===== -->
+    <Style Selector="Button.flat">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="BorderBrush" Value="Transparent"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="Foreground" Value="White"/>
+        <Setter Property="Padding" Value="0"/>
+        <Setter Property="CornerRadius" Value="0"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="HorizontalContentAlignment" Value="Center"/>
+        <Setter Property="VerticalContentAlignment" Value="Center"/>
+        <Setter Property="Template">
+            <ControlTemplate>
+                <Border Name="Root"
+                        Background="{TemplateBinding Background}"
+                        BorderBrush="{TemplateBinding BorderBrush}"
+                        BorderThickness="{TemplateBinding BorderThickness}"
+                        CornerRadius="{TemplateBinding CornerRadius}"
+                        Padding="{TemplateBinding Padding}">
+                    <ContentPresenter Name="PART_ContentPresenter"
+                                      Content="{TemplateBinding Content}"
+                                      ContentTemplate="{TemplateBinding ContentTemplate}"
+                                      Foreground="{TemplateBinding Foreground}"
+                                      HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                      VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
+                </Border>
+            </ControlTemplate>
+        </Setter>
+    </Style>
+    <Style Selector="Button.flat:disabled /template/ Border#Root">
+        <Setter Property="Opacity" Value="0.5"/>
+    </Style>
+
+    <!-- ===== Barre des tâches ===== -->
+    <Style Selector="Button.taskbar">
+        <Setter Property="Width" Value="48"/>
+        <Setter Property="Height" Value="40"/>
+    </Style>
+    <Style Selector="Button.taskbar:pointerover /template/ Border#Root">
+        <Setter Property="Background" Value="#26FFFFFF"/>
+    </Style>
+    <Style Selector="Button.taskbar:pressed /template/ Border#Root">
+        <Setter Property="Background" Value="#1AFFFFFF"/>
+    </Style>
+    <Style Selector="Button.taskbar.active /template/ Border#Root">
+        <Setter Property="Background" Value="#33FFFFFF"/>
+    </Style>
+
+    <Style Selector="Button.tray">
+        <Setter Property="Height" Value="40"/>
+        <Setter Property="Padding" Value="6,0"/>
+        <Setter Property="MinWidth" Value="24"/>
+    </Style>
+    <Style Selector="Button.tray:pointerover /template/ Border#Root">
+        <Setter Property="Background" Value="#26FFFFFF"/>
+    </Style>
+
+    <Style Selector="PathIcon.white">
+        <Setter Property="Foreground" Value="White"/>
+    </Style>
+
+    <!-- ===== Menu Démarrer ===== -->
+    <Style Selector="Button.startitem">
+        <Setter Property="HorizontalAlignment" Value="Stretch"/>
+        <Setter Property="HorizontalContentAlignment" Value="Left"/>
+        <Setter Property="Height" Value="40"/>
+        <Setter Property="Padding" Value="8,0"/>
+    </Style>
+    <Style Selector="Button.startitem:pointerover /template/ Border#Root">
+        <Setter Property="Background" Value="#1FFFFFFF"/>
+    </Style>
+    <Style Selector="Button.startitem:pressed /template/ Border#Root">
+        <Setter Property="Background" Value="#33FFFFFF"/>
+    </Style>
+
+    <Style Selector="Button.rail">
+        <Setter Property="Width" Value="48"/>
+        <Setter Property="Height" Value="48"/>
+    </Style>
+    <Style Selector="Button.rail:pointerover /template/ Border#Root">
+        <Setter Property="Background" Value="#1FFFFFFF"/>
+    </Style>
+
+    <Style Selector="Button.tile">
+        <Setter Property="Width" Value="100"/>
+        <Setter Property="Height" Value="100"/>
+        <Setter Property="Margin" Value="2"/>
+        <Setter Property="Background" Value="{DynamicResource AccentBrush}"/>
+        <Setter Property="BorderThickness" Value="2"/>
+    </Style>
+    <Style Selector="Button.tile:pointerover /template/ Border#Root">
+        <Setter Property="BorderBrush" Value="#66FFFFFF"/>
+    </Style>
+    <Style Selector="Button.tile:pressed">
+        <Setter Property="RenderTransform" Value="scale(0.97)"/>
+    </Style>
+
+    <!-- ===== Icônes du bureau ===== -->
+    <Style Selector="Border.desktopicon">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="BorderBrush" Value="Transparent"/>
+        <Setter Property="BorderThickness" Value="1"/>
+    </Style>
+    <Style Selector="Border.desktopicon:pointerover">
+        <Setter Property="Background" Value="#33A6D8FF"/>
+        <Setter Property="BorderBrush" Value="#4DA6D8FF"/>
+    </Style>
+    <Style Selector="Border.desktopicon.selected">
+        <Setter Property="Background" Value="#66A6D8FF"/>
+        <Setter Property="BorderBrush" Value="#99A6D8FF"/>
+    </Style>
+
+    <!-- ===== Boutons de fenêtre (réduire, agrandir, fermer) ===== -->
+    <Style Selector="Button.caption">
+        <Setter Property="Width" Value="46"/>
+        <Setter Property="Height" Value="31"/>
+        <Setter Property="Foreground" Value="Black"/>
+        <Setter Property="Cursor" Value="Arrow"/>
+    </Style>
+    <Style Selector="Button.caption:pointerover /template/ Border#Root">
+        <Setter Property="Background" Value="#1A000000"/>
+    </Style>
+    <Style Selector="Button.caption:pressed /template/ Border#Root">
+        <Setter Property="Background" Value="#33000000"/>
+    </Style>
+    <Style Selector="Button.caption.close:pointerover /template/ Border#Root">
+        <Setter Property="Background" Value="#E81123"/>
+    </Style>
+    <Style Selector="Button.caption.close:pressed /template/ Border#Root">
+        <Setter Property="Background" Value="#F1707A"/>
+    </Style>
+    <Style Selector="Button.caption.close:pointerover Path">
+        <Setter Property="Stroke" Value="White"/>
+    </Style>
+    <Style Selector="Button.caption Path">
+        <Setter Property="Stroke" Value="Black"/>
+        <Setter Property="StrokeThickness" Value="1"/>
+        <Setter Property="Width" Value="10"/>
+        <Setter Property="Height" Value="10"/>
+    </Style>
+
+    <!-- ===== Écran de connexion ===== -->
+    <Style Selector="Button.signin">
+        <Setter Property="Background" Value="#33FFFFFF"/>
+        <Setter Property="BorderBrush" Value="#66FFFFFF"/>
+        <Setter Property="BorderThickness" Value="2"/>
+        <Setter Property="Foreground" Value="White"/>
+        <Setter Property="FontSize" Value="15"/>
+        <Setter Property="Height" Value="36"/>
+        <Setter Property="MinWidth" Value="140"/>
+        <Setter Property="Padding" Value="24,0"/>
+        <Setter Property="HorizontalAlignment" Value="Center"/>
+    </Style>
+    <Style Selector="Button.signin:pointerover /template/ Border#Root">
+        <Setter Property="Background" Value="#4DFFFFFF"/>
+        <Setter Property="BorderBrush" Value="#99FFFFFF"/>
+    </Style>
+    <Style Selector="Button.signin:pressed /template/ Border#Root">
+        <Setter Property="Background" Value="#66FFFFFF"/>
+    </Style>
+
+    <Style Selector="Button.link">
+        <Setter Property="Foreground" Value="White"/>
+        <Setter Property="FontSize" Value="14"/>
+        <Setter Property="HorizontalAlignment" Value="Center"/>
+        <Setter Property="Padding" Value="4,2"/>
+    </Style>
+    <Style Selector="Button.link:pointerover">
+        <Setter Property="Foreground" Value="#CCFFFFFF"/>
+    </Style>
+
+    <Style Selector="Button.corner">
+        <Setter Property="Width" Value="48"/>
+        <Setter Property="Height" Value="48"/>
+    </Style>
+    <Style Selector="Button.corner:pointerover /template/ Border#Root">
+        <Setter Property="Background" Value="#26FFFFFF"/>
+    </Style>
+
+    <!-- Indicateur d'attente : arc qui tourne (remplace les points animés de Windows 10). -->
+    <Style Selector="Arc.spinner">
+        <Setter Property="Stroke" Value="White"/>
+        <Setter Property="StrokeThickness" Value="3"/>
+        <Setter Property="StartAngle" Value="0"/>
+        <Setter Property="SweepAngle" Value="270"/>
+        <Setter Property="StrokeLineCap" Value="Round"/>
+        <Style.Animations>
+            <Animation Duration="0:0:1.1" IterationCount="Infinite">
+                <KeyFrame Cue="0%">
+                    <Setter Property="RenderTransform" Value="rotate(0deg)"/>
+                </KeyFrame>
+                <KeyFrame Cue="100%">
+                    <Setter Property="RenderTransform" Value="rotate(360deg)"/>
+                </KeyFrame>
+            </Animation>
+        </Style.Animations>
+    </Style>
+
+    <!-- ===== Interface téléphone ===== -->
+    <Style Selector="Button.mobileicon">
+        <Setter Property="HorizontalAlignment" Value="Stretch"/>
+        <Setter Property="Padding" Value="0,8"/>
+    </Style>
+    <Style Selector="Button.mobileicon:pressed">
+        <Setter Property="RenderTransform" Value="scale(0.94)"/>
+    </Style>
+</Styles>

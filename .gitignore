@@ -1,0 +1,20 @@
+# Compilation
+bin/
+obj/
+artifacts/
+.vs/
+.idea/
+*.user
+.DS_Store
+
+# Données du serveur (sessions Discord chiffrées)
+src/ARGOS.Server/data/
+
+# Secrets locaux : NE JAMAIS VERSIONNER
+appsettings.Local.json
+argos.local.json
+*private*.pem
+
+# Signature Android
+*.keystore
+*.jks

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <style name="ArgosTheme.NoActionBar" parent="@style/Theme.AppCompat.NoActionBar">
+    <item name="android:windowActionBar">false</item>
+    <item name="android:windowNoTitle">true</item>
+    <item name="android:windowBackground">@color/argos_background</item>
+    <item name="android:statusBarColor">@color/argos_background</item>
+    <item name="android:navigationBarColor">@color/argos_background</item>
+    <item name="colorPrimary">@color/argos_accent</item>
+    <item name="colorAccent">@color/argos_accent</item>
+  </style>
+</resources>

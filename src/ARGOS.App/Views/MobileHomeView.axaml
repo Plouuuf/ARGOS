@@ -1,0 +1,123 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="Argos.Views.MobileHomeView">
+    <UserControl.Styles>
+        <Style Selector="TextBlock.white">
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+        <Style Selector="TextBlock.shadow">
+            <Setter Property="Effect">
+                <DropShadowEffect BlurRadius="6" OffsetX="0" OffsetY="1" Opacity="0.85" Color="Black"/>
+            </Setter>
+        </Style>
+        <Style Selector="PathIcon.offline">
+            <Setter Property="Opacity" Value="0.35"/>
+        </Style>
+    </UserControl.Styles>
+
+    <Grid>
+        <!-- ===================== Écran d'accueil ===================== -->
+        <Grid RowDefinitions="Auto,*,Auto" IsVisible="{Binding !IsMobileAppOpen}">
+
+            <!-- Profil -->
+            <Grid ColumnDefinitions="Auto,*,Auto" Margin="16,12,8,8">
+                <Border Width="40" Height="40" CornerRadius="20" ClipToBounds="True" Background="#59FFFFFF">
+                    <Panel>
+                        <PathIcon Data="{StaticResource IconPerson}" Width="22" Height="22" Foreground="White"
+                                  IsVisible="{Binding !HasAvatar}"/>
+                        <Image Source="{Binding Avatar}" Stretch="UniformToFill" IsVisible="{Binding HasAvatar}"/>
+                    </Panel>
+                </Border>
+                <StackPanel Grid.Column="1" Margin="12,0,0,0" VerticalAlignment="Center">
+                    <TextBlock Classes="white shadow" Text="{Binding DisplayName}" FontSize="16" FontWeight="SemiBold"
+                               TextTrimming="CharacterEllipsis"/>
+                    <TextBlock Classes="white shadow" Text="{Binding LevelLabel}" FontSize="13" Opacity="0.9"/>
+                </StackPanel>
+                <PathIcon Grid.Column="2" Data="{StaticResource IconNetwork}" Width="18" Height="18" Foreground="White"
+                          Margin="8,0" Classes.offline="{Binding !IsOnline}" ToolTip.Tip="{Binding NetworkTooltip}"/>
+            </Grid>
+
+            <!-- Applications -->
+            <ScrollViewer Grid.Row="1" Margin="8,8,8,0">
+                <ItemsControl ItemsSource="{Binding Apps}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <UniformGrid Columns="4"/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Button Classes="flat mobileicon" Command="{Binding OpenCommand}">
+                                <StackPanel Spacing="6">
+                                    <Border Width="62" Height="62" CornerRadius="14" Background="#EBFFFFFF"
+                                            HorizontalAlignment="Center">
+                                        <Image Source="{Binding Icon}" Width="46" Height="46"
+                                               RenderOptions.BitmapInterpolationMode="HighQuality"/>
+                                    </Border>
+                                    <TextBlock Classes="white shadow" Text="{Binding Title}" FontSize="12"
+                                               TextAlignment="Center" TextWrapping="Wrap" MaxLines="2"
+                                               HorizontalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+
+            <!-- Barre basse, dans l'esprit de la barre des tâches -->
+            <Border Grid.Row="2" Background="{StaticResource TaskbarBrush}" Margin="8" CornerRadius="10" Height="56">
+                <Grid ColumnDefinitions="Auto,*,Auto,Auto">
+                    <PathIcon Data="{StaticResource IconWindows}" Width="18" Height="18" Foreground="White" Margin="18,0"/>
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                        <TextBlock Classes="white" Text="ARGOS" FontSize="14" FontWeight="SemiBold"/>
+                        <TextBlock Text="{Binding TrayTime}" Foreground="#BBBBBB" FontSize="12"/>
+                    </StackPanel>
+                    <Button Grid.Column="2" Classes="flat corner" Command="{Binding LockCommand}">
+                        <PathIcon Data="{StaticResource IconLock}" Width="20" Height="20" Foreground="White"/>
+                    </Button>
+                    <Button Grid.Column="3" Classes="flat corner" Command="{Binding SignOutCommand}">
+                        <PathIcon Data="{StaticResource IconSignOut}" Width="20" Height="20" Foreground="White"/>
+                    </Button>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- ===================== Application en plein écran ===================== -->
+        <Grid RowDefinitions="52,*" IsVisible="{Binding IsMobileAppOpen}" Background="White">
+            <Border Background="#F2F2F2" BorderBrush="#E0E0E0" BorderThickness="0,0,0,1">
+                <Grid ColumnDefinitions="Auto,Auto,*">
+                    <Button Classes="flat" Width="52" Height="52" Command="{Binding MobileBackCommand}">
+                        <PathIcon Data="{StaticResource IconArrowLeft}" Width="20" Height="20" Foreground="#1F1F1F"/>
+                    </Button>
+                    <Image Grid.Column="1" Source="{Binding MobileApp.Icon}" Width="24" Height="24" Margin="0,0,10,0"/>
+                    <TextBlock Grid.Column="2" Text="{Binding MobileApp.Title}" FontSize="17" FontWeight="SemiBold"
+                               Foreground="#1F1F1F" VerticalAlignment="Center"/>
+                </Grid>
+            </Border>
+            <ContentControl Name="MobileBody" Grid.Row="1"/>
+        </Grid>
+
+        <!-- Notifications, en haut de l'écran -->
+        <ItemsControl ItemsSource="{Binding Toasts}" VerticalAlignment="Top" Margin="8">
+            <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <StackPanel Spacing="8"/>
+                </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                    <Button Classes="flat" Command="{Binding DismissCommand}" HorizontalContentAlignment="Stretch">
+                        <Border Background="{StaticResource StartMenuBrush}" CornerRadius="10" Padding="14,10"
+                                BoxShadow="0 4 16 0 #66000000">
+                            <StackPanel Spacing="2">
+                                <TextBlock Classes="white" Text="{Binding Title}" FontSize="15" FontWeight="SemiBold"
+                                           TextWrapping="Wrap"/>
+                                <TextBlock Text="{Binding Text}" Foreground="#CCCCCC" FontSize="14" TextWrapping="Wrap"/>
+                            </StackPanel>
+                        </Border>
+                    </Button>
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+        </ItemsControl>
+    </Grid>
+</UserControl>

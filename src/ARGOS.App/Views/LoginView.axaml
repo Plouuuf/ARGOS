@@ -1,0 +1,124 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="Argos.Views.LoginView">
+    <UserControl.Styles>
+        <Style Selector="TextBlock">
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+        <Style Selector="Border#AvatarFrame">
+            <Setter Property="Width" Value="192"/>
+            <Setter Property="Height" Value="192"/>
+            <Setter Property="CornerRadius" Value="96"/>
+        </Style>
+        <Style Selector="TextBlock#UserName">
+            <Setter Property="FontSize" Value="36"/>
+        </Style>
+        <Style Selector="StackPanel.compact Border#AvatarFrame">
+            <Setter Property="Width" Value="128"/>
+            <Setter Property="Height" Value="128"/>
+            <Setter Property="CornerRadius" Value="64"/>
+        </Style>
+        <Style Selector="StackPanel.compact TextBlock#UserName">
+            <Setter Property="FontSize" Value="28"/>
+        </Style>
+    </UserControl.Styles>
+
+    <!-- Voile sombre sur le fond flouté, comme Windows 10. -->
+    <Grid Background="#4D000000">
+        <StackPanel Classes.compact="{Binding IsCompact}"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Width="340"
+                    Spacing="14">
+
+            <!-- Photo de profil (avatar Discord, ou logo ARGOS par défaut) -->
+            <Border Name="AvatarFrame"
+                    HorizontalAlignment="Center"
+                    ClipToBounds="True">
+                <Panel>
+                    <!-- Sans compte connu : logo ARGOS à la place de la photo. -->
+                    <Image Source="avares://ARGOS.App/Assets/argos-icon.png"
+                           Stretch="Uniform"
+                           IsVisible="{Binding !HasAvatar}"/>
+                    <Image Source="{Binding Avatar}"
+                           Stretch="UniformToFill"
+                           IsVisible="{Binding HasAvatar}"/>
+                </Panel>
+            </Border>
+
+            <TextBlock Name="UserName"
+                       Text="{Binding DisplayName}"
+                       HorizontalAlignment="Center"
+                       TextAlignment="Center"
+                       TextWrapping="Wrap"
+                       FontWeight="Light"/>
+            <TextBlock Text="{Binding Subtitle}"
+                       HorizontalAlignment="Center"
+                       TextAlignment="Center"
+                       FontSize="14"
+                       Opacity="0.85"
+                       Margin="0,-8,0,6"/>
+
+            <!-- Bouton de connexion -->
+            <Button Classes="flat signin"
+                    Content="{Binding SignInLabel}"
+                    Command="{Binding SignInCommand}"
+                    IsVisible="{Binding !IsBusy}"/>
+
+            <!-- Attente (vérification, navigateur ouvert) -->
+            <StackPanel Spacing="12" IsVisible="{Binding IsBusy}" HorizontalAlignment="Center">
+                <Arc Classes="spinner" Width="36" Height="36" HorizontalAlignment="Center"/>
+                <TextBlock Text="{Binding StatusText}"
+                           FontSize="14"
+                           TextAlignment="Center"
+                           TextWrapping="Wrap"
+                           HorizontalAlignment="Center"/>
+                <Button Classes="flat link" Content="Annuler" Command="{Binding CancelSignInCommand}"/>
+            </StackPanel>
+
+            <!-- Erreur (accès refusé, serveur injoignable…) -->
+            <Border IsVisible="{Binding HasError}"
+                    Background="#B3000000"
+                    BorderBrush="#E81123"
+                    BorderThickness="0,0,0,2"
+                    Padding="12,10">
+                <TextBlock Text="{Binding ErrorText}"
+                           FontSize="14"
+                           TextAlignment="Center"
+                           TextWrapping="Wrap"/>
+            </Border>
+
+            <Button Classes="flat link"
+                    Content="Utiliser un autre compte Discord"
+                    Command="{Binding UseOtherAccountCommand}"
+                    IsVisible="{Binding HasKnownAccount}"
+                    Margin="0,8,0,0"/>
+        </StackPanel>
+
+        <!-- Coin inférieur gauche : retour à l'écran de verrouillage -->
+        <Button Classes="flat corner"
+                HorizontalAlignment="Left"
+                VerticalAlignment="Bottom"
+                Margin="16"
+                ToolTip.Tip="Verrouiller"
+                Command="{Binding BackToLockCommand}">
+            <PathIcon Data="{StaticResource IconLock}" Width="20" Height="20" Foreground="White"/>
+        </Button>
+
+        <!-- Coin inférieur droit : réseau et marche/arrêt, comme Windows 10 -->
+        <StackPanel Orientation="Horizontal"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Bottom"
+                    Margin="16">
+            <Border Width="48" Height="48" ToolTip.Tip="Réseau">
+                <PathIcon Data="{StaticResource IconNetwork}" Width="20" Height="20" Foreground="White"/>
+            </Border>
+            <Button Classes="flat corner"
+                    ToolTip.Tip="Quitter ARGOS"
+                    IsVisible="{Binding CanQuit}"
+                    Command="{Binding QuitCommand}">
+                <PathIcon Data="{StaticResource IconPower}" Width="20" Height="20" Foreground="White"/>
+            </Button>
+        </StackPanel>
+    </Grid>
+</UserControl>

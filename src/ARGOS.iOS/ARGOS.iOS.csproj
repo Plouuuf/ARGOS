@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    ARGOS pour iPhone et iPad.
+    Prérequis : un Mac avec Xcode, puis « dotnet workload install ios ».
+    Simulateur :
+      dotnet build src/ARGOS.iOS -c Release -f net9.0-ios -r iossimulator-arm64
+    Appareil / TestFlight : certificat + profil de provisionnement « fr.vdms.argos » (même compte Apple que SIMCALL).
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net9.0-ios</TargetFramework>
+    <SupportedOSPlatformVersion>15.0</SupportedOSPlatformVersion>
+    <AssemblyName>ARGOS.iOS</AssemblyName>
+    <RootNamespace>ArgosIos</RootNamespace>
+    <ApplicationId>fr.vdms.argos</ApplicationId>
+    <ApplicationTitle>ARGOS</ApplicationTitle>
+    <ApplicationDisplayVersion>$(Version)</ApplicationDisplayVersion>
+    <ApplicationVersion>$(Version)</ApplicationVersion>
+    <ProvisioningType>manual</ProvisioningType>
+    <TrimMode>partial</TrimMode>
+    <JsonSerializerIsReflectionEnabledByDefault>true</JsonSerializerIsReflectionEnabledByDefault>
+    <NoWarn>$(NoWarn);CA1416;CA1422</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Avalonia.iOS" Version="$(AvaloniaVersion)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ARGOS.App\ARGOS.App.csproj" />
+  </ItemGroup>
+</Project>

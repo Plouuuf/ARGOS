@@ -1,0 +1,16 @@
+<Project>
+  <PropertyGroup>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <!-- Permet de compiler la solution complète depuis un Mac. -->
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <Version>0.1.0</Version>
+    <AvaloniaVersion>11.3.22</AvaloniaVersion>
+    <Company>VAL-DE-MARNE SIMULATION</Company>
+    <Product>ARGOS</Product>
+    <AssemblyTitle>ARGOS - $(Version) © 2026 VAL-DE-MARNE SIMULATION</AssemblyTitle>
+    <Description>ARGOS - poste de travail BSPP du réseau VAL-DE-MARNE SIMULATION</Description>
+    <Copyright>© 2026 VAL-DE-MARNE SIMULATION</Copyright>
+  </PropertyGroup>
+</Project>

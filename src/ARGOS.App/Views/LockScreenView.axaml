@@ -1,0 +1,56 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="Argos.Views.LockScreenView"
+             Background="Transparent"
+             Cursor="Hand">
+    <UserControl.Styles>
+        <Style Selector="TextBlock">
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Effect">
+                <DropShadowEffect BlurRadius="12" OffsetX="0" OffsetY="1" Opacity="0.55" Color="Black"/>
+            </Setter>
+        </Style>
+        <!-- Ordinateur : heure et date en bas à gauche, comme l'écran de verrouillage de Windows 10. -->
+        <Style Selector="StackPanel#Clock">
+            <Setter Property="HorizontalAlignment" Value="Left"/>
+            <Setter Property="VerticalAlignment" Value="Bottom"/>
+            <Setter Property="Margin" Value="48,0,0,88"/>
+        </Style>
+        <Style Selector="TextBlock#Time">
+            <Setter Property="FontSize" Value="118"/>
+        </Style>
+        <Style Selector="TextBlock#Date">
+            <Setter Property="FontSize" Value="44"/>
+        </Style>
+
+        <!-- Téléphone : horloge plus petite, centrée en haut comme sur un écran de verrouillage mobile. -->
+        <Style Selector="StackPanel#Clock.compact">
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="VerticalAlignment" Value="Top"/>
+            <Setter Property="Margin" Value="0,72,0,0"/>
+        </Style>
+        <Style Selector="StackPanel#Clock.compact TextBlock">
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+        </Style>
+        <Style Selector="StackPanel#Clock.compact TextBlock#Time">
+            <Setter Property="FontSize" Value="76"/>
+        </Style>
+        <Style Selector="StackPanel#Clock.compact TextBlock#Date">
+            <Setter Property="FontSize" Value="22"/>
+        </Style>
+    </UserControl.Styles>
+
+    <Grid>
+        <StackPanel Name="Clock" Classes.compact="{Binding IsCompact}">
+            <TextBlock Name="Time" Text="{Binding TimeText}" FontWeight="Light"/>
+            <TextBlock Name="Date" Text="{Binding DateText}" FontWeight="Light" Margin="4,0,0,0"/>
+        </StackPanel>
+
+        <TextBlock HorizontalAlignment="Center"
+                   VerticalAlignment="Bottom"
+                   Margin="0,0,0,24"
+                   FontSize="13"
+                   Opacity="0.85"
+                   Text="Appuyez ou cliquez pour vous connecter"/>
+    </Grid>
+</UserControl>

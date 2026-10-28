@@ -1,0 +1,79 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="Argos.Views.AppWindowControl"
+             FontFamily="{StaticResource WindowsFont}">
+    <!-- Fenêtre Windows 10 : bordure fine (accent si active), barre de titre blanche, boutons à droite. -->
+    <UserControl.Styles>
+        <Style Selector="Border#Frame">
+            <Setter Property="BorderBrush" Value="{StaticResource InactiveBorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BoxShadow" Value="0 7 24 0 #47000000"/>
+        </Style>
+        <Style Selector="Border#Frame.active">
+            <Setter Property="BorderBrush" Value="{StaticResource WindowBorderBrush}"/>
+            <Setter Property="BoxShadow" Value="0 10 32 0 #66000000"/>
+        </Style>
+        <Style Selector="Border#Frame.maximized">
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="BoxShadow" Value="none"/>
+        </Style>
+        <Style Selector="TextBlock#TitleText">
+            <Setter Property="Foreground" Value="#999999"/>
+        </Style>
+        <Style Selector="TextBlock#TitleText.active">
+            <Setter Property="Foreground" Value="#000000"/>
+        </Style>
+        <Style Selector="Border.resize">
+            <Setter Property="Background" Value="Transparent"/>
+        </Style>
+        <Style Selector="Border.resize.hidden">
+            <Setter Property="IsVisible" Value="False"/>
+        </Style>
+    </UserControl.Styles>
+
+    <Border Name="Frame"
+            Background="White"
+            Classes.active="{Binding IsActive}"
+            Classes.maximized="{Binding IsMaximized}">
+        <Grid>
+            <Grid RowDefinitions="31,*">
+                <!-- Barre de titre : glisser pour déplacer, double-clic pour agrandir. -->
+                <Grid Name="TitleBar" Background="White" ColumnDefinitions="Auto,*,Auto">
+                    <Image Source="{Binding Icon}" Width="16" Height="16" Margin="8,0,8,0" VerticalAlignment="Center"/>
+                    <TextBlock Name="TitleText"
+                               Grid.Column="1"
+                               Classes.active="{Binding IsActive}"
+                               Text="{Binding Title}"
+                               FontSize="12"
+                               VerticalAlignment="Center"
+                               TextTrimming="CharacterEllipsis"/>
+                    <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Top">
+                        <Button Classes="flat caption" ToolTip.Tip="Réduire" Command="{Binding MinimizeCommand}">
+                            <Path Data="{StaticResource CaptionMinimize}"/>
+                        </Button>
+                        <Button Classes="flat caption" ToolTip.Tip="Agrandir" Command="{Binding ToggleMaximizeCommand}">
+                            <Panel>
+                                <Path Data="{StaticResource CaptionMaximize}" IsVisible="{Binding !IsMaximized}"/>
+                                <Path Data="{StaticResource CaptionRestore}" IsVisible="{Binding IsMaximized}"/>
+                            </Panel>
+                        </Button>
+                        <Button Classes="flat caption close" ToolTip.Tip="Fermer" Command="{Binding CloseCommand}">
+                            <Path Data="{StaticResource CaptionClose}"/>
+                        </Button>
+                    </StackPanel>
+                </Grid>
+
+                <ContentControl Name="Body" Grid.Row="1" ClipToBounds="True"/>
+            </Grid>
+
+            <!-- Poignées de redimensionnement (bord droit, bord bas, coin) -->
+            <Border Name="ResizeRight" Classes="resize" Classes.hidden="{Binding IsMaximized}"
+                    Width="6" HorizontalAlignment="Right" Margin="0,31,-3,8" Cursor="SizeWestEast"/>
+            <Border Name="ResizeBottom" Classes="resize" Classes.hidden="{Binding IsMaximized}"
+                    Height="6" VerticalAlignment="Bottom" Margin="0,0,8,-3" Cursor="SizeNorthSouth"/>
+            <Border Name="ResizeCorner" Classes="resize" Classes.hidden="{Binding IsMaximized}"
+                    Width="14" Height="14" HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                    Margin="0,0,-3,-3" Cursor="BottomRightCorner"/>
+        </Grid>
+    </Border>
+</UserControl>

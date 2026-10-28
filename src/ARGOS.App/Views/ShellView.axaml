@@ -1,0 +1,38 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:views="clr-namespace:Argos.Views"
+             x:Class="Argos.Views.ShellView"
+             FontFamily="{StaticResource WindowsFont}"
+             Background="Black"
+             Focusable="True">
+    <UserControl.Styles>
+        <!-- Fond flouté et légèrement agrandi (évite les bords transparents du flou), comme l'écran de connexion de Windows 10. -->
+        <Style Selector="Image#Wallpaper.blurred">
+            <Setter Property="Effect">
+                <BlurEffect Radius="48"/>
+            </Setter>
+            <Setter Property="RenderTransform" Value="scale(1.08)"/>
+        </Style>
+    </UserControl.Styles>
+
+    <Grid ClipToBounds="True">
+        <Image Name="Wallpaper"
+               Source="{Binding Wallpaper}"
+               Stretch="UniformToFill"
+               Classes.blurred="{Binding IsWallpaperBlurred}"/>
+
+        <!-- Contenu, à l'intérieur des zones sûres (encoche, barre d'accueil) sur téléphone et tablette. -->
+        <Panel Name="SafeArea">
+            <views:LockScreenView IsVisible="{Binding IsLockScreen}"/>
+            <views:LoginView IsVisible="{Binding IsLoginScreen}"/>
+            <views:WelcomeView IsVisible="{Binding IsWelcomeScreen}"/>
+
+            <Panel IsVisible="{Binding ShowDesktopLayout}">
+                <views:DesktopView DataContext="{Binding Desktop}"/>
+            </Panel>
+            <Panel IsVisible="{Binding ShowMobileLayout}">
+                <views:MobileHomeView DataContext="{Binding Desktop}"/>
+            </Panel>
+        </Panel>
+    </Grid>
+</UserControl>

@@ -1,0 +1,24 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="Argos.Views.WelcomeView">
+    <!-- « Bienvenue » de Windows 10, le temps de préparer le bureau. -->
+    <Grid Background="#4D000000">
+        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="18">
+            <Border Width="160" Height="160" CornerRadius="80" ClipToBounds="True"
+                    HorizontalAlignment="Center">
+                <Panel>
+                    <Image Source="avares://ARGOS.App/Assets/argos-icon.png" Stretch="Uniform"
+                           IsVisible="{Binding !HasAvatar}"/>
+                    <Image Source="{Binding Avatar}" Stretch="UniformToFill" IsVisible="{Binding HasAvatar}"/>
+                </Panel>
+            </Border>
+            <TextBlock Text="{Binding DisplayName}" Foreground="White" FontSize="30" FontWeight="Light"
+                       HorizontalAlignment="Center"/>
+            <StackPanel Orientation="Horizontal" Spacing="14" HorizontalAlignment="Center">
+                <Arc Classes="spinner" Width="28" Height="28"/>
+                <TextBlock Text="Bienvenue" Foreground="White" FontSize="30" FontWeight="Light"
+                           VerticalAlignment="Center"/>
+            </StackPanel>
+        </StackPanel>
+    </Grid>
+</UserControl>

@@ -1,0 +1,19 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="Argos.Views.Apps.PlaceholderAppView"
+             Background="White">
+    <!-- Contenu provisoire d'une application pas encore développée. DataContext : AppTileViewModel. -->
+    <Grid>
+        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="10" Margin="24">
+            <Image Source="{Binding Icon}" Width="96" Height="96" HorizontalAlignment="Center"/>
+            <TextBlock Text="{Binding Title}" FontSize="24" FontWeight="SemiBold" Foreground="#1F1F1F"
+                       HorizontalAlignment="Center" Margin="0,8,0,0"/>
+            <TextBlock Text="{Binding Subtitle}" FontSize="15" Foreground="#5D5D5D" HorizontalAlignment="Center"/>
+            <Border Background="#F2F2F2" BorderBrush="#E0E0E0" BorderThickness="1" Padding="16,10" Margin="0,12,0,0"
+                    HorizontalAlignment="Center">
+                <TextBlock Text="Cette application arrive dans une prochaine version d'ARGOS."
+                           FontSize="13" Foreground="#3B3B3B" TextWrapping="Wrap" TextAlignment="Center"/>
+            </Border>
+        </StackPanel>
+    </Grid>
+</UserControl>

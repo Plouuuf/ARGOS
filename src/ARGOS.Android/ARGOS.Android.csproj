@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    ARGOS pour téléphones et tablettes Android (APK).
+    Prérequis : dotnet workload install android
+    Compilation : dotnet publish src/ARGOS.Android -c Release -f net9.0-android
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net9.0-android</TargetFramework>
+    <SupportedOSPlatformVersion>24</SupportedOSPlatformVersion>
+    <AssemblyName>ARGOS.Android</AssemblyName>
+    <!-- Pas « ARGOS.Android » : l'espace de noms entrerait en conflit avec « Android.* ». -->
+    <RootNamespace>ArgosDroid</RootNamespace>
+    <ApplicationId>fr.vdms.argos</ApplicationId>
+    <ApplicationTitle>ARGOS</ApplicationTitle>
+    <ApplicationDisplayVersion>$(Version)</ApplicationDisplayVersion>
+    <!-- Code de version Android (entier croissant) : 0.1.0 → 100, 1.2.3 → 10203. -->
+    <ApplicationVersion>$([MSBuild]::Add($([MSBuild]::Add($([MSBuild]::Multiply($([System.Version]::Parse('$(Version)').Major), 10000)), $([MSBuild]::Multiply($([System.Version]::Parse('$(Version)').Minor), 100)))), $([System.Version]::Parse('$(Version)').Build)))</ApplicationVersion>
+    <AndroidPackageFormat>apk</AndroidPackageFormat>
+    <TrimMode>partial</TrimMode>
+    <JsonSerializerIsReflectionEnabledByDefault>true</JsonSerializerIsReflectionEnabledByDefault>
+    <NoWarn>$(NoWarn);CA1416;XA0141</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Avalonia.Android" Version="$(AvaloniaVersion)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ARGOS.App\ARGOS.App.csproj" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Contrats échangés entre le serveur ARGOS et l'application (toutes plateformes). -->
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <AssemblyName>ARGOS.Shared</AssemblyName>
+    <RootNamespace>Argos.Shared</RootNamespace>
+  </PropertyGroup>
+</Project>
