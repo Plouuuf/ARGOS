@@ -119,6 +119,7 @@ jobs:
           dotnet publish src/ARGOS.Server/ARGOS.Server.csproj -c Release -r win-x64 --self-contained true \
             -p:PublishSingleFile=true -p:EnableCompressionInSingleFile=true -o artifacts/server
           cp README.md artifacts/server/LISEZ-MOI.md
+          cp deployment/INSTALLER-ARGOS.ps1 deployment/INSTALLER-ARGOS.cmd artifacts/server/
 
       - uses: actions/upload-artifact@v4
         with:
