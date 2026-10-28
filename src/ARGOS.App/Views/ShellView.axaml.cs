@@ -39,7 +39,7 @@ public partial class ShellView : UserControl
         if (_insets is not null)
         {
             // Téléphone / tablette : le fond passe sous la barre d'état, le contenu reste dans la zone sûre.
-            _insets.DisplayEdgeToEdge = true;
+            _insets.DisplayEdgeToEdgePreference = true;
             _insets.SafeAreaChanged += OnSafeAreaChanged;
             ApplySafeArea(_insets.SafeAreaPadding);
         }

@@ -189,11 +189,12 @@
         <Setter Property="StrokeLineCap" Value="Round"/>
         <Style.Animations>
             <Animation Duration="0:0:1.1" IterationCount="Infinite">
+                <!-- Avalonia anime la rotation via « RotateTransform.Angle » (pas de RenderTransform direct). -->
                 <KeyFrame Cue="0%">
-                    <Setter Property="RenderTransform" Value="rotate(0deg)"/>
+                    <Setter Property="RotateTransform.Angle" Value="0"/>
                 </KeyFrame>
                 <KeyFrame Cue="100%">
-                    <Setter Property="RenderTransform" Value="rotate(360deg)"/>
+                    <Setter Property="RotateTransform.Angle" Value="360"/>
                 </KeyFrame>
             </Animation>
         </Style.Animations>
