@@ -245,16 +245,19 @@ public sealed class PriseAppelViewModel : ViewModelBase, IDisposable
 
     private void RefreshStreetSuggestions(OdeSnapshot snapshot)
     {
+        // Plan VDMS d'abord (voie - quartier), puis les lieux déjà saisis qui n'y figurent pas (sites, ERP…).
+        var map = VdmsMap.Streets.Select(s => s.Display).ToList();
         var known = snapshot.Calls.Select(c => c.Street)
             .Concat(snapshot.Interventions.Select(i => i.Address))
             .Where(s => !string.IsNullOrWhiteSpace(s))
             .Select(s => s.Trim())
+            .Where(s => VdmsMap.FindStreet(s) is null)
             .Distinct(StringComparer.OrdinalIgnoreCase)
-            .OrderBy(s => s, StringComparer.Create(OdeFormat.French, true))
-            .ToList();
-        if (known.SequenceEqual(StreetSuggestions)) return;
+            .OrderBy(s => s, StringComparer.Create(OdeFormat.French, true));
+        var all = map.Concat(known).ToList();
+        if (all.SequenceEqual(StreetSuggestions)) return;
         StreetSuggestions.Clear();
-        foreach (var s in known) StreetSuggestions.Add(s);
+        foreach (var s in all) StreetSuggestions.Add(s);
     }
 
     private void Tick()
@@ -349,12 +352,27 @@ public sealed class PriseAppelViewModel : ViewModelBase, IDisposable
             return;
         }
 
+        var number = StreetNumber.Trim();
+        var known = VdmsMap.FindStreet(street);
         _call.LocationConfirmed = true;
-        AlertAddress = string.Join(" ", new[] { StreetNumber.Trim(), street }.Where(s => s.Length > 0)).ToUpperInvariant();
+        if (known is not null)
+        {
+            Street = known.Display;
+            _call.Locality = known.District.ToUpperInvariant();
+            AlertAddress = string.Join(" ", new[] { number, known.Name }.Where(s => s.Length > 0)).ToUpperInvariant();
+        }
+        else
+        {
+            _call.Locality = string.Empty;
+            AlertAddress = string.Join(" ", new[] { number, street }.Where(s => s.Length > 0)).ToUpperInvariant();
+        }
         if (string.IsNullOrWhiteSpace(Cstc))
             Cstc = EnginsCatalog.Creteil;
         OnPropertyChanged(nameof(LocationConfirmed));
-        ShowMessage("Localisation confirmée.", false);
+        if (known is null)
+            ShowMessage("Voie absente du plan VDMS : localisation enregistrée telle quelle (F9 si l'adresse n'existe pas).", true);
+        else
+            ShowMessage($"Localisation confirmée : {known.Name}, {known.District}.", false);
     }
 
     // ===== Touches F1 à F9 =====

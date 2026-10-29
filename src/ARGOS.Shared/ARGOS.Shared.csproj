@@ -8,5 +8,7 @@
   <ItemGroup>
     <!-- Natures d'intervention BSPP (codes et libellés), partagées par le serveur et l'application. -->
     <EmbeddedResource Include="Data\natures.json" LogicalName="ARGOS.natures.json" />
+    <!-- Plan VDMS : voies et quartiers (export de l'éditeur cartographique VDMS, coordonnées GTA V). -->
+    <EmbeddedResource Include="Data\voies.json" LogicalName="ARGOS.voies.json" />
   </ItemGroup>
 </Project>

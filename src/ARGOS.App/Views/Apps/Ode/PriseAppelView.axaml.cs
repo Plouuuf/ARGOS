@@ -1,3 +1,4 @@
+using Argos.Shared.Contracts;
 using Argos.ViewModels.Ode;
 using Avalonia;
 using Avalonia.Controls;
@@ -14,6 +15,16 @@ public partial class PriseAppelView : UserControl
         InitializeComponent();
         StreetArrow.Click += (_, _) => OpenSuggestions(StreetBox);
         MotifArrow.Click += (_, _) => OpenSuggestions(MotifBox);
+
+        // Voies : tous les mots saisis, sans tenir compte des accents (« bosq echat » → AVENUE BOSQUET - L'ÉCHAT).
+        StreetBox.FilterMode = AutoCompleteFilterMode.Custom;
+        StreetBox.ItemFilter = (search, item) =>
+        {
+            var hay = VdmsMap.Normalize(item?.ToString() ?? string.Empty);
+            return VdmsMap.Normalize(search ?? string.Empty)
+                .Split(' ', StringSplitOptions.RemoveEmptyEntries)
+                .All(w => hay.Contains(w, StringComparison.Ordinal));
+        };
 
         // Les touches F sont interceptées avant les champs de saisie.
         AddHandler(KeyDownEvent, OnKeyDownTunnel, RoutingStrategies.Tunnel);
