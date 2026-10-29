@@ -26,6 +26,9 @@ public static class RealtimeTypes
     /// <summary>Les données d'ADAGIO ODE ont changé : les postes rechargent l'état (Text = raison).</summary>
     public const string OdeChanged = "ode-changed";
 
+    /// <summary>Les données d'ADAGIO REMISE ont changé (parc, matériel, maintenance, stocks).</summary>
+    public const string RemiseChanged = "remise-changed";
+
     /// <summary>Ouvrir la prise d'appel de l'appel indiqué (Text = identifiant), au décroché d'un 18.</summary>
     public const string OpenCall = "open-call";
 }

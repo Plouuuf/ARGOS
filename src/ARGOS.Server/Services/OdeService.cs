@@ -17,11 +17,17 @@ public sealed class OdeService(OdeDatabase db, RealtimeHub hub, ILogger<OdeServi
     public OdeSnapshot Snapshot()
     {
         EnsureEngins();
+        var fleet = Fleet().Where(f => f.Active).ToDictionary(f => f.Nom, StringComparer.OrdinalIgnoreCase);
+        var engins = db.Engins()
+            .Where(e => fleet.ContainsKey(e.Nom))
+            .Select(e => Enrich(e, fleet[e.Nom]))
+            .OrderBy(e => fleet[e.Nom].Ordre).ThenBy(e => e.Nom)
+            .ToList();
         return new OdeSnapshot
         {
             Calls = db.RecentCalls(300),
             Interventions = db.Interventions(300),
-            Engins = db.Engins().OrderBy(e => EnginOrder(e.Nom)).ToList(),
+            Engins = engins,
             ServerTime = DateTimeOffset.UtcNow
         };
     }
@@ -196,6 +202,7 @@ public sealed class OdeService(OdeDatabase db, RealtimeHub hub, ILogger<OdeServi
         {
             EnsureEngins();
             var states = db.Engins().ToDictionary(e => e.Nom, StringComparer.OrdinalIgnoreCase);
+            var fleetActive = Fleet().Where(f => f.Active).Select(f => f.Nom).ToHashSet(StringComparer.OrdinalIgnoreCase);
 
             var engins = new List<string>();
             if (!string.IsNullOrWhiteSpace(request.FirstEngin))
@@ -207,7 +214,7 @@ public sealed class OdeService(OdeDatabase db, RealtimeHub hub, ILogger<OdeServi
                 return (new(false, "Sélectionne au moins un engin."), null);
             foreach (var nom in engins)
             {
-                if (!states.TryGetValue(nom, out var state))
+                if (!states.TryGetValue(nom, out var state) || !fleetActive.Contains(nom))
                     return (new(false, $"Engin inconnu : {nom}."), null);
                 if (!EnginStatuses.IsAvailable(state.Status))
                     return (new(false, $"{nom} n'est pas disponible ({state.Status})."), null);
@@ -369,8 +376,9 @@ public sealed class OdeService(OdeDatabase db, RealtimeHub hub, ILogger<OdeServi
             var state = db.Engins().FirstOrDefault(e => string.Equals(e.Nom, engaged.Nom, StringComparison.OrdinalIgnoreCase));
             if (state is not null)
             {
-                // « Rentré » libère l'engin ; « Disponible sur intervention » le rend engageable ailleurs.
-                state.Status = status == EnginStatuses.Rentre ? EnginStatuses.Disponible : status;
+                // « Rentré » libère l'engin (ou le remet dans son état REMISE) ;
+                // « Disponible sur intervention » le rend engageable ailleurs.
+                state.Status = status == EnginStatuses.Rentre ? IdleStatus(engaged.Nom) : status;
                 state.InterventionNumber = status == EnginStatuses.Rentre ? null : intervention.Number;
                 state.UpdatedAt = now;
                 state.UpdatedBy = user.DisplayName;
@@ -428,7 +436,7 @@ public sealed class OdeService(OdeDatabase db, RealtimeHub hub, ILogger<OdeServi
                 var state = states.FirstOrDefault(s => string.Equals(s.Nom, engaged.Nom, StringComparison.OrdinalIgnoreCase));
                 if (state is not null && state.InterventionNumber == intervention.Number)
                 {
-                    state.Status = EnginStatuses.Disponible;
+                    state.Status = IdleStatus(state.Nom);
                     state.InterventionNumber = null;
                     state.UpdatedAt = now;
                     state.UpdatedBy = user.DisplayName;
@@ -490,18 +498,118 @@ public sealed class OdeService(OdeDatabase db, RealtimeHub hub, ILogger<OdeServi
 
     // ===== Outils =====
 
-    /// <summary>Crée l'état des engins du parc qui n'existent pas encore en base.</summary>
+    // ===== Lien ADAGIO REMISE =====
+
+    /// <summary>Parc d'engins (ADAGIO REMISE) ; créé depuis la feuille GDM au premier démarrage.</summary>
+    public List<FleetEngin> Fleet()
+    {
+        if (!db.AnyDoc(OdeDatabase.RemiseTables.Engins))
+        {
+            var now = DateTimeOffset.UtcNow;
+            foreach (var engin in RemiseSeed.Engins(now))
+                db.SaveDoc(OdeDatabase.RemiseTables.Engins, engin.Nom, now, engin);
+            if (!db.AnyDoc(OdeDatabase.RemiseTables.Items))
+                foreach (var item in RemiseSeed.Items(now))
+                    db.SaveDoc(OdeDatabase.RemiseTables.Items, item.Id, now, item);
+        }
+        return db.Docs<FleetEngin>(OdeDatabase.RemiseTables.Engins).OrderBy(f => f.Ordre).ThenBy(f => f.Nom).ToList();
+    }
+
+    /// <summary>
+    /// Disponibilité administrative fixée dans REMISE, répercutée sur le statut ODE de l'engin.
+    /// Refusée pour un engin engagé si elle le rendrait indisponible.
+    /// </summary>
+    public async Task<OdeResult> ApplyAvailabilityAsync(ArgosUserDto user, string nom, string availability)
+    {
+        await _gate.WaitAsync();
+        try
+        {
+            EnsureEngins();
+            var state = db.Engins().FirstOrDefault(e => string.Equals(e.Nom, nom, StringComparison.OrdinalIgnoreCase));
+            if (state is null)
+                return new(false, $"Engin inconnu : {nom}.");
+            if (EnginStatuses.IsEngaged(state.Status) || state.Status == EnginStatuses.DisponibleIntervention)
+            {
+                if (availability != FleetAvailability.Disponible)
+                    return new(false, $"{state.Nom} est engagé sur l'intervention {state.InterventionNumber} ({state.Status}) : " +
+                                      "il passera indisponible à son retour.");
+                return new(true);
+            }
+
+            var target = ToOdeStatus(availability);
+            if (state.Status == target)
+                return new(true);
+            state.Status = target;
+            state.InterventionNumber = null;
+            state.UpdatedAt = DateTimeOffset.UtcNow;
+            state.UpdatedBy = user.DisplayName;
+            db.SaveEngin(state);
+            await NotifyAsync("remise");
+            return new(true);
+        }
+        finally
+        {
+            _gate.Release();
+        }
+    }
+
+    /// <summary>Changement d'indicatif ou de centre dans REMISE : l'état ODE suit le nouveau nom.</summary>
+    public async Task<OdeResult> RenameEnginAsync(string oldNom, string newNom)
+    {
+        await _gate.WaitAsync();
+        try
+        {
+            var state = db.Engins().FirstOrDefault(e => string.Equals(e.Nom, oldNom, StringComparison.OrdinalIgnoreCase));
+            if (state is null)
+                return new(true);
+            if (EnginStatuses.IsEngaged(state.Status))
+                return new(false, $"{oldNom} est engagé : renomme-le à son retour.");
+            db.RenameEngin(oldNom, new EnginState
+            {
+                Nom = newNom, Status = state.Status, UpdatedAt = DateTimeOffset.UtcNow, UpdatedBy = state.UpdatedBy
+            });
+            await NotifyAsync("remise");
+            return new(true);
+        }
+        finally
+        {
+            _gate.Release();
+        }
+    }
+
+    public static string ToOdeStatus(string availability) => availability switch
+    {
+        FleetAvailability.Indisponible => EnginStatuses.Indisponible,
+        FleetAvailability.Maintenance => EnginStatuses.Maintenance,
+        _ => EnginStatuses.Disponible
+    };
+
+    /// <summary>Statut d'un engin qui rentre : celui fixé par REMISE (indisponible, maintenance) ou disponible.</summary>
+    private string IdleStatus(string nom)
+    {
+        var fleet = db.GetDoc<FleetEngin>(OdeDatabase.RemiseTables.Engins, nom);
+        return ToOdeStatus(fleet?.Availability ?? FleetAvailability.Disponible);
+    }
+
+    private static EnginState Enrich(EnginState state, FleetEngin fleet)
+    {
+        state.Type = fleet.Type;
+        state.Libelle = fleet.Libelle;
+        state.Centre = fleet.Centre;
+        state.Code = fleet.Code;
+        state.Availability = fleet.Availability;
+        return state;
+    }
+
+    /// <summary>Crée l'état ODE des engins du parc qui n'en ont pas encore.</summary>
     private void EnsureEngins()
     {
         var known = db.Engins().Select(e => e.Nom).ToHashSet(StringComparer.OrdinalIgnoreCase);
-        foreach (var engin in EnginsCatalog.All.Where(e => !known.Contains(e.Nom)))
-            db.SaveEngin(new EnginState { Nom = engin.Nom, Status = EnginStatuses.Disponible, UpdatedAt = DateTimeOffset.UtcNow, UpdatedBy = "ARGOS" });
-    }
-
-    private static int EnginOrder(string nom)
-    {
-        var index = EnginsCatalog.All.ToList().FindIndex(e => string.Equals(e.Nom, nom, StringComparison.OrdinalIgnoreCase));
-        return index < 0 ? int.MaxValue : index;
+        foreach (var engin in Fleet().Where(e => !known.Contains(e.Nom)))
+            db.SaveEngin(new EnginState
+            {
+                Nom = engin.Nom, Status = ToOdeStatus(engin.Availability), UpdatedAt = DateTimeOffset.UtcNow, UpdatedBy = "ARGOS"
+            });
     }
 
     /// <summary>Numéro d'intervention « 210-593 », unique.</summary>

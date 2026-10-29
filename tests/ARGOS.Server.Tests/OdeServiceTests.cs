@@ -117,7 +117,7 @@ public sealed class OdeServiceTests : IDisposable
         try { Directory.Delete(_dir, true); } catch { }
     }
 
-    private sealed class StaticMonitor<T>(T value) : IOptionsMonitor<T>
+    internal sealed class StaticMonitor<T>(T value) : IOptionsMonitor<T>
     {
         public T CurrentValue => value;
         public T Get(string? name) => value;

@@ -51,6 +51,17 @@ public sealed class OdeDatabase
                 action TEXT NOT NULL, target TEXT NOT NULL, details TEXT NOT NULL);
             CREATE TABLE IF NOT EXISTS counters (
                 name TEXT PRIMARY KEY, value INTEGER NOT NULL);
+            -- ADAGIO REMISE : un document JSON par objet, daté pour le tri.
+            CREATE TABLE IF NOT EXISTS remise_engins (id TEXT PRIMARY KEY, at TEXT NOT NULL, data TEXT NOT NULL);
+            CREATE TABLE IF NOT EXISTS remise_items (id TEXT PRIMARY KEY, at TEXT NOT NULL, data TEXT NOT NULL);
+            CREATE TABLE IF NOT EXISTS remise_verifications (id TEXT PRIMARY KEY, at TEXT NOT NULL, data TEXT NOT NULL);
+            CREATE TABLE IF NOT EXISTS remise_maintenances (id TEXT PRIMARY KEY, at TEXT NOT NULL, data TEXT NOT NULL);
+            CREATE TABLE IF NOT EXISTS remise_movements (id TEXT PRIMARY KEY, at TEXT NOT NULL, data TEXT NOT NULL);
+            -- Les mouvements de stock ne peuvent être ni modifiés ni effacés.
+            CREATE TRIGGER IF NOT EXISTS movements_no_update BEFORE UPDATE ON remise_movements
+                BEGIN SELECT RAISE(ABORT, 'mouvements en lecture seule'); END;
+            CREATE TRIGGER IF NOT EXISTS movements_no_delete BEFORE DELETE ON remise_movements
+                BEGIN SELECT RAISE(ABORT, 'mouvements en lecture seule'); END;
             -- Le journal d'activité ne peut être ni modifié ni effacé.
             CREATE TRIGGER IF NOT EXISTS journal_no_update BEFORE UPDATE ON journal
                 BEGIN SELECT RAISE(ABORT, 'journal en lecture seule'); END;
@@ -157,6 +168,60 @@ public sealed class OdeDatabase
     }
 
     public List<EnginState> Engins() => Query<EnginState>("SELECT data FROM engins");
+
+    /// <summary>Renomme l'état ODE d'un engin (changement d'indicatif dans REMISE).</summary>
+    public void RenameEngin(string oldNom, EnginState state)
+    {
+        using var c = Open();
+        Execute(c, "DELETE FROM engins WHERE nom = $o", ("$o", oldNom));
+        SaveEngin(state);
+    }
+
+    // ===== ADAGIO REMISE (documents JSON) =====
+
+    public static class RemiseTables
+    {
+        public const string Engins = "remise_engins";
+        public const string Items = "remise_items";
+        public const string Verifications = "remise_verifications";
+        public const string Maintenances = "remise_maintenances";
+        public const string Movements = "remise_movements";
+    }
+
+    public void SaveDoc(string table, string id, DateTimeOffset at, object document)
+    {
+        using var c = Open();
+        Execute(c, $"INSERT INTO {table}(id, at, data) VALUES ($id, $at, $d) ON CONFLICT(id) DO UPDATE SET at = excluded.at, data = excluded.data",
+            ("$id", id), ("$at", Iso(at)), ("$d", JsonSerializer.Serialize(document, JsonOptions)));
+    }
+
+    /// <summary>Ajout seul (mouvements de stock) : refusé si l'identifiant existe déjà.</summary>
+    public void InsertDoc(string table, string id, DateTimeOffset at, object document)
+    {
+        using var c = Open();
+        Execute(c, $"INSERT INTO {table}(id, at, data) VALUES ($id, $at, $d)",
+            ("$id", id), ("$at", Iso(at)), ("$d", JsonSerializer.Serialize(document, JsonOptions)));
+    }
+
+    public void DeleteDoc(string table, string id)
+    {
+        using var c = Open();
+        Execute(c, $"DELETE FROM {table} WHERE id = $id", ("$id", id));
+    }
+
+    public T? GetDoc<T>(string table, string id) where T : class
+        => QueryOne<T>($"SELECT data FROM {table} WHERE id = $id", ("$id", id));
+
+    public List<T> Docs<T>(string table, int limit = 100000)
+        => Query<T>($"SELECT data FROM {table} ORDER BY at DESC LIMIT $l", ("$l", limit));
+
+    public bool AnyDoc(string table)
+    {
+        using var c = Open();
+        using var cmd = c.CreateCommand();
+        cmd.CommandText = $"SELECT EXISTS(SELECT 1 FROM {table})";
+        return Convert.ToInt64(cmd.ExecuteScalar()) > 0;
+    }
 
     // ===== Journal =====
 

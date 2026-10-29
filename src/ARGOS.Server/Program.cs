@@ -40,6 +40,7 @@ public static class Program
         builder.Services.AddSingleton<RealtimeHub>();
         builder.Services.AddSingleton(_ => new OdeDatabase());
         builder.Services.AddSingleton<OdeService>();
+        builder.Services.AddSingleton<RemiseService>();
 
         var app = builder.Build();
 
@@ -199,6 +200,64 @@ public static class Program
         {
             var user = await AuthenticateAsync(context, oauth);
             return user is null ? Results.Unauthorized() : ToResult(await service.CloseInterventionAsync(user, id));
+        });
+
+        // ===== ADAGIO REMISE =====
+
+        var remise = app.MapGroup("/api/remise");
+
+        remise.MapGet("/state", async (HttpContext context, DiscordOAuthService oauth, RemiseService service) =>
+        {
+            var user = await AuthenticateAsync(context, oauth);
+            return user is null ? Results.Unauthorized() : Results.Ok(service.Snapshot(user));
+        });
+
+        remise.MapGet("/journal", async (HttpContext context, DiscordOAuthService oauth, OdeService service, int? limit) =>
+        {
+            if (await AuthenticateAsync(context, oauth) is null) return Results.Unauthorized();
+            return Results.Ok(service.Journal(limit ?? 2000).Where(j => RemiseJournal.IsRemise(j.Action)).ToList());
+        });
+
+        remise.MapPost("/engins", async (SaveEnginRequest request, HttpContext context, DiscordOAuthService oauth, RemiseService service) =>
+        {
+            var user = await AuthenticateAsync(context, oauth);
+            return user is null ? Results.Unauthorized() : ToResult(await service.SaveEnginAsync(user, request));
+        });
+
+        remise.MapPost("/items", async (MaterielItem item, HttpContext context, DiscordOAuthService oauth, RemiseService service) =>
+        {
+            var user = await AuthenticateAsync(context, oauth);
+            return user is null ? Results.Unauthorized() : ToResult(await service.SaveItemAsync(user, item));
+        });
+
+        remise.MapPost("/verifications", async (VerificationRequest request, HttpContext context, DiscordOAuthService oauth, RemiseService service) =>
+        {
+            var user = await AuthenticateAsync(context, oauth);
+            return user is null ? Results.Unauthorized() : ToResult(await service.VerifyAsync(user, request));
+        });
+
+        remise.MapPost("/maintenances", async (AnomalyRequest request, HttpContext context, DiscordOAuthService oauth, RemiseService service) =>
+        {
+            var user = await AuthenticateAsync(context, oauth);
+            return user is null ? Results.Unauthorized() : ToResult(await service.ReportAnomalyAsync(user, request));
+        });
+
+        remise.MapPost("/maintenances/{id}/repairs", async (string id, RepairRequest request, HttpContext context, DiscordOAuthService oauth, RemiseService service) =>
+        {
+            var user = await AuthenticateAsync(context, oauth);
+            return user is null ? Results.Unauthorized() : ToResult(await service.AddRepairAsync(user, id, request));
+        });
+
+        remise.MapPost("/maintenances/{id}/close", async (string id, CloseMaintenanceRequest request, HttpContext context, DiscordOAuthService oauth, RemiseService service) =>
+        {
+            var user = await AuthenticateAsync(context, oauth);
+            return user is null ? Results.Unauthorized() : ToResult(await service.CloseMaintenanceAsync(user, id, request));
+        });
+
+        remise.MapPost("/stocks", async (StockRequest request, HttpContext context, DiscordOAuthService oauth, RemiseService service) =>
+        {
+            var user = await AuthenticateAsync(context, oauth);
+            return user is null ? Results.Unauthorized() : ToResult(await service.MoveStockAsync(user, request));
         });
 
         // ===== Intégrations serveur à serveur (clé ARGOS:AccessKey dans l'en-tête X-Argos-Key) =====

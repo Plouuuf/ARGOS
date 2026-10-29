@@ -60,6 +60,7 @@ public static class EnginStatuses
     public const string DisponibleIntervention = "Disponible sur intervention";
     public const string Rentre = "Rentré";
     public const string Indisponible = "Indisponible";
+    public const string Maintenance = "En maintenance";
 
     /// <summary>Statuts proposés pour un engin engagé, dans l'ordre du déroulé.</summary>
     public static readonly IReadOnlyList<string> Operationnels =
@@ -200,6 +201,17 @@ public sealed class Intervention
 public sealed class EnginState
 {
     public string Nom { get; set; } = string.Empty;
+
+    // Fiche du parc (ADAGIO REMISE), recopiée par le serveur à chaque lecture de l'état.
+    public string Type { get; set; } = string.Empty;
+    public string Libelle { get; set; } = string.Empty;
+    public string Centre { get; set; } = string.Empty;
+    public string Code { get; set; } = string.Empty;
+    public string Availability { get; set; } = FleetAvailability.Disponible;
+
+    /// <summary>« EPAN 24 MALF (EPAN_1_MALF) », forme de l'ordre de départ.</summary>
+    public string NomOde => string.IsNullOrWhiteSpace(Code) ? Nom : $"{Nom} ({Code})";
+
     public string Status { get; set; } = EnginStatuses.Disponible;
     public string? InterventionNumber { get; set; }
     public DateTimeOffset UpdatedAt { get; set; }
