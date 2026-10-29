@@ -145,11 +145,10 @@ public sealed class CreateOdeViewModel : ViewModelBase
         var snapshot = ArgosSession.Current?.Ode.Snapshot;
         AvailableEngins.Clear();
         AllEngins.Clear();
-        foreach (var engin in EnginsCatalog.All)
+        // Parc tenu dans ADAGIO REMISE (engins créés, renommés ou retirés compris).
+        foreach (var engin in snapshot?.Engins ?? [])
         {
-            var status = snapshot?.Engins.FirstOrDefault(e => string.Equals(e.Nom, engin.Nom, StringComparison.OrdinalIgnoreCase))?.Status
-                         ?? EnginStatuses.Disponible;
-            var choice = new EnginChoice(engin.Nom, status, engin.Centre, engin.Libelle);
+            var choice = new EnginChoice(engin.Nom, engin.Status, engin.Centre, engin.Libelle);
             AllEngins.Add(choice);
             if (choice.IsAvailable)
                 AvailableEngins.Add(choice);

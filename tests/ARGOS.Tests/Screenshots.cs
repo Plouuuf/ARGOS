@@ -99,3 +99,106 @@ public class Screenshots
         Capture(shell, 1440, 900, "verrouillage");
     }
 }
+
+/// <summary>Captures d'ADAGIO REMISE avec le parc de départ (feuille GDM).</summary>
+public class RemiseScreenshots
+{
+    private static readonly string Folder = Environment.GetEnvironmentVariable("ARGOS_SCREENSHOTS")
+                                            ?? Path.Combine(Path.GetTempPath(), "argos-screenshots");
+
+    private static void Capture(Control content, double width, double height, string name)
+    {
+        Directory.CreateDirectory(Folder);
+        var window = new Window { Width = width, Height = height, Content = content };
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+        var frame = window.CaptureRenderedFrame();
+        Assert.NotNull(frame);
+        frame!.Save(Path.Combine(Folder, name + ".png"));
+        window.Close();
+    }
+
+    private static RemiseSnapshot Sample()
+    {
+        var now = DateTimeOffset.Now;
+        var engins = RemiseSeed.Engins(now);
+        engins.Single(e => e.Nom == "FA 32 CRET").Availability = FleetAvailability.Maintenance;
+        engins.Single(e => e.Nom == "CRAC 12 MASS").Availability = FleetAvailability.Indisponible;
+        engins.Single(e => e.Nom == "VSAV 949 CRET").Dotation[2].Present = 1;
+        engins.Single(e => e.Nom == "PSE 212 CRET").NextRevision = now.AddDays(-2);
+        var items = RemiseSeed.Items(now);
+        items.Single(i => i.Id == "o2-5l").Stock = 1;
+        return new RemiseSnapshot
+        {
+            Engins = engins,
+            Items = items,
+            CanManage = true,
+            Maintenances =
+            [
+                new MaintenanceRecord
+                {
+                    Id = "m1", Number = "MNT-0003", Engin = "FA 32 CRET", ReportedAt = now.AddHours(-5), ReportedBy = "Durand",
+                    Description = "Fuite hydraulique sur la pompe", Immobilisation = Immobilisations.Totale,
+                    Repairs = [new RepairEntry { At = now.AddHours(-1), By = "Durand", Text = "Joint commandé" }]
+                },
+                new MaintenanceRecord
+                {
+                    Id = "m2", Number = "MNT-0002", Engin = "VSAV 949 CRET", ReportedAt = now.AddDays(-1), ReportedBy = "Martin",
+                    Description = "Vérification : Bouteille d'oxygène 5 L : 1/2", Source = "Vérification"
+                }
+            ],
+            Verifications =
+            [
+                new Verification
+                {
+                    Id = "v1", Engin = "VSAV 949 CRET", At = now.AddDays(-1), By = "Martin",
+                    Lines = [new VerificationLine { Name = "Bouteille d'oxygène 5 L", Required = 2, Counted = 1, Result = CheckResults.Present }]
+                }
+            ],
+            Movements =
+            [
+                new StockMovement { Id = "s1", At = now.AddHours(-3), By = "Durand", ItemName = "Poste radio portatif ANTARES",
+                    Kind = StockKinds.Entree, Quantity = 4, StockAfter = 12, Comment = "Livraison GIS 2" }
+            ]
+        };
+    }
+
+    [AvaloniaFact]
+    public void Application_REMISE()
+    {
+        var user = new ArgosUserDto("1", "Durand", null, [AccessLevels.Sapeur, AccessLevels.Operateur]);
+        var previous = Argos.Services.ArgosSession.Current;
+        var session = new Argos.Services.ArgosSession(user, "test");
+        Argos.Services.ArgosSession.Current = session;
+        try
+        {
+            session.Remise.Apply(Sample());
+            var desktop = new DesktopViewModel(user, null, () => { }, () => { });
+            var vm = new Argos.ViewModels.Remise.RemiseAppViewModel(desktop);
+            Capture(new Argos.Views.Apps.Remise.RemiseAppView { DataContext = vm }, 1400, 900, "remise-tableau-de-bord");
+            vm.CurrentPage = Argos.ViewModels.Remise.RemiseAppViewModel.Page.Parc;
+            Capture(new Argos.Views.Apps.Remise.RemiseAppView { DataContext = vm }, 1400, 1000, "remise-parc-gdm");
+            vm.CurrentPage = Argos.ViewModels.Remise.RemiseAppViewModel.Page.Inventaire;
+            Capture(new Argos.Views.Apps.Remise.RemiseAppView { DataContext = vm }, 1400, 800, "remise-inventaire");
+            vm.VerifEngin = "VSAV 949 CRET";
+            vm.CurrentPage = Argos.ViewModels.Remise.RemiseAppViewModel.Page.Verification;
+            Capture(new Argos.Views.Apps.Remise.RemiseAppView { DataContext = vm }, 1400, 900, "remise-verification");
+            vm.CurrentPage = Argos.ViewModels.Remise.RemiseAppViewModel.Page.Maintenance;
+            vm.OpenAnomalies[0].OpenCommand.Execute(null);
+            Capture(new Argos.Views.Apps.Remise.RemiseAppView { DataContext = vm }, 1400, 800, "remise-maintenance");
+            vm.CurrentPage = Argos.ViewModels.Remise.RemiseAppViewModel.Page.Stocks;
+            Capture(new Argos.Views.Apps.Remise.RemiseAppView { DataContext = vm }, 1400, 800, "remise-stocks");
+            Assert.Equal(16, vm.TotalEngins);
+            Assert.Equal(1, vm.EnMaintenance);
+
+            var fiche = new Argos.ViewModels.Remise.FicheEnginViewModel(desktop, "VSAV 949 CRET", "test");
+            Capture(new Argos.Views.Apps.Remise.FicheEnginView { DataContext = fiche }, 900, 1300, "remise-fiche-engin");
+            Assert.Equal("VSAV 949", fiche.Indicatif);
+            Assert.True(fiche.Dotation.Count > 10);
+        }
+        finally
+        {
+            Argos.Services.ArgosSession.Current = previous;
+        }
+    }
+}

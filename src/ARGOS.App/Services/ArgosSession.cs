@@ -11,6 +11,7 @@ public sealed class ArgosSession
         Token = token;
         Api = new ApiClient(token);
         Ode = new OdeStore(Api);
+        Remise = new RemiseStore(Api);
     }
 
     /// <summary>Session courante (null sur l'écran de verrouillage et de connexion).</summary>
@@ -20,6 +21,7 @@ public sealed class ArgosSession
     public string Token { get; }
     public ApiClient Api { get; }
     public OdeStore Ode { get; }
+    public RemiseStore Remise { get; }
 
     /// <summary>Nom d'opérateur affiché dans ADAGIO (en majuscules).</summary>
     public string OperatorName => User.DisplayName.Trim().ToUpperInvariant();

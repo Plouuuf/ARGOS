@@ -1,0 +1,222 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="Argos.Views.Apps.Remise.FicheEnginView"
+             Background="{StaticResource AdagioBack}"
+             FontFamily="{StaticResource AdagioFont}"
+             Foreground="Black">
+    <UserControl.Styles>
+        <Style Selector="Border.msg">
+            <Setter Property="Background" Value="#2E7D32"/>
+        </Style>
+        <Style Selector="Border.msg.error">
+            <Setter Property="Background" Value="#C62828"/>
+        </Style>
+        <Style Selector="Border.line">
+            <Setter Property="Background" Value="#E9F0F5"/>
+            <Setter Property="BorderBrush" Value="#C3D4E1"/>
+            <Setter Property="BorderThickness" Value="0,0,0,1"/>
+            <Setter Property="Padding" Value="6,3"/>
+        </Style>
+        <Style Selector="TextBlock.cell">
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="Margin" Value="0,0,8,0"/>
+        </Style>
+        <Style Selector="TextBlock.empty">
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Foreground" Value="#355C8C"/>
+        </Style>
+    </UserControl.Styles>
+
+    <DockPanel>
+        <!-- Barre d'actions -->
+        <Border DockPanel.Dock="Bottom" Background="#9DBBD0" Padding="10,6">
+            <Grid ColumnDefinitions="*,Auto,8,Auto">
+                <TextBlock Classes="lbl" Text="Consultation seule : la modification du parc demande l'habilitation de gestion."
+                           IsVisible="{Binding IsReadOnly}"/>
+                <Button Grid.Column="1" Classes="adg primary" Content="Enregistrer la fiche" Command="{Binding SaveCommand}"
+                        IsVisible="{Binding CanEdit}"/>
+                <Button Grid.Column="3" Classes="adg" Content="Fermer" Command="{Binding CloseCommand}"/>
+            </Grid>
+        </Border>
+        <Border DockPanel.Dock="Top" Classes="msg" Classes.error="{Binding MessageIsError}" Padding="10,6" IsVisible="{Binding HasMessage}">
+            <TextBlock Text="{Binding Message}" Foreground="White" FontWeight="Bold" TextWrapping="Wrap"/>
+        </Border>
+
+        <ScrollViewer>
+            <StackPanel Margin="4,6,4,10">
+                <!-- ===== En-tête : photo, nom, statut ===== -->
+                <Grid ColumnDefinitions="230,14,*" Margin="8,4,8,8">
+                    <StackPanel Spacing="6">
+                        <Border Background="#666666" BorderBrush="#2F2F2F" BorderThickness="2" Height="130" ClipToBounds="True">
+                            <Panel>
+                                <Image Source="{Binding Photo}" Stretch="Uniform" IsVisible="{Binding HasPhoto}"/>
+                                <TextBlock Text="Pas de photo" Foreground="#CFCFCF" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                           IsVisible="{Binding !HasPhoto}"/>
+                            </Panel>
+                        </Border>
+                        <StackPanel Orientation="Horizontal" Spacing="6" IsVisible="{Binding CanEdit}">
+                            <Button Name="PhotoButton" Classes="adg" Content="Ajouter une image" Padding="8,3" FontSize="11"/>
+                            <Button Classes="adg" Content="Photo du type" Padding="8,3" FontSize="11" Command="{Binding RemovePhotoCommand}"/>
+                        </StackPanel>
+                    </StackPanel>
+                    <StackPanel Grid.Column="2" Spacing="4">
+                        <TextBlock Text="{Binding Title}" FontSize="24" FontWeight="Bold"/>
+                        <TextBlock Text="{Binding TypeLabel}" FontSize="15" FontWeight="Bold" Foreground="#355C8C"/>
+                        <Border Background="White" BorderBrush="#3B3B3B" BorderThickness="1" Padding="10,6" HorizontalAlignment="Left"
+                                Margin="0,6,0,0" IsVisible="{Binding !IsNew}">
+                            <StackPanel>
+                                <TextBlock Text="{Binding OdeStatus}" FontSize="17" FontWeight="Bold" Foreground="{Binding OdeStatusBrush}"/>
+                                <TextBlock Text="{Binding OdeStatusDetail}" FontSize="11.5"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </Grid>
+
+                <!-- ===== Identification ===== -->
+                <HeaderedContentControl Classes="group" Header="Identification">
+                    <Grid ColumnDefinitions="*,8,*,8,*,8,*" RowDefinitions="Auto,Auto,Auto,Auto">
+                        <TextBlock Classes="cap" Text="INDICATIF"/>
+                        <TextBlock Grid.Column="2" Classes="cap" Text="TYPE"/>
+                        <TextBlock Grid.Column="4" Classes="cap" Text="TYPE (FEUILLE GDM)"/>
+                        <TextBlock Grid.Column="6" Classes="cap" Text="AFFECTATION (CENTRE)"/>
+                        <TextBox Grid.Row="1" Classes="adg" Text="{Binding Indicatif}" IsReadOnly="{Binding IsReadOnly}" Watermark="VSAV 947"/>
+                        <TextBox Grid.Row="1" Grid.Column="2" Classes="adg" Text="{Binding Type}" IsReadOnly="{Binding IsReadOnly}" Watermark="VSAV"/>
+                        <TextBox Grid.Row="1" Grid.Column="4" Classes="adg" Text="{Binding TypeGdm}" IsReadOnly="{Binding IsReadOnly}" Watermark="(identique)"/>
+                        <AutoCompleteBox Grid.Row="1" Grid.Column="6" Classes="adg" Text="{Binding Centre}" ItemsSource="{Binding Centres}"
+                                         IsEnabled="{Binding CanEdit}"/>
+
+                        <TextBlock Grid.Row="2" Classes="cap" Text="DÉSIGNATION" Margin="2,8,0,2"/>
+                        <TextBlock Grid.Row="2" Grid.Column="4" Classes="cap" Text="CODE ADAGIO" Margin="2,8,0,2"/>
+                        <TextBlock Grid.Row="2" Grid.Column="6" Classes="cap" Text="IMMATRICULATION" Margin="2,8,0,2"/>
+                        <TextBox Grid.Row="3" Grid.ColumnSpan="3" Classes="adg" Text="{Binding Libelle}" IsReadOnly="{Binding IsReadOnly}"/>
+                        <TextBox Grid.Row="3" Grid.Column="4" Classes="adg" Text="{Binding Code}" IsReadOnly="{Binding IsReadOnly}" Watermark="VSAV_1_CRET"/>
+                        <TextBox Grid.Row="3" Grid.Column="6" Classes="adg" Text="{Binding Immatriculation}" IsReadOnly="{Binding IsReadOnly}"/>
+                    </Grid>
+                </HeaderedContentControl>
+
+                <!-- ===== Disponibilité et révision ===== -->
+                <HeaderedContentControl Classes="group" Header="Disponibilité et révision">
+                    <Grid ColumnDefinitions="200,8,*,8,200" RowDefinitions="Auto,Auto,Auto">
+                        <TextBlock Classes="cap" Text="DISPONIBILITÉ (REMISE)"/>
+                        <TextBlock Grid.Column="2" Classes="cap" Text="MOTIF"/>
+                        <TextBlock Grid.Column="4" Classes="cap" Text="PROCHAINE RÉVISION"/>
+                        <ComboBox Grid.Row="1" Classes="adg bold" ItemsSource="{Binding Availabilities}" SelectedItem="{Binding Availability}"
+                                  HorizontalAlignment="Stretch" IsEnabled="{Binding CanEdit}"/>
+                        <TextBox Grid.Row="1" Grid.Column="2" Classes="adg" Text="{Binding AvailabilityReason}" IsReadOnly="{Binding IsReadOnly}"/>
+                        <CalendarDatePicker Grid.Row="1" Grid.Column="4" SelectedDate="{Binding NextRevision}" HorizontalAlignment="Stretch"
+                                            IsEnabled="{Binding CanEdit}" Background="{StaticResource AdagioField}"/>
+                        <StackPanel Grid.Row="2" Grid.ColumnSpan="5" Orientation="Horizontal" Spacing="16" Margin="0,6,0,0">
+                            <CheckBox Content="Engin au parc (décocher pour le retirer de l'ODE)" IsChecked="{Binding Active}"
+                                      IsEnabled="{Binding CanEdit}" FontSize="12"/>
+                        </StackPanel>
+                    </Grid>
+                </HeaderedContentControl>
+
+                <!-- ===== Dotation matérielle ===== -->
+                <HeaderedContentControl Classes="group" Header="Matériel embarqué (dotation obligatoire)">
+                    <StackPanel>
+                        <TextBlock Text="{Binding DotationSummary}" FontSize="11.5" Foreground="#355C8C" Margin="0,0,0,4"/>
+                        <Border Classes="tablehead">
+                            <Grid ColumnDefinitions="*,90,90,90,90">
+                                <TextBlock Text="Équipement"/>
+                                <TextBlock Grid.Column="1" Text="Requis"/>
+                                <TextBlock Grid.Column="2" Text="Présent"/>
+                                <TextBlock Grid.Column="3" Text="Manquant"/>
+                                <TextBlock Grid.Column="4" Text=""/>
+                            </Grid>
+                        </Border>
+                        <ItemsControl ItemsSource="{Binding Dotation}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Classes="line">
+                                        <Grid ColumnDefinitions="*,90,90,90,90">
+                                            <TextBlock Classes="cell" Text="{Binding Name}" FontWeight="Bold"/>
+                                            <TextBox Grid.Column="1" Classes="adg center" Text="{Binding Required}" Margin="0,0,8,0"
+                                                     IsReadOnly="{Binding $parent[UserControl].DataContext.IsReadOnly}"/>
+                                            <TextBlock Grid.Column="2" Classes="cell" Text="{Binding Present}"/>
+                                            <TextBlock Grid.Column="3" Classes="cell" Text="{Binding Missing}" FontWeight="Bold" Foreground="#C62828"
+                                                       IsVisible="{Binding HasMissing}"/>
+                                            <Button Grid.Column="4" Classes="adg" Content="Retirer" Padding="6,1" FontSize="11"
+                                                    Command="{Binding RemoveCommand}"
+                                                    IsVisible="{Binding $parent[UserControl].DataContext.CanEdit}"/>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <Grid ColumnDefinitions="*,8,80,8,Auto" Margin="0,6,0,0" IsVisible="{Binding CanEdit}">
+                            <ComboBox Classes="adg" ItemsSource="{Binding ItemChoices}" SelectedItem="{Binding NewItem}"
+                                      HorizontalAlignment="Stretch" PlaceholderText="Ajouter un équipement à la dotation"/>
+                            <TextBox Grid.Column="2" Classes="adg center" Text="{Binding NewQuantity}"/>
+                            <Button Grid.Column="4" Classes="adg" Content="Ajouter" Command="{Binding AddLineCommand}"/>
+                        </Grid>
+                        <TextBlock Text="Les quantités présentes sont mises à jour par les vérifications et les mouvements de stock."
+                                   FontSize="11" Foreground="#355C8C" Margin="0,4,0,0"/>
+                    </StackPanel>
+                </HeaderedContentControl>
+
+                <!-- ===== Anomalies et maintenance ===== -->
+                <HeaderedContentControl Classes="group" Header="Anomalies en cours" IsVisible="{Binding !IsNew}">
+                    <StackPanel>
+                        <ItemsControl ItemsSource="{Binding Anomalies}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Classes="line">
+                                        <Grid ColumnDefinitions="85,90,190,*">
+                                            <TextBlock Classes="cell" Text="{Binding Number}" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Classes="cell" Text="{Binding Date}"/>
+                                            <TextBlock Grid.Column="2" Classes="cell" Text="{Binding Immobilisation}"/>
+                                            <TextBlock Grid.Column="3" Classes="cell" Text="{Binding Description}" TextWrapping="Wrap"/>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <TextBlock Classes="empty" Text="Aucune anomalie ouverte." IsVisible="{Binding !HasAnomalies}"/>
+                    </StackPanel>
+                </HeaderedContentControl>
+
+                <HeaderedContentControl Classes="group" Header="Historique de maintenance" IsVisible="{Binding !IsNew}">
+                    <StackPanel>
+                        <ItemsControl ItemsSource="{Binding History}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Classes="line">
+                                        <Grid ColumnDefinitions="85,90,*">
+                                            <TextBlock Classes="cell" Text="{Binding Number}" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Classes="cell" Text="{Binding Date}"/>
+                                            <TextBlock Grid.Column="2" Classes="cell" Text="{Binding Description}" TextWrapping="Wrap"/>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <TextBlock Classes="empty" Text="Aucune maintenance clôturée." IsVisible="{Binding !History.Count}"/>
+                    </StackPanel>
+                </HeaderedContentControl>
+
+                <HeaderedContentControl Classes="group" Header="Dernières vérifications" IsVisible="{Binding !IsNew}">
+                    <StackPanel>
+                        <ItemsControl ItemsSource="{Binding Verifications}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Classes="line">
+                                        <Grid ColumnDefinitions="95,140,180,*">
+                                            <TextBlock Classes="cell" Text="{Binding Date}"/>
+                                            <TextBlock Grid.Column="1" Classes="cell" Text="{Binding By}"/>
+                                            <TextBlock Grid.Column="2" Classes="cell" Text="{Binding Result}" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="3" Classes="cell" Text="{Binding Details}"/>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <TextBlock Classes="empty" Text="Aucune vérification." IsVisible="{Binding !Verifications.Count}"/>
+                    </StackPanel>
+                </HeaderedContentControl>
+            </StackPanel>
+        </ScrollViewer>
+    </DockPanel>
+</UserControl>

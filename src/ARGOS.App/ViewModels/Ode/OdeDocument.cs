@@ -20,7 +20,8 @@ public sealed class OdeDocument
     public string Complementary { get; init; } = string.Empty;   // FPTL 202 MALF (FPTL_1_MALF)
     public string Footer { get; init; } = string.Empty;          // ODE n°1 · opérateur
 
-    public static string EnginLabel(string nom) => EnginsCatalog.Find(nom)?.NomOde ?? nom;
+    public static string EnginLabel(string nom)
+        => Argos.Services.ArgosSession.Current?.Ode.FindEngin(nom)?.NomOde ?? EnginsCatalog.Find(nom)?.NomOde ?? nom;
 
     public static OdeDocument From(Intervention intervention, DepartureOrder order)
     {

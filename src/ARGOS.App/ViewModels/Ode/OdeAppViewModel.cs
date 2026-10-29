@@ -163,7 +163,7 @@ public sealed class OdeAppViewModel : ViewModelBase, IDisposable
         ClosedToday = s.Interventions.Count(i => !i.Active && i.ClosedAt?.ToLocalTime().Date == today);
         EnginsAvailable = s.Engins.Count(e => EnginStatuses.IsAvailable(e.Status));
         EnginsEngaged = s.Engins.Count(e => EnginStatuses.IsEngaged(e.Status));
-        EnginsUnavailable = s.Engins.Count(e => e.Status == EnginStatuses.Indisponible);
+        EnginsUnavailable = s.Engins.Count(e => e.Status is EnginStatuses.Indisponible or EnginStatuses.Maintenance);
         foreach (var name in new[] { nameof(CallsInProgress), nameof(CallsWaiting), nameof(CallsToday), nameof(ActiveInterventions),
                                      nameof(ClosedToday), nameof(EnginsAvailable), nameof(EnginsEngaged), nameof(EnginsUnavailable) })
             OnPropertyChanged(name);
@@ -174,12 +174,8 @@ public sealed class OdeAppViewModel : ViewModelBase, IDisposable
         Fill(RecentInterventions, s.Interventions.OrderByDescending(i => i.CreatedAt).Take(8).Select(InterventionRowOf));
         Fill(Active, s.Interventions.Where(i => i.Active).OrderByDescending(i => i.CreatedAt).Select(InterventionRowOf));
 
-        Fill(Engins, s.Engins.Select(e =>
-        {
-            var def = EnginsCatalog.Find(e.Nom);
-            return new EnginRow(e.Nom, def?.Libelle ?? string.Empty, def?.Centre ?? string.Empty, e.Status,
-                e.InterventionNumber ?? "—", OdeFormat.Short(e.UpdatedAt));
-        }));
+        Fill(Engins, s.Engins.Select(e => new EnginRow(e.Nom, e.Libelle, e.Centre, e.Status,
+            e.InterventionNumber ?? "—", OdeFormat.Short(e.UpdatedAt))));
 
         BuildCalls();
         BuildArchives();

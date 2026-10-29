@@ -98,7 +98,7 @@ public sealed class InterventionViewModel : ViewModelBase, IDisposable
                 .ToList();
             Engins.Add(new EngagedRow(
                 e.Nom,
-                EnginsCatalog.Find(e.Nom)?.Libelle ?? string.Empty,
+                ArgosSession.Current?.Ode.FindEngin(e.Nom)?.Libelle ?? EnginsCatalog.Find(e.Nom)?.Libelle ?? string.Empty,
                 e.Status,
                 "depuis " + OdeFormat.Time(e.StatusAt),
                 e.FirstDeparture ? "1er départ" : $"Complémentaire (ODE n°{e.OrderNumber})",

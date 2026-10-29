@@ -58,6 +58,7 @@ public sealed class RemiseService(OdeDatabase db, OdeService ode, RealtimeHub hu
         await _gate.WaitAsync();
         try
         {
+            ode.Fleet(); // parc créé depuis la feuille GDM au premier usage
             var fleet = ode.Fleet();
             var originalNom = string.IsNullOrWhiteSpace(request.OriginalNom) ? null : request.OriginalNom.Trim();
             var existing = originalNom is null ? null : fleet.FirstOrDefault(f => Same(f.Nom, originalNom));
@@ -145,6 +146,7 @@ public sealed class RemiseService(OdeDatabase db, OdeService ode, RealtimeHub hu
         await _gate.WaitAsync();
         try
         {
+            ode.Fleet(); // parc créé depuis la feuille GDM au premier usage
             var items = db.Docs<MaterielItem>(RemiseTables.Items);
             var existing = string.IsNullOrWhiteSpace(item.Id) ? null : items.FirstOrDefault(i => i.Id == item.Id);
             if (items.Any(i => i.Id != item.Id && string.Equals(i.Name, item.Name, StringComparison.OrdinalIgnoreCase)))
@@ -188,6 +190,7 @@ public sealed class RemiseService(OdeDatabase db, OdeService ode, RealtimeHub hu
         await _gate.WaitAsync();
         try
         {
+            ode.Fleet(); // parc créé depuis la feuille GDM au premier usage
             var engin = db.GetDoc<FleetEngin>(RemiseTables.Engins, request.Engin ?? string.Empty);
             if (engin is null)
                 return new(false, "Choisis un engin.");
@@ -265,6 +268,7 @@ public sealed class RemiseService(OdeDatabase db, OdeService ode, RealtimeHub hu
         await _gate.WaitAsync();
         try
         {
+            ode.Fleet(); // parc créé depuis la feuille GDM au premier usage
             var engin = db.GetDoc<FleetEngin>(RemiseTables.Engins, request.Engin ?? string.Empty);
             if (engin is null)
                 return new(false, "Choisis l'engin concerné.");
@@ -308,6 +312,7 @@ public sealed class RemiseService(OdeDatabase db, OdeService ode, RealtimeHub hu
         await _gate.WaitAsync();
         try
         {
+            ode.Fleet(); // parc créé depuis la feuille GDM au premier usage
             var record = db.GetDoc<MaintenanceRecord>(RemiseTables.Maintenances, id);
             if (record is null)
                 return new(false, "Maintenance introuvable.");
@@ -334,6 +339,7 @@ public sealed class RemiseService(OdeDatabase db, OdeService ode, RealtimeHub hu
         await _gate.WaitAsync();
         try
         {
+            ode.Fleet(); // parc créé depuis la feuille GDM au premier usage
             var record = db.GetDoc<MaintenanceRecord>(RemiseTables.Maintenances, id);
             if (record is null)
                 return new(false, "Maintenance introuvable.");
@@ -398,6 +404,7 @@ public sealed class RemiseService(OdeDatabase db, OdeService ode, RealtimeHub hu
         await _gate.WaitAsync();
         try
         {
+            ode.Fleet(); // parc créé depuis la feuille GDM au premier usage
             var item = db.GetDoc<MaterielItem>(RemiseTables.Items, request.ItemId ?? string.Empty);
             if (item is null)
                 return new(false, "Choisis le matériel.");

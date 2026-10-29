@@ -19,6 +19,30 @@ public static class ImageLoader
             return new Bitmap(stream);
         });
 
+    private static readonly ConcurrentDictionary<int, Bitmap> Photos = new();
+
+    /// <summary>Photo d'un engin : celle choisie dans ADAGIO REMISE, sinon celle de son type ; null si aucune.</summary>
+    public static Bitmap? EnginPhoto(Argos.Shared.Contracts.FleetEngin engin)
+    {
+        if (!string.IsNullOrWhiteSpace(engin.ImageData))
+        {
+            try
+            {
+                return Photos.GetOrAdd(engin.ImageData.GetHashCode(StringComparison.Ordinal), _ =>
+                {
+                    using var stream = new MemoryStream(Convert.FromBase64String(engin.ImageData));
+                    return new Bitmap(stream);
+                });
+            }
+            catch
+            {
+                // Image illisible : on retombe sur la photo du type.
+            }
+        }
+        var key = Argos.Shared.Contracts.RemiseSeed.PhotoKey(engin.Type);
+        return key is null ? null : Asset($"Engins/{key}.jpg");
+    }
+
     /// <summary>Avatar Discord ; null si l'adresse est vide ou l'image injoignable.</summary>
     public static async Task<Bitmap?> AvatarAsync(string? url, CancellationToken ct = default)
     {

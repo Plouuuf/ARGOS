@@ -1,7 +1,9 @@
 using Argos.Shared.Contracts;
 using Argos.ViewModels;
 using Argos.ViewModels.Ode;
+using Argos.ViewModels.Remise;
 using Argos.Views.Apps.Ode;
+using Argos.Views.Apps.Remise;
 using Avalonia.Controls;
 
 namespace Argos.Views.Apps;
@@ -15,6 +17,7 @@ public static class AppContentFactory
     public static Control Create(AppTileViewModel app, DesktopViewModel desktop) => app.Id switch
     {
         ArgosApps.AdagioOde => new OdeAppView { DataContext = new OdeAppViewModel(desktop) },
+        ArgosApps.AdagioRemise => new RemiseAppView { DataContext = new RemiseAppViewModel(desktop) },
         _ => new PlaceholderAppView { DataContext = app }
     };
 }
