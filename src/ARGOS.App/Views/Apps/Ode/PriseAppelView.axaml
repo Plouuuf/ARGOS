@@ -5,6 +5,14 @@
              FontFamily="{StaticResource AdagioFont}"
              Foreground="Black"
              Focusable="True">
+    <UserControl.Styles>
+        <Style Selector="Border.msg">
+            <Setter Property="Background" Value="#2E7D32"/>
+        </Style>
+        <Style Selector="Border.msg.error">
+            <Setter Property="Background" Value="#C62828"/>
+        </Style>
+    </UserControl.Styles>
     <!--
         Réplique de la fenêtre « Prise d'appel - v1.8.0 » (ADAGIO, capture vLife) :
         menu, Informations téléphoniques, Localisation de l'événement, Adresse de l'alerte,
@@ -67,7 +75,7 @@
 
         <!-- ===== Localisation de l'événement ===== -->
         <HeaderedContentControl Grid.Row="2" Classes="group" Header="Localisation de l'événement">
-            <Grid ColumnDefinitions="115,8,140,8,80,8,*,8,Auto" RowDefinitions="Auto,Auto">
+            <Grid ColumnDefinitions="115,8,160,8,80,8,*,8,Auto" RowDefinitions="Auto,Auto">
                 <TextBlock Grid.Column="0" Classes="cap" Text="MODE"/>
                 <TextBlock Grid.Column="2" Classes="cap" Text="RESEAU"/>
                 <TextBlock Grid.Column="4" Classes="cap" Text="NUMERO"/>
@@ -191,13 +199,8 @@
                             Command="{Binding OpenInterventionCommand}" IsVisible="{Binding HasIntervention}"/>
                 </StackPanel>
             </Border>
-            <Border Padding="10,6" IsVisible="{Binding HasMessage}" CornerRadius="2"
-                    Background="#2E7D32" Classes.error="{Binding MessageIsError}">
-                <Border.Styles>
-                    <Style Selector="Border.error">
-                        <Setter Property="Background" Value="#C62828"/>
-                    </Style>
-                </Border.Styles>
+            <Border Classes="msg" Padding="10,6" IsVisible="{Binding HasMessage}" CornerRadius="2"
+                    Classes.error="{Binding MessageIsError}">
                 <TextBlock Text="{Binding Message}" Foreground="White" FontWeight="Bold" FontSize="12" TextWrapping="Wrap"/>
             </Border>
         </StackPanel>
