@@ -8,9 +8,9 @@
     1. reprend l'application Discord de SIMCALL (Client ID, secret, serveur Discord)
        depuis C:\SIMCALL\Server\appsettings.json ;
     2. crée appsettings.Local.json (clé du serveur générée une fois, puis conservée) ;
-    3. ouvre le port 8091 dans le pare-feu Windows ;
+    3. ouvre le port 8092 dans le pare-feu Windows ;
     4. installe une tâche planifiée qui démarre ARGOS au démarrage du VPS et le relance s'il s'arrête ;
-    5. démarre ARGOS et vérifie http://127.0.0.1:8091/health ;
+    5. démarre ARGOS et vérifie http://127.0.0.1:8092/health ;
     6. relie SIMCALL à ARGOS (section Argos de C:\SIMCALL\Server\appsettings.json) : au décroché
        d'un 18, la prise d'appel s'ouvre sur le poste ARGOS de l'opérateur (nécessite SIMCALL 0.7.2 ou plus).
 
@@ -23,8 +23,8 @@ param(
     [string]$OperateurRoleIds = "1560234256226193528",
     [string]$EncadrementRoleIds = "",
     [string]$AdministrationRoleIds = "",
-    [string]$PublicBaseUrl = "http://46.105.78.32:8091",
-    [int]$Port = 8091
+    [string]$PublicBaseUrl = "http://46.105.78.32:8092",
+    [int]$Port = 8092
 )
 
 $ErrorActionPreference = "Stop"

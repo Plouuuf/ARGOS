@@ -41,7 +41,7 @@ Dans le [portail développeur Discord](https://discord.com/developers/applicatio
 (ou réutiliser celle de SIMCALL) et ajouter l'adresse de retour OAuth2 :
 
 ```text
-http://46.105.78.32:8091/auth/discord/callback
+http://46.105.78.32:8092/auth/discord/callback
 ```
 
 ### 2. Serveur
@@ -54,7 +54,7 @@ Créer `src/ARGOS.Server/appsettings.Local.json` (jamais versionné) :
   "Discord": {
     "ClientId": "…",
     "ClientSecret": "…",
-    "PublicBaseUrl": "http://46.105.78.32:8091",
+    "PublicBaseUrl": "http://46.105.78.32:8092",
     "RequiredRoleId": "ID du rôle BSPP",
     "LevelRoles": {
       "operateur": "ID du rôle opérateur 18",
@@ -71,7 +71,7 @@ Puis :
 dotnet run --project src/ARGOS.Server
 ```
 
-Le serveur écoute sur le port **8091** (SIMCALL reste sur 8080 ; adresse de retour Discord déjà autorisée).
+Le serveur écoute sur le port **8092** (SIMCALL reste sur 8080 ; adresse de retour Discord déjà autorisée).
 
 ### 3. Poste ordinateur
 
@@ -80,7 +80,7 @@ dotnet run --project src/ARGOS.Desktop
 ```
 
 ARGOS s'ouvre en plein écran ; **F11** bascule en fenêtre. Pour viser un serveur de test, placer un
-`argos.local.json` à côté de l'exécutable : `{ "ServerUrl": "http://127.0.0.1:8091" }`.
+`argos.local.json` à côté de l'exécutable : `{ "ServerUrl": "http://127.0.0.1:8092" }`.
 
 ### 4. iPhone / iPad et Android
 
@@ -97,7 +97,7 @@ Identifiant d'application : `fr.vdms.argos` (profil de provisionnement à créer
 Avec un poste connecté :
 
 ```bash
-curl -X POST http://127.0.0.1:8091/api/integrations/notify \
+curl -X POST http://127.0.0.1:8092/api/integrations/notify \
   -H "X-Argos-Key: une-longue-cle-aleatoire" -H "Content-Type: application/json" \
   -d '{"type":"notify","title":"ADAGIO ODE","text":"Nouvel ordre de départ","appId":"adagio-ode"}'
 ```

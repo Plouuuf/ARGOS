@@ -5,7 +5,7 @@
 #   ARGOS-server   serveur ARGOS pour Windows (à compléter avec appsettings.Local.json, voir README)
 #
 # Variables facultatives (Settings › Secrets and variables › Actions › Variables) :
-#   ARGOS_SERVER_URL  adresse du serveur intégrée aux postes (défaut http://46.105.78.32:8091)
+#   ARGOS_SERVER_URL  adresse du serveur intégrée aux postes (défaut http://46.105.78.32:8092)
 
 name: Build ARGOS
 
@@ -25,7 +25,7 @@ permissions:
 env:
   DOTNET_CLI_TELEMETRY_OPTOUT: "1"
   DOTNET_NOLOGO: "1"
-  SERVER_URL: ${{ vars.ARGOS_SERVER_URL || 'http://46.105.78.32:8091' }}
+  SERVER_URL: ${{ vars.ARGOS_SERVER_URL || 'http://46.105.78.32:8092' }}
 
 jobs:
   desktop-server:
