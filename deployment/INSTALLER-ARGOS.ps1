@@ -10,7 +10,9 @@
     2. crée appsettings.Local.json (clé du serveur générée une fois, puis conservée) ;
     3. ouvre le port 8090 dans le pare-feu Windows ;
     4. installe une tâche planifiée qui démarre ARGOS au démarrage du VPS et le relance s'il s'arrête ;
-    5. démarre ARGOS et vérifie http://127.0.0.1:8090/health.
+    5. démarre ARGOS et vérifie http://127.0.0.1:8090/health ;
+    6. relie SIMCALL à ARGOS (section Argos de C:\SIMCALL\Server\appsettings.json) : au décroché
+       d'un 18, la prise d'appel s'ouvre sur le poste ARGOS de l'opérateur (nécessite SIMCALL 0.7.2 ou plus).
 
   Relançable sans risque : les réglages existants sont conservés.
 #>
@@ -115,6 +117,30 @@ try {
     icacls $LocalSettings /inheritance:r /grant:r "*S-1-5-32-544:(F)" "*S-1-5-18:(F)" | Out-Null
     Ok "Accès au fichier réservé aux administrateurs."
 } catch { Warn "Impossible de restreindre les droits du fichier." }
+
+# --- 2 bis. Lien SIMCALL -> ARGOS (prise d'appel au décroché d'un 18) ---
+Step "Lien avec SIMCALL"
+if (Test-Path $SimcallSettings) {
+    try {
+        $sc = Get-Content $SimcallSettings -Raw | ConvertFrom-Json
+        $argosLink = [pscustomobject]@{ Url = "http://127.0.0.1:$Port"; Key = $accessKey }
+        if ($sc.PSObject.Properties['Argos']) { $sc.Argos = $argosLink } else { $sc | Add-Member -NotePropertyName Argos -NotePropertyValue $argosLink }
+        Copy-Item $SimcallSettings "$SimcallSettings.avant-argos" -Force
+        $sc | ConvertTo-Json -Depth 20 | Set-Content -Path $SimcallSettings -Encoding utf8
+        Ok "SIMCALL préviendra ARGOS au décroché des appels 18 (sauvegarde : appsettings.json.avant-argos)."
+        $svc = Get-Service -Name "SIMCALLServer" -ErrorAction SilentlyContinue
+        if ($svc -and $svc.Status -eq "Running") {
+            Restart-Service -Name "SIMCALLServer" -Force
+            Ok "Serveur SIMCALL redémarré pour prendre en compte le lien."
+        } else {
+            Warn "Service SIMCALL non trouvé ou arrêté : le lien sera actif à son prochain démarrage."
+        }
+    } catch {
+        Warn "Impossible de configurer le lien dans SIMCALL : $($_.Exception.Message)"
+    }
+} else {
+    Warn "SIMCALL introuvable : lien non configuré."
+}
 
 # --- 3. Pare-feu ---
 Step "Pare-feu Windows (port $Port)"

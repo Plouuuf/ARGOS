@@ -5,7 +5,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <!-- Permet de compiler la solution complète depuis un Mac. -->
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
-    <Version>0.1.0</Version>
+    <Version>0.2.0</Version>
     <AvaloniaVersion>11.3.22</AvaloniaVersion>
     <Company>VAL-DE-MARNE SIMULATION</Company>
     <Product>ARGOS</Product>

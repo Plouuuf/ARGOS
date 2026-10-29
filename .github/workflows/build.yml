@@ -19,7 +19,8 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  # Écriture : publication des captures d'écran dans la branche « captures ».
+  contents: write
 
 env:
   DOTNET_CLI_TELEMETRY_OPTOUT: "1"
@@ -66,6 +67,16 @@ jobs:
             grep -E "Failed |Error Message|Exception" test.log | head -40 | while read -r line; do echo "::error::$line"; done
             exit 1
           }
+
+      - name: Captures d'écran dans la branche « captures »
+        if: always() && github.event_name != 'pull_request'
+        run: |
+          [ -d artifacts/screenshots ] || exit 0
+          cp test.log artifacts/screenshots/ 2>/dev/null || true
+          cd artifacts/screenshots
+          git init -q && git checkout -q -b captures && git add -A
+          git -c user.name="ARGOS CI" -c user.email="ci@argos.local" commit -q -m "Captures - compilation ${{ github.run_number }}"
+          git push -q -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" captures
 
       - uses: actions/upload-artifact@v4
         if: always()
