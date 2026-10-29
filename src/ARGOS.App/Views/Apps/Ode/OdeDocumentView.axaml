@@ -1,0 +1,82 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="Argos.Views.Apps.Ode.OdeDocumentView"
+             FontFamily="{StaticResource AdagioFont}">
+    <!-- Feuille d'ordre de départ, d'après la feuille ODE fournie (fond jaune, traits noirs). DataContext : OdeDocument. -->
+    <UserControl.Styles>
+        <Style Selector="TextBlock">
+            <Setter Property="Foreground" Value="Black"/>
+        </Style>
+        <Style Selector="TextBlock.k">
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Margin" Value="18,0,0,0"/>
+            <Setter Property="VerticalAlignment" Value="Top"/>
+        </Style>
+        <Style Selector="TextBlock.v">
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+            <Setter Property="VerticalAlignment" Value="Top"/>
+        </Style>
+        <Style Selector="Border.rule">
+            <Setter Property="Height" Value="2"/>
+            <Setter Property="Background" Value="Black"/>
+            <Setter Property="Margin" Value="0,10"/>
+        </Style>
+    </UserControl.Styles>
+
+    <Border Background="#FFFFC0" Padding="36,20,36,26" Width="820">
+        <StackPanel>
+            <TextBlock Text="{Binding MissionTitle}" FontSize="13" FontWeight="Bold" HorizontalAlignment="Center"/>
+            <Border Classes="rule" Margin="0,10,0,6"/>
+            <TextBlock Text="{Binding DepartTitle}" FontSize="34" FontWeight="Bold" HorizontalAlignment="Right"
+                       TextTrimming="CharacterEllipsis"/>
+            <Border Classes="rule" Margin="0,6,0,26"/>
+
+            <TextBlock Text="{Binding MainEngin}" FontSize="34" TextWrapping="Wrap"/>
+            <TextBlock Text="{Binding Locality}" FontSize="34" Margin="0,30,0,0" MinHeight="40"/>
+            <Border Classes="rule" Margin="0,18,0,12"/>
+
+            <Grid ColumnDefinitions="200,*,Auto,90" RowDefinitions="Auto,Auto,Auto,Auto" Margin="0,0,0,0">
+                <TextBlock Classes="k" Text="heure de validation ode :"/>
+                <TextBlock Grid.Column="1" Classes="v" Text="{Binding ValidatedAt}" Margin="80,0,0,0"/>
+                <TextBlock Grid.Column="2" Classes="v" Text="cstc :"/>
+                <TextBlock Grid.Column="3" Classes="v" Text="{Binding Cstc}" Margin="10,0,0,0" FontWeight="Bold"/>
+
+                <TextBlock Grid.Row="1" Classes="k" Text="n° intervention :" Margin="18,14,0,0"/>
+                <TextBlock Grid.Row="1" Grid.Column="1" Classes="v" Text="{Binding Number}" Margin="72,14,0,0"
+                           FontWeight="Bold"/>
+
+                <TextBlock Grid.Row="2" Classes="k" Text="1er départ :" Margin="18,14,0,0"/>
+                <TextBlock Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="3" Classes="v" Text="{Binding Nature}" Margin="0,14,0,0"/>
+
+                <TextBlock Grid.Row="3" Classes="k" Text="adresse d'intervention :" Margin="18,14,0,0"/>
+                <TextBlock Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="3" Classes="v" Text="{Binding Address}" Margin="0,14,0,0"/>
+            </Grid>
+
+            <Grid ColumnDefinitions="200,*" Margin="0,40,0,0">
+                <TextBlock Classes="k" Text="numéro requérant :"/>
+                <TextBlock Grid.Column="1" Classes="v" Text="{Binding CallerPhone}" Margin="210,0,0,0"/>
+            </Grid>
+            <Border Classes="rule"/>
+
+            <Grid ColumnDefinitions="220,*" MinHeight="30">
+                <TextBlock Classes="v" Text="informations requérants :"/>
+                <TextBlock Grid.Column="1" Classes="v" Text="{Binding CallerInfo}"/>
+            </Grid>
+            <Border Classes="rule"/>
+
+            <Grid ColumnDefinitions="220,*" MinHeight="70">
+                <TextBlock Classes="k" Text="consignes chef d'agrès :"/>
+                <TextBlock Grid.Column="1" Classes="v" Text="{Binding Consignes}"/>
+            </Grid>
+            <Border Classes="rule"/>
+
+            <Grid ColumnDefinitions="220,*" MinHeight="70">
+                <TextBlock Classes="k" Text="engins complémentaires :"/>
+                <TextBlock Grid.Column="1" Classes="v" Text="{Binding Complementary}"/>
+            </Grid>
+
+            <TextBlock Text="{Binding Footer}" FontSize="10" Foreground="#555555" HorizontalAlignment="Right" Margin="0,16,0,0"/>
+        </StackPanel>
+    </Border>
+</UserControl>

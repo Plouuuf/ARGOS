@@ -1,5 +1,4 @@
 using Argos.ViewModels;
-using Argos.Views.Apps;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
@@ -49,7 +48,7 @@ public partial class AppWindowControl : UserControl
     protected override void OnDataContextChanged(EventArgs e)
     {
         base.OnDataContextChanged(e);
-        Body.Content = WindowModel is { } window ? AppContentFactory.Create(window.App) : null;
+        Body.Content = WindowModel is { } window ? window.Spec.CreateContent() : null;
     }
 
     private void BeginDrag(PointerPressedEventArgs e, DragMode mode)

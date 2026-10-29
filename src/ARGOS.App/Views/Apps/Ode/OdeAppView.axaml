@@ -1,0 +1,361 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="Argos.Views.Apps.Ode.OdeAppView"
+             Background="{StaticResource AdagioBack}"
+             FontFamily="{StaticResource AdagioFont}"
+             Foreground="Black">
+    <UserControl.Styles>
+        <Style Selector="TextBlock.h1">
+            <Setter Property="FontSize" Value="18"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Margin" Value="0,0,0,8"/>
+        </Style>
+        <Style Selector="TextBlock.big">
+            <Setter Property="FontSize" Value="28"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+        </Style>
+        <Style Selector="TextBlock.small">
+            <Setter Property="FontSize" Value="11.5"/>
+            <Setter Property="Foreground" Value="#355C8C"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+        </Style>
+        <Style Selector="TextBlock.cell">
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="Margin" Value="0,0,8,0"/>
+        </Style>
+    </UserControl.Styles>
+
+    <Grid ColumnDefinitions="190,*">
+        <!-- ===================== Navigation ===================== -->
+        <Border Background="#1F3A52">
+            <DockPanel>
+                <StackPanel DockPanel.Dock="Top" Margin="14,14,14,16" Spacing="2">
+                    <Image Source="avares://ARGOS.App/Assets/Icons/adagio-ode.png" Width="54" Height="54" HorizontalAlignment="Left"/>
+                    <TextBlock Text="ADAGIO ODE" Foreground="White" FontSize="17" FontWeight="Bold" Margin="0,6,0,0"/>
+                    <TextBlock Text="Appels et ordres de départ" Foreground="#9FB9CE" FontSize="11"/>
+                </StackPanel>
+                <StackPanel DockPanel.Dock="Bottom" Margin="10,0,10,12" Spacing="6">
+                    <Button Classes="adg primary" HorizontalAlignment="Stretch" Content="Nouvel appel" Command="{Binding NewCallCommand}"/>
+                    <Button Classes="adg" HorizontalAlignment="Stretch" Content="Nouvel ODE" Command="{Binding NewOdeCommand}"/>
+                    <TextBlock Text="{Binding OperatorName}" Foreground="#9FB9CE" FontSize="11" Margin="2,6,0,0"
+                               TextTrimming="CharacterEllipsis"/>
+                </StackPanel>
+                <StackPanel>
+                    <Button Classes="nav" Classes.selected="{Binding IsDashboard}" Content="Tableau de bord"
+                            Command="{Binding NavigateCommand}" CommandParameter="Dashboard"/>
+                    <Button Classes="nav" Classes.selected="{Binding IsCalls}" Content="Appels"
+                            Command="{Binding NavigateCommand}" CommandParameter="Calls"/>
+                    <Button Classes="nav" Classes.selected="{Binding IsInterventions}" Content="Suivi des interventions"
+                            Command="{Binding NavigateCommand}" CommandParameter="Interventions"/>
+                    <Button Classes="nav" Classes.selected="{Binding IsArchives}" Content="Archives ODE"
+                            Command="{Binding NavigateCommand}" CommandParameter="Archives"/>
+                    <Button Classes="nav" Classes.selected="{Binding IsEngins}" Content="Engins"
+                            Command="{Binding NavigateCommand}" CommandParameter="Engins"/>
+                    <Button Classes="nav" Classes.selected="{Binding IsStats}" Content="Statistiques"
+                            Command="{Binding NavigateCommand}" CommandParameter="Stats"/>
+                    <Button Classes="nav" Classes.selected="{Binding IsJournal}" Content="Journal d'activité"
+                            Command="{Binding NavigateCommand}" CommandParameter="Journal"/>
+                </StackPanel>
+            </DockPanel>
+        </Border>
+
+        <!-- ===================== Pages ===================== -->
+        <Grid Grid.Column="1" RowDefinitions="Auto,*">
+            <Border Background="#C62828" Padding="10,5" IsVisible="{Binding HasError}">
+                <Grid ColumnDefinitions="*,Auto">
+                    <TextBlock Text="{Binding Error}" Foreground="White" FontWeight="Bold" VerticalAlignment="Center"/>
+                    <Button Grid.Column="1" Classes="adg" Content="Réessayer" Padding="8,2" Command="{Binding RefreshCommand}"/>
+                </Grid>
+            </Border>
+
+            <!-- ===== Tableau de bord ===== -->
+            <ScrollViewer Grid.Row="1" IsVisible="{Binding IsDashboard}">
+                <StackPanel Margin="14">
+                    <TextBlock Classes="h1" Text="Tableau de bord opérationnel"/>
+                    <WrapPanel>
+                        <Border Classes="tile"><StackPanel><TextBlock Classes="big" Text="{Binding CallsInProgress}"/><TextBlock Classes="small" Text="Appels en cours"/></StackPanel></Border>
+                        <Border Classes="tile"><StackPanel><TextBlock Classes="big" Text="{Binding CallsWaiting}"/><TextBlock Classes="small" Text="Appels en attente"/></StackPanel></Border>
+                        <Border Classes="tile"><StackPanel><TextBlock Classes="big" Text="{Binding CallsToday}"/><TextBlock Classes="small" Text="Appels aujourd'hui"/></StackPanel></Border>
+                        <Border Classes="tile"><StackPanel><TextBlock Classes="big" Text="{Binding ActiveInterventions}"/><TextBlock Classes="small" Text="Interventions actives"/></StackPanel></Border>
+                        <Border Classes="tile"><StackPanel><TextBlock Classes="big" Text="{Binding ClosedToday}"/><TextBlock Classes="small" Text="Terminées aujourd'hui"/></StackPanel></Border>
+                        <Border Classes="tile"><StackPanel><TextBlock Classes="big" Text="{Binding EnginsAvailable}" Foreground="#2E7D32"/><TextBlock Classes="small" Text="Engins disponibles"/></StackPanel></Border>
+                        <Border Classes="tile"><StackPanel><TextBlock Classes="big" Text="{Binding EnginsEngaged}" Foreground="#C62828"/><TextBlock Classes="small" Text="Engins engagés"/></StackPanel></Border>
+                        <Border Classes="tile"><StackPanel><TextBlock Classes="big" Text="{Binding EnginsUnavailable}" Foreground="#6D6D6D"/><TextBlock Classes="small" Text="Engins indisponibles"/></StackPanel></Border>
+                    </WrapPanel>
+
+                    <TextBlock Classes="h1" Text="Appels à traiter" Margin="0,10,0,6"/>
+                    <ItemsControl ItemsSource="{Binding PendingCalls}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Button Classes="row" Command="{Binding OpenCommand}">
+                                    <Grid ColumnDefinitions="110,95,*,130,110">
+                                        <TextBlock Classes="cell" Text="{Binding Id}" FontWeight="Bold"/>
+                                        <TextBlock Grid.Column="1" Classes="cell" Text="{Binding Received}"/>
+                                        <TextBlock Grid.Column="2" Classes="cell" Text="{Binding Address}"/>
+                                        <TextBlock Grid.Column="3" Classes="cell" Text="{Binding Phone}"/>
+                                        <TextBlock Grid.Column="4" Classes="cell" Text="{Binding Status}" FontWeight="Bold"/>
+                                    </Grid>
+                                </Button>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <TextBlock Text="Aucun appel en attente." FontSize="12" Foreground="#355C8C"
+                               IsVisible="{Binding !PendingCalls.Count}"/>
+
+                    <TextBlock Classes="h1" Text="Derniers ODE" Margin="0,14,0,6"/>
+                    <ItemsControl ItemsSource="{Binding RecentInterventions}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Button Classes="row" Command="{Binding OpenCommand}">
+                                    <Grid ColumnDefinitions="80,95,*,*,90">
+                                        <TextBlock Classes="cell" Text="{Binding Number}" FontWeight="Bold"/>
+                                        <TextBlock Grid.Column="1" Classes="cell" Text="{Binding Created}"/>
+                                        <TextBlock Grid.Column="2" Classes="cell" Text="{Binding Nature}"/>
+                                        <TextBlock Grid.Column="3" Classes="cell" Text="{Binding Address}"/>
+                                        <TextBlock Grid.Column="4" Classes="cell" Text="{Binding State}" FontWeight="Bold"/>
+                                    </Grid>
+                                </Button>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </ScrollViewer>
+
+            <!-- ===== Appels ===== -->
+            <DockPanel Grid.Row="1" IsVisible="{Binding IsCalls}" Margin="14">
+                <StackPanel DockPanel.Dock="Top" Spacing="8" Margin="0,0,0,8">
+                    <TextBlock Classes="h1" Text="Historique des appels" Margin="0"/>
+                    <Grid ColumnDefinitions="*,8,170,8,Auto">
+                        <TextBox Classes="adg" Text="{Binding CallSearch}"
+                                 Watermark="Rechercher : n° d'appel, téléphone, requérant, adresse, opérateur, nature"/>
+                        <ComboBox Grid.Column="2" Classes="adg" ItemsSource="{Binding CallStatusFilters}"
+                                  SelectedItem="{Binding CallStatusFilter}"/>
+                        <TextBlock Grid.Column="4" Classes="lbl" Text="{Binding CallsCount}"/>
+                    </Grid>
+                </StackPanel>
+                <Border DockPanel.Dock="Top" Classes="tablehead">
+                    <Grid ColumnDefinitions="110,95,110,*,150,130,95">
+                        <TextBlock Text="N° d'appel"/>
+                        <TextBlock Grid.Column="1" Text="Reçu"/>
+                        <TextBlock Grid.Column="2" Text="Opérateur"/>
+                        <TextBlock Grid.Column="3" Text="Adresse"/>
+                        <TextBlock Grid.Column="4" Text="Nature"/>
+                        <TextBlock Grid.Column="5" Text="Requérant"/>
+                        <TextBlock Grid.Column="6" Text="Statut"/>
+                    </Grid>
+                </Border>
+                <ScrollViewer>
+                    <ItemsControl ItemsSource="{Binding Calls}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Button Classes="row" Command="{Binding OpenCommand}">
+                                    <Grid ColumnDefinitions="110,95,110,*,150,130,95">
+                                        <TextBlock Classes="cell" Text="{Binding Id}" FontWeight="Bold"/>
+                                        <TextBlock Grid.Column="1" Classes="cell" Text="{Binding Received}"/>
+                                        <TextBlock Grid.Column="2" Classes="cell" Text="{Binding Operator}"/>
+                                        <TextBlock Grid.Column="3" Classes="cell" Text="{Binding Address}"/>
+                                        <TextBlock Grid.Column="4" Classes="cell" Text="{Binding Nature}"/>
+                                        <TextBlock Grid.Column="5" Classes="cell" Text="{Binding Phone}"/>
+                                        <TextBlock Grid.Column="6" Classes="cell" Text="{Binding Status}" FontWeight="Bold"/>
+                                    </Grid>
+                                </Button>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </DockPanel>
+
+            <!-- ===== Suivi des interventions ===== -->
+            <DockPanel Grid.Row="1" IsVisible="{Binding IsInterventions}" Margin="14">
+                <TextBlock DockPanel.Dock="Top" Classes="h1" Text="Interventions en cours"/>
+                <Border DockPanel.Dock="Top" Classes="tablehead">
+                    <Grid ColumnDefinitions="80,95,*,*,*">
+                        <TextBlock Text="N°"/>
+                        <TextBlock Grid.Column="1" Text="Créée"/>
+                        <TextBlock Grid.Column="2" Text="Nature"/>
+                        <TextBlock Grid.Column="3" Text="Adresse"/>
+                        <TextBlock Grid.Column="4" Text="Engins (statut)"/>
+                    </Grid>
+                </Border>
+                <ScrollViewer>
+                    <StackPanel>
+                        <ItemsControl ItemsSource="{Binding Active}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Button Classes="row" Command="{Binding OpenCommand}">
+                                        <Grid ColumnDefinitions="80,95,*,*,*">
+                                            <TextBlock Classes="cell" Text="{Binding Number}" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Classes="cell" Text="{Binding Created}"/>
+                                            <TextBlock Grid.Column="2" Classes="cell" Text="{Binding Nature}"/>
+                                            <TextBlock Grid.Column="3" Classes="cell" Text="{Binding Address}"/>
+                                            <TextBlock Grid.Column="4" Classes="cell" Text="{Binding Engins}" TextWrapping="Wrap"/>
+                                        </Grid>
+                                    </Button>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <TextBlock Text="Aucune intervention en cours." FontSize="12" Foreground="#355C8C" Margin="0,8"
+                                   IsVisible="{Binding !Active.Count}"/>
+                    </StackPanel>
+                </ScrollViewer>
+            </DockPanel>
+
+            <!-- ===== Archives ODE ===== -->
+            <DockPanel Grid.Row="1" IsVisible="{Binding IsArchives}" Margin="14">
+                <StackPanel DockPanel.Dock="Top" Spacing="8" Margin="0,0,0,8">
+                    <TextBlock Classes="h1" Text="Archives des ordres de départ" Margin="0"/>
+                    <Grid ColumnDefinitions="*,8,Auto">
+                        <TextBox Classes="adg" Text="{Binding ArchiveSearch}"
+                                 Watermark="Rechercher : n° d'intervention, adresse, nature, procédure, engin"/>
+                        <TextBlock Grid.Column="2" Classes="lbl" Text="{Binding ArchivesCount}"/>
+                    </Grid>
+                </StackPanel>
+                <Border DockPanel.Dock="Top" Classes="tablehead">
+                    <Grid ColumnDefinitions="80,95,*,*,90,90">
+                        <TextBlock Text="N°"/>
+                        <TextBlock Grid.Column="1" Text="Créée"/>
+                        <TextBlock Grid.Column="2" Text="Nature"/>
+                        <TextBlock Grid.Column="3" Text="Adresse"/>
+                        <TextBlock Grid.Column="4" Text="Procédure"/>
+                        <TextBlock Grid.Column="5" Text="État"/>
+                    </Grid>
+                </Border>
+                <ScrollViewer>
+                    <ItemsControl ItemsSource="{Binding Archives}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Button Classes="row" Command="{Binding OpenCommand}">
+                                    <Grid ColumnDefinitions="80,95,*,*,90,90">
+                                        <TextBlock Classes="cell" Text="{Binding Number}" FontWeight="Bold"/>
+                                        <TextBlock Grid.Column="1" Classes="cell" Text="{Binding Created}"/>
+                                        <TextBlock Grid.Column="2" Classes="cell" Text="{Binding Nature}"/>
+                                        <TextBlock Grid.Column="3" Classes="cell" Text="{Binding Address}"/>
+                                        <TextBlock Grid.Column="4" Classes="cell" Text="{Binding Procedure}"/>
+                                        <TextBlock Grid.Column="5" Classes="cell" Text="{Binding State}" FontWeight="Bold"/>
+                                    </Grid>
+                                </Button>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </DockPanel>
+
+            <!-- ===== Engins ===== -->
+            <DockPanel Grid.Row="1" IsVisible="{Binding IsEngins}" Margin="14">
+                <TextBlock DockPanel.Dock="Top" Classes="h1" Text="Situation des engins"/>
+                <Border DockPanel.Dock="Top" Classes="tablehead">
+                    <Grid ColumnDefinitions="140,*,70,170,90,90">
+                        <TextBlock Text="Engin"/>
+                        <TextBlock Grid.Column="1" Text="Désignation"/>
+                        <TextBlock Grid.Column="2" Text="Centre"/>
+                        <TextBlock Grid.Column="3" Text="Statut"/>
+                        <TextBlock Grid.Column="4" Text="Intervention"/>
+                        <TextBlock Grid.Column="5" Text="Depuis"/>
+                    </Grid>
+                </Border>
+                <ScrollViewer>
+                    <ItemsControl ItemsSource="{Binding Engins}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Background="#E9F0F5" BorderBrush="#C3D4E1" BorderThickness="0,0,0,1" Padding="6,5">
+                                    <Grid ColumnDefinitions="140,*,70,170,90,90">
+                                        <TextBlock Classes="cell" Text="{Binding Nom}" FontWeight="Bold"/>
+                                        <TextBlock Grid.Column="1" Classes="cell" Text="{Binding Libelle}"/>
+                                        <TextBlock Grid.Column="2" Classes="cell" Text="{Binding Centre}"/>
+                                        <TextBlock Grid.Column="3" Classes="cell" Text="{Binding Status}" FontWeight="Bold"/>
+                                        <TextBlock Grid.Column="4" Classes="cell" Text="{Binding Intervention}"/>
+                                        <TextBlock Grid.Column="5" Classes="cell" Text="{Binding Since}"/>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </DockPanel>
+
+            <!-- ===== Statistiques ===== -->
+            <ScrollViewer Grid.Row="1" IsVisible="{Binding IsStats}">
+                <StackPanel Margin="14" Spacing="6">
+                    <TextBlock Classes="h1" Text="Statistiques"/>
+                    <ItemsControl ItemsSource="{Binding StatTotals}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Grid ColumnDefinitions="260,*" Margin="0,2">
+                                    <TextBlock Text="{Binding Label}" FontSize="13"/>
+                                    <TextBlock Grid.Column="1" Text="{Binding Value}" FontSize="13" FontWeight="Bold"/>
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <TextBlock Classes="h1" Text="Interventions par nature" Margin="0,14,0,4"/>
+                    <ItemsControl ItemsSource="{Binding StatNatures}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Grid ColumnDefinitions="320,*,40" Margin="0,2">
+                                    <TextBlock Text="{Binding Label}" FontSize="12" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+                                    <ProgressBar Grid.Column="1" Minimum="0" Maximum="1" Value="{Binding Ratio}" Height="12"
+                                                 Foreground="#2C6FB7" Background="#E9F0F5" Margin="8,0"/>
+                                    <TextBlock Grid.Column="2" Text="{Binding Value}" FontWeight="Bold" FontSize="12" VerticalAlignment="Center"/>
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <TextBlock Classes="h1" Text="Appels par opérateur" Margin="0,14,0,4"/>
+                    <ItemsControl ItemsSource="{Binding StatOperators}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Grid ColumnDefinitions="320,*,40" Margin="0,2">
+                                    <TextBlock Text="{Binding Label}" FontSize="12" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+                                    <ProgressBar Grid.Column="1" Minimum="0" Maximum="1" Value="{Binding Ratio}" Height="12"
+                                                 Foreground="#2C6FB7" Background="#E9F0F5" Margin="8,0"/>
+                                    <TextBlock Grid.Column="2" Text="{Binding Value}" FontWeight="Bold" FontSize="12" VerticalAlignment="Center"/>
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </ScrollViewer>
+
+            <!-- ===== Journal d'activité ===== -->
+            <DockPanel Grid.Row="1" IsVisible="{Binding IsJournal}" Margin="14">
+                <StackPanel DockPanel.Dock="Top" Spacing="8" Margin="0,0,0,8">
+                    <TextBlock Classes="h1" Text="Journal d'activité (non modifiable)" Margin="0"/>
+                    <Grid ColumnDefinitions="*,8,Auto">
+                        <TextBox Classes="adg" Text="{Binding JournalSearch}" Watermark="Rechercher : opérateur, action, numéro"/>
+                        <Button Grid.Column="2" Classes="adg" Content="Actualiser" Command="{Binding RefreshCommand}"/>
+                    </Grid>
+                </StackPanel>
+                <Border DockPanel.Dock="Top" Classes="tablehead">
+                    <Grid ColumnDefinitions="130,140,170,100,*">
+                        <TextBlock Text="Date"/>
+                        <TextBlock Grid.Column="1" Text="Opérateur"/>
+                        <TextBlock Grid.Column="2" Text="Action"/>
+                        <TextBlock Grid.Column="3" Text="Objet"/>
+                        <TextBlock Grid.Column="4" Text="Détails"/>
+                    </Grid>
+                </Border>
+                <ScrollViewer>
+                    <ItemsControl ItemsSource="{Binding Journal}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Background="#E9F0F5" BorderBrush="#C3D4E1" BorderThickness="0,0,0,1" Padding="6,4">
+                                    <Grid ColumnDefinitions="130,140,170,100,*">
+                                        <TextBlock Classes="cell" Text="{Binding LocalAt, StringFormat='{}{0:dd/MM/yyyy HH:mm:ss}'}"/>
+                                        <TextBlock Grid.Column="1" Classes="cell" Text="{Binding UserName}"/>
+                                        <TextBlock Grid.Column="2" Classes="cell" Text="{Binding Action}" FontWeight="Bold"/>
+                                        <TextBlock Grid.Column="3" Classes="cell" Text="{Binding Target}"/>
+                                        <TextBlock Grid.Column="4" Classes="cell" Text="{Binding Details}" TextWrapping="Wrap"/>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </DockPanel>
+        </Grid>
+    </Grid>
+</UserControl>

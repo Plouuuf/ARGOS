@@ -6,6 +6,7 @@
     <Application.Styles>
         <FluentTheme />
         <StyleInclude Source="avares://ARGOS.App/Styles/Windows10.axaml" />
+        <StyleInclude Source="avares://ARGOS.App/Styles/Adagio.axaml" />
     </Application.Styles>
 
     <Application.Resources>

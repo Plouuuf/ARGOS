@@ -1,0 +1,179 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="Argos.Views.Apps.Ode.InterventionView"
+             Background="{StaticResource AdagioBack}"
+             FontFamily="{StaticResource AdagioFont}"
+             Foreground="Black">
+    <UserControl.Styles>
+        <Style Selector="Button.status">
+            <Setter Property="Background" Value="#E9F0F5"/>
+            <Setter Property="BorderBrush" Value="#8FA9BC"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Foreground" Value="Black"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="Padding" Value="7,3"/>
+            <Setter Property="Margin" Value="0,0,4,4"/>
+            <Setter Property="CornerRadius" Value="2"/>
+        </Style>
+        <Style Selector="Button.status.current">
+            <Setter Property="Background" Value="#2C6FB7"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+        </Style>
+    </UserControl.Styles>
+
+    <Grid RowDefinitions="Auto,*">
+        <!-- En-tête de l'intervention -->
+        <Border Background="#2B4F6E" Padding="14,8">
+            <Grid ColumnDefinitions="*,Auto">
+                <StackPanel Spacing="2">
+                    <StackPanel Orientation="Horizontal" Spacing="12">
+                        <TextBlock Text="{Binding Number}" Foreground="White" FontSize="22" FontWeight="Bold"/>
+                        <Border Background="#AFCADB" Padding="6,1" CornerRadius="2" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding StateLabel}" FontWeight="Bold" FontSize="11"/>
+                        </Border>
+                        <TextBlock Text="{Binding Procedure}" Foreground="#C3D8E6" FontWeight="Bold" VerticalAlignment="Center"/>
+                    </StackPanel>
+                    <TextBlock Text="{Binding Nature}" Foreground="White" FontSize="14" FontWeight="Bold"/>
+                    <TextBlock Text="{Binding Address}" Foreground="White" FontSize="13"/>
+                    <TextBlock Text="{Binding Created}" Foreground="#C3D8E6" FontSize="11"/>
+                </StackPanel>
+                <StackPanel Grid.Column="1" Spacing="6" VerticalAlignment="Center">
+                    <Button Classes="adg" Content="Ajouter des moyens" Command="{Binding AddMeansCommand}" HorizontalAlignment="Stretch"/>
+                    <Button Classes="adg danger" Content="Clôturer l'intervention" Command="{Binding AskCloseCommand}" HorizontalAlignment="Stretch"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <Grid Grid.Row="1" ColumnDefinitions="*,360">
+            <ScrollViewer>
+                <StackPanel>
+                    <TextBlock Text="{Binding Error}" IsVisible="{Binding HasError}" Foreground="#A00000"
+                               FontWeight="Bold" Margin="12,8,12,0" TextWrapping="Wrap"/>
+
+                    <HeaderedContentControl Classes="group" Header="Engins engagés" Margin="6,8,6,2">
+                        <ItemsControl ItemsSource="{Binding Engins}" Margin="0,6,0,0">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Background="#E9F0F5" Padding="8,6" Margin="0,0,0,6" CornerRadius="2">
+                                        <StackPanel Spacing="4">
+                                            <Grid ColumnDefinitions="*,Auto">
+                                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                                    <TextBlock Text="{Binding Nom}" FontWeight="Bold" FontSize="14"/>
+                                                    <TextBlock Text="{Binding Libelle}" FontSize="11" Foreground="#355C8C" VerticalAlignment="Center"/>
+                                                </StackPanel>
+                                                <TextBlock Grid.Column="1" FontSize="11" VerticalAlignment="Center">
+                                                    <Run Text="{Binding Role}"/>
+                                                    <Run Text=" · "/>
+                                                    <Run Text="{Binding Status}" FontWeight="Bold"/>
+                                                    <Run Text=" "/>
+                                                    <Run Text="{Binding Since}"/>
+                                                </TextBlock>
+                                            </Grid>
+                                            <ItemsControl ItemsSource="{Binding Buttons}">
+                                                <ItemsControl.ItemsPanel>
+                                                    <ItemsPanelTemplate>
+                                                        <WrapPanel/>
+                                                    </ItemsPanelTemplate>
+                                                </ItemsControl.ItemsPanel>
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <Button Classes="status" Classes.current="{Binding IsCurrent}"
+                                                                Content="{Binding Label}" Command="{Binding Command}"/>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </HeaderedContentControl>
+
+                    <HeaderedContentControl Classes="group" Header="Requérant et consignes">
+                        <StackPanel Spacing="4" Margin="0,6,0,0">
+                            <TextBlock Text="{Binding Requerant}" TextWrapping="Wrap" FontSize="12"/>
+                            <TextBlock FontSize="12" TextWrapping="Wrap">
+                                <Run Text="Consignes chef d'agrès : " FontWeight="Bold"/>
+                                <Run Text="{Binding Consignes}"/>
+                            </TextBlock>
+                        </StackPanel>
+                    </HeaderedContentControl>
+
+                    <HeaderedContentControl Classes="group" Header="Ordres de départ">
+                        <ItemsControl ItemsSource="{Binding Orders}" Margin="0,6,0,0">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,4">
+                                        <TextBlock Text="{Binding Text}" FontSize="12" TextWrapping="Wrap" VerticalAlignment="Center"/>
+                                        <Button Grid.Column="1" Classes="adg" Content="Voir / imprimer" Padding="8,2"
+                                                Command="{Binding PrintCommand}"/>
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </HeaderedContentControl>
+
+                    <HeaderedContentControl Classes="group" Header="Appels rattachés">
+                        <ItemsControl ItemsSource="{Binding Calls}" Margin="0,6,0,0">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Button Classes="row" Command="{Binding OpenCommand}">
+                                        <TextBlock Text="{Binding Text}"/>
+                                    </Button>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </HeaderedContentControl>
+                </StackPanel>
+            </ScrollViewer>
+
+            <!-- Main courante de l'intervention -->
+            <HeaderedContentControl Grid.Column="1" Classes="group" Header="Main courante" Margin="0,8,6,6">
+                <DockPanel Margin="0,6,0,0">
+                    <StackPanel DockPanel.Dock="Bottom" Spacing="6" Margin="0,8,0,0">
+                        <TextBox Classes="adg" Text="{Binding Message}" Watermark="Message opérationnel…"
+                                 AcceptsReturn="True" TextWrapping="Wrap" MinHeight="50"/>
+                        <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Right">
+                            <Button Classes="adg" Content="Demande de renfort" Command="{Binding RenfortCommand}"/>
+                            <Button Classes="adg primary" Content="Ajouter" Command="{Binding SendMessageCommand}"/>
+                        </StackPanel>
+                    </StackPanel>
+                    <ScrollViewer>
+                        <ItemsControl ItemsSource="{Binding Events}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border BorderBrush="#C3D4E1" BorderThickness="0,0,0,1" Padding="0,5">
+                                        <StackPanel Spacing="2">
+                                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                                <TextBlock Text="{Binding LocalAt, StringFormat='{}{0:dd/MM HH:mm:ss}'}" FontWeight="Bold" FontSize="11"/>
+                                                <TextBlock Text="{Binding Author}" FontSize="11" Foreground="#355C8C"/>
+                                            </StackPanel>
+                                            <TextBlock Text="{Binding Text}" FontSize="12" TextWrapping="Wrap"/>
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+                </DockPanel>
+            </HeaderedContentControl>
+        </Grid>
+
+        <!-- Confirmation de clôture -->
+        <Border Grid.RowSpan="2" Background="#66000000" IsVisible="{Binding ConfirmClose}">
+            <Border Background="{StaticResource AdagioBack}" BorderBrush="White" BorderThickness="2.5" CornerRadius="6"
+                    Width="460" Padding="18" HorizontalAlignment="Center" VerticalAlignment="Center">
+                <StackPanel Spacing="12">
+                    <TextBlock Text="Clôturer l'intervention ?" FontWeight="Bold" FontSize="15"/>
+                    <TextBlock Text="Tous les engins encore engagés seront remis disponibles. L'intervention passera dans les archives."
+                               TextWrapping="Wrap" FontSize="12"/>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
+                        <Button Classes="adg" Content="Annuler" Command="{Binding CancelCloseCommand}"/>
+                        <Button Classes="adg danger" Content="Clôturer" Command="{Binding CloseInterventionCommand}"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+        </Border>
+    </Grid>
+</UserControl>

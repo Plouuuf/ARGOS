@@ -350,6 +350,8 @@ public sealed class ShellViewModel : ViewModelBase
         Screen = ShellScreen.Welcome;
         StatusText = null;
 
+        ArgosSession.Current = new ArgosSession(user, _auth.SessionToken!);
+        _ = ArgosSession.Current.Ode.RefreshAsync();
         Desktop = new DesktopViewModel(user, Avatar, LockSession, () => _ = SignOutAsync());
         Desktop.IsOnline = _realtime.IsConnected;
         _realtime.Start(_auth.SessionToken!);
@@ -370,6 +372,7 @@ public sealed class ShellViewModel : ViewModelBase
         _revalidation.Stop();
         await _realtime.StopAsync();
         Desktop = null;
+        ArgosSession.Current = null;
         ErrorText = null;
         Screen = ShellScreen.Lock;
     }

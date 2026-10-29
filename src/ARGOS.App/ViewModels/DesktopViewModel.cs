@@ -2,6 +2,8 @@ using System.Collections.ObjectModel;
 using System.Globalization;
 using Argos.Services;
 using Argos.Shared.Contracts;
+using Argos.Views.Apps;
+using Argos.Views.Apps.Ode;
 using Avalonia.Media.Imaging;
 using Avalonia.Threading;
 
@@ -29,7 +31,8 @@ public sealed class DesktopViewModel : ViewModelBase
     private bool _isOnline;
     private string _trayTime = string.Empty;
     private string _trayDate = string.Empty;
-    private AppTileViewModel? _mobileApp;
+    private WindowSpec? _mobileApp;
+    private readonly Stack<WindowSpec> _mobileStack = new();
 
     public DesktopViewModel(ArgosUserDto user, Bitmap? avatar, Action lockSession, Action signOut)
     {
@@ -56,7 +59,7 @@ public sealed class DesktopViewModel : ViewModelBase
         LockCommand = new RelayCommand(() => { IsStartMenuOpen = false; _lock(); });
         SignOutCommand = new RelayCommand(() => { IsStartMenuOpen = false; _signOut(); });
         ShowDesktopCommand = new RelayCommand(ShowDesktop);
-        MobileBackCommand = new RelayCommand(() => MobileApp = null);
+        MobileBackCommand = new RelayCommand(() => MobileApp = _mobileStack.Count > 0 ? _mobileStack.Pop() : null);
 
         UpdateClock(DateTime.Now);
     }
@@ -122,7 +125,7 @@ public sealed class DesktopViewModel : ViewModelBase
     }
 
     /// <summary>Application ouverte en plein écran sur téléphone (null = écran d'accueil).</summary>
-    public AppTileViewModel? MobileApp
+    public WindowSpec? MobileApp
     {
         get => _mobileApp;
         private set
@@ -151,33 +154,58 @@ public sealed class DesktopViewModel : ViewModelBase
     // ===== Applications et fenêtres =====
 
     public void OpenApp(AppTileViewModel app)
+        => OpenWindow(new WindowSpec(app.Id, app.Title, app.Icon, () => AppContentFactory.Create(app, this)));
+
+    /// <summary>
+    /// Ouvre une fenêtre (ou la ramène au premier plan si sa clé est déjà ouverte).
+    /// Sur téléphone, la page s'affiche en plein écran ; « retour » revient à la page précédente.
+    /// </summary>
+    public void OpenWindow(WindowSpec spec)
     {
         IsStartMenuOpen = false;
         SelectIcon(null);
 
         if (IsCompactLayout)
         {
-            MobileApp = app;
+            if (MobileApp is not null && MobileApp.Key != spec.Key)
+                _mobileStack.Push(MobileApp);
+            MobileApp = spec;
             return;
         }
 
-        var existing = Windows.FirstOrDefault(w => w.App == app);
+        var existing = Windows.FirstOrDefault(w => w.Key == spec.Key);
         if (existing is not null)
         {
             Activate(existing);
             return;
         }
 
-        var width = Math.Min(DefaultWidth, Math.Max(480, WorkAreaWidth - 80));
-        var height = Math.Min(DefaultHeight, Math.Max(360, WorkAreaHeight - 60));
+        var width = Math.Min(spec.Width, Math.Max(480, WorkAreaWidth - 40));
+        var height = Math.Min(spec.Height, Math.Max(360, WorkAreaHeight - 20));
         var offset = 28 * (_cascade++ % 8);
-        var x = Math.Max(0, (WorkAreaWidth - width) / 2 - 120 + offset);
-        var y = Math.Max(0, (WorkAreaHeight - height) / 2 - 80 + offset);
+        var x = Math.Max(0, Math.Min((WorkAreaWidth - width) / 2 - 120 + offset, WorkAreaWidth - width));
+        var y = Math.Max(0, Math.Min((WorkAreaHeight - height) / 2 - 80 + offset, WorkAreaHeight - height));
 
-        var window = new AppWindowViewModel(app, x, y, width, height, this);
+        var window = new AppWindowViewModel(spec, x, y, width, height, this);
         Windows.Add(window);
         Activate(window);
     }
+
+    /// <summary>Ferme la fenêtre de cette clé, si elle est ouverte.</summary>
+    public void CloseWindow(string key)
+    {
+        if (IsCompactLayout)
+        {
+            if (MobileApp?.Key == key)
+                MobileApp = _mobileStack.Count > 0 ? _mobileStack.Pop() : null;
+            return;
+        }
+        var window = Windows.FirstOrDefault(w => w.Key == key);
+        if (window is not null)
+            Close(window);
+    }
+
+    public AppWindowViewModel? FindWindow(string key) => Windows.FirstOrDefault(w => w.Key == key);
 
     public void Activate(AppWindowViewModel window)
     {
@@ -261,12 +289,28 @@ public sealed class DesktopViewModel : ViewModelBase
 
     public void HandleRealtime(RealtimeMessage message)
     {
-        if (message.Type == RealtimeTypes.Notify)
+        switch (message.Type)
         {
-            var app = message.AppId is null ? null : Apps.FirstOrDefault(a => a.Id == message.AppId);
-            ShowNotification(message.Title ?? "ARGOS", message.Text ?? string.Empty, app?.Icon);
+            case RealtimeTypes.Notify:
+                var app = message.AppId is null ? null : Apps.FirstOrDefault(a => a.Id == message.AppId);
+                ShowNotification(message.Title ?? "ARGOS", message.Text ?? string.Empty, app?.Icon);
+                break;
+
+            case RealtimeTypes.OdeChanged:
+                _ = ArgosSession.Current?.Ode.RefreshAsync();
+                break;
+
+            case RealtimeTypes.OpenCall when !string.IsNullOrWhiteSpace(message.Text):
+                // Décroché d'un 18 sur SIMCALL : la prise d'appel s'ouvre d'elle-même.
+                _ = ArgosSession.Current?.Ode.RefreshAsync();
+                OpenCall(message.Text!);
+                ShowNotification("Appel 18", "Prise d'appel ouverte.", Apps.FirstOrDefault(a => a.Id == ArgosApps.AdagioOde)?.Icon);
+                break;
         }
     }
+
+    /// <summary>Ouvre la fenêtre « Prise d'appel » d'une fiche d'appel.</summary>
+    public void OpenCall(string callId) => OpenWindow(OdeWindows.PriseAppel(this, callId));
 
     public void ShowNotification(string title, string text, Bitmap? icon = null)
     {

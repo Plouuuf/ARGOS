@@ -5,4 +5,8 @@
     <AssemblyName>ARGOS.Shared</AssemblyName>
     <RootNamespace>Argos.Shared</RootNamespace>
   </PropertyGroup>
+  <ItemGroup>
+    <!-- Natures d'intervention BSPP (codes et libellés), partagées par le serveur et l'application. -->
+    <EmbeddedResource Include="Data\natures.json" LogicalName="ARGOS.natures.json" />
+  </ItemGroup>
 </Project>

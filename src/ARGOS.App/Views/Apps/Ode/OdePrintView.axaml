@@ -1,0 +1,24 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ode="clr-namespace:Argos.Views.Apps.Ode"
+             x:Class="Argos.Views.Apps.Ode.OdePrintView"
+             Background="#6E7B86"
+             FontFamily="{StaticResource AdagioFont}">
+    <Grid RowDefinitions="Auto,*">
+        <Border Background="#F0F0F0" Padding="10,6" BorderBrush="#C8C8C8" BorderThickness="0,0,0,1">
+            <Grid ColumnDefinitions="*,Auto">
+                <TextBlock Text="{Binding Status}" VerticalAlignment="Center" Foreground="Black" FontSize="12"/>
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                    <Button Classes="adg" Content="Suivi de l'intervention" Command="{Binding OpenInterventionCommand}"/>
+                    <Button Classes="adg primary" Content="{Binding PrintLabel}" Command="{Binding PrintCommand}"/>
+                    <Button Classes="adg" Content="Fermer" Command="{Binding CloseCommand}"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+        <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Auto">
+            <Border Margin="20" HorizontalAlignment="Center" BoxShadow="0 4 18 0 #66000000">
+                <ode:OdeDocumentView DataContext="{Binding Document}"/>
+            </Border>
+        </ScrollViewer>
+    </Grid>
+</UserControl>

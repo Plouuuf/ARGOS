@@ -55,13 +55,24 @@ jobs:
             }
           done
 
-      - name: Tests d'affichage (chaque écran chargé sans écran)
+      - name: Tests (serveur ODE + chaque écran chargé sans écran)
+        env:
+          ARGOS_SCREENSHOTS: ${{ github.workspace }}/artifacts/screenshots
         run: |
+          sudo apt-get install -y -qq fonts-liberation >/dev/null || true
           set -o pipefail
-          dotnet test tests/ARGOS.Tests/ARGOS.Tests.csproj -c Release --logger "console;verbosity=normal" 2>&1 | tee test.log || {
+          { dotnet test tests/ARGOS.Server.Tests/ARGOS.Server.Tests.csproj -c Release --logger "console;verbosity=normal" && \
+            dotnet test tests/ARGOS.Tests/ARGOS.Tests.csproj -c Release --logger "console;verbosity=normal"; } 2>&1 | tee test.log || {
             grep -E "Failed |Error Message|Exception" test.log | head -40 | while read -r line; do echo "::error::$line"; done
             exit 1
           }
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ARGOS-captures
+          path: artifacts/screenshots/
+          if-no-files-found: ignore
 
       - name: Publication macOS (ARGOS.app)
         run: |

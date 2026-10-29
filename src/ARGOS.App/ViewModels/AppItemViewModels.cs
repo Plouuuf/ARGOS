@@ -1,4 +1,5 @@
 using Argos.Services;
+using Avalonia.Controls;
 using Avalonia.Media.Imaging;
 
 namespace Argos.ViewModels;
@@ -33,6 +34,18 @@ public sealed class AppTileViewModel : ViewModelBase
 /// <summary>Titre de section du menu Démarrer (première lettre).</summary>
 public sealed record StartMenuHeader(string Letter);
 
+/// <summary>
+/// Description d'une fenêtre à ouvrir : une application du bureau, une prise d'appel, un document…
+/// La clé évite d'ouvrir deux fois la même fenêtre.
+/// </summary>
+public sealed record WindowSpec(
+    string Key,
+    string Title,
+    Bitmap Icon,
+    Func<Control> CreateContent,
+    double Width = 980,
+    double Height = 640);
+
 /// <summary>Fenêtre ouverte sur le bureau.</summary>
 public sealed class AppWindowViewModel : ViewModelBase
 {
@@ -44,10 +57,12 @@ public sealed class AppWindowViewModel : ViewModelBase
     private bool _isMaximized;
     private bool _isActive;
     private int _zIndex;
+    private string _title;
 
-    public AppWindowViewModel(AppTileViewModel app, double x, double y, double width, double height, DesktopViewModel desktop)
+    public AppWindowViewModel(WindowSpec spec, double x, double y, double width, double height, DesktopViewModel desktop)
     {
-        App = app;
+        Spec = spec;
+        _title = spec.Title;
         _x = x;
         _y = y;
         _width = width;
@@ -59,9 +74,12 @@ public sealed class AppWindowViewModel : ViewModelBase
         CloseCommand = new RelayCommand(() => desktop.Close(this));
     }
 
-    public AppTileViewModel App { get; }
-    public string Title => App.Title;
-    public Bitmap Icon => App.Icon;
+    public WindowSpec Spec { get; }
+    public string Key => Spec.Key;
+    public Bitmap Icon => Spec.Icon;
+
+    /// <summary>Titre de la barre de titre (modifiable par le contenu, ex. numéro d'appel).</summary>
+    public string Title { get => _title; set => SetProperty(ref _title, value); }
 
     public double X { get => _x; set => SetProperty(ref _x, value); }
     public double Y { get => _y; set => SetProperty(ref _y, value); }

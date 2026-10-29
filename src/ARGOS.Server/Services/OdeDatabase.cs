@@ -1,0 +1,219 @@
+using System.Text.Json;
+using Argos.Shared.Contracts;
+using Microsoft.Data.Sqlite;
+
+namespace Argos.Server.Services;
+
+/// <summary>
+/// Base de données d'ARGOS (SQLite, data/argos.db) : rien à installer sur le VPS.
+/// Chaque objet métier est rangé en JSON dans sa table ; le journal d'activité est en ajout seul.
+/// </summary>
+public sealed class OdeDatabase
+{
+    private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
+    private readonly string _connectionString;
+
+    /// <param name="path">Fichier de la base ; par défaut data/argos.db à côté du serveur.</param>
+    public OdeDatabase(string? path = null)
+    {
+        path ??= Path.Combine(AppContext.BaseDirectory, "data", "argos.db");
+        Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(path))!);
+        _connectionString = new SqliteConnectionStringBuilder
+        {
+            DataSource = path,
+            Mode = SqliteOpenMode.ReadWriteCreate,
+            Cache = SqliteCacheMode.Shared
+        }.ToString();
+        Initialize();
+    }
+
+    private SqliteConnection Open()
+    {
+        var connection = new SqliteConnection(_connectionString);
+        connection.Open();
+        return connection;
+    }
+
+    private void Initialize()
+    {
+        using var c = Open();
+        Execute(c, """
+            PRAGMA journal_mode = WAL;
+            CREATE TABLE IF NOT EXISTS calls (
+                id TEXT PRIMARY KEY, data TEXT NOT NULL, received_at TEXT NOT NULL, updated_at TEXT NOT NULL);
+            CREATE TABLE IF NOT EXISTS interventions (
+                id TEXT PRIMARY KEY, number TEXT NOT NULL UNIQUE, data TEXT NOT NULL,
+                active INTEGER NOT NULL, created_at TEXT NOT NULL, updated_at TEXT NOT NULL);
+            CREATE TABLE IF NOT EXISTS engins (
+                nom TEXT PRIMARY KEY, data TEXT NOT NULL);
+            CREATE TABLE IF NOT EXISTS journal (
+                id INTEGER PRIMARY KEY AUTOINCREMENT, at TEXT NOT NULL, user_id TEXT NOT NULL, user_name TEXT NOT NULL,
+                action TEXT NOT NULL, target TEXT NOT NULL, details TEXT NOT NULL);
+            CREATE TABLE IF NOT EXISTS counters (
+                name TEXT PRIMARY KEY, value INTEGER NOT NULL);
+            -- Le journal d'activité ne peut être ni modifié ni effacé.
+            CREATE TRIGGER IF NOT EXISTS journal_no_update BEFORE UPDATE ON journal
+                BEGIN SELECT RAISE(ABORT, 'journal en lecture seule'); END;
+            CREATE TRIGGER IF NOT EXISTS journal_no_delete BEFORE DELETE ON journal
+                BEGIN SELECT RAISE(ABORT, 'journal en lecture seule'); END;
+            """);
+    }
+
+    private static void Execute(SqliteConnection c, string sql, params (string Name, object? Value)[] parameters)
+    {
+        using var cmd = c.CreateCommand();
+        cmd.CommandText = sql;
+        foreach (var (name, value) in parameters)
+            cmd.Parameters.AddWithValue(name, value ?? DBNull.Value);
+        cmd.ExecuteNonQuery();
+    }
+
+    private static string Iso(DateTimeOffset value) => value.UtcDateTime.ToString("O");
+
+    // ===== Compteurs (numéros d'appel et d'intervention) =====
+
+    public long NextCounter(string name)
+    {
+        using var c = Open();
+        using var tx = c.BeginTransaction();
+        using var cmd = c.CreateCommand();
+        cmd.Transaction = tx;
+        cmd.CommandText = """
+            INSERT INTO counters(name, value) VALUES ($n, 1)
+            ON CONFLICT(name) DO UPDATE SET value = value + 1;
+            SELECT value FROM counters WHERE name = $n;
+            """;
+        cmd.Parameters.AddWithValue("$n", name);
+        var value = Convert.ToInt64(cmd.ExecuteScalar());
+        tx.Commit();
+        return value;
+    }
+
+    public bool InterventionNumberExists(string number)
+    {
+        using var c = Open();
+        using var cmd = c.CreateCommand();
+        cmd.CommandText = "SELECT COUNT(1) FROM interventions WHERE number = $n";
+        cmd.Parameters.AddWithValue("$n", number);
+        return Convert.ToInt64(cmd.ExecuteScalar()) > 0;
+    }
+
+    // ===== Appels =====
+
+    public void SaveCall(CallRecord call)
+    {
+        using var c = Open();
+        Execute(c, """
+            INSERT INTO calls(id, data, received_at, updated_at) VALUES ($id, $data, $r, $u)
+            ON CONFLICT(id) DO UPDATE SET data = excluded.data, updated_at = excluded.updated_at;
+            """,
+            ("$id", call.Id), ("$data", JsonSerializer.Serialize(call, JsonOptions)),
+            ("$r", Iso(call.ReceivedAt)), ("$u", Iso(call.UpdatedAt)));
+    }
+
+    public CallRecord? GetCall(string id)
+        => QueryOne<CallRecord>("SELECT data FROM calls WHERE id = $id", ("$id", id));
+
+    public List<CallRecord> RecentCalls(int limit)
+        => Query<CallRecord>("SELECT data FROM calls ORDER BY received_at DESC LIMIT $l", ("$l", limit));
+
+    public CallRecord? FindCallBySimcallId(string simcallId)
+        => RecentCalls(200).FirstOrDefault(c => c.SimcallCallId == simcallId);
+
+    // ===== Interventions =====
+
+    public void SaveIntervention(Intervention intervention)
+    {
+        using var c = Open();
+        Execute(c, """
+            INSERT INTO interventions(id, number, data, active, created_at, updated_at) VALUES ($id, $n, $data, $a, $c, $u)
+            ON CONFLICT(id) DO UPDATE SET data = excluded.data, active = excluded.active, updated_at = excluded.updated_at;
+            """,
+            ("$id", intervention.Id), ("$n", intervention.Number),
+            ("$data", JsonSerializer.Serialize(intervention, JsonOptions)),
+            ("$a", intervention.Active ? 1 : 0), ("$c", Iso(intervention.CreatedAt)), ("$u", Iso(intervention.UpdatedAt)));
+    }
+
+    public Intervention? GetIntervention(string id)
+        => QueryOne<Intervention>("SELECT data FROM interventions WHERE id = $id", ("$id", id));
+
+    /// <summary>Interventions actives, plus les plus récentes clôturées (archives).</summary>
+    public List<Intervention> Interventions(int closedLimit)
+        => Query<Intervention>("""
+            SELECT data FROM interventions WHERE active = 1
+            UNION ALL
+            SELECT data FROM (SELECT data FROM interventions WHERE active = 0 ORDER BY created_at DESC LIMIT $l)
+            """, ("$l", closedLimit));
+
+    // ===== Engins =====
+
+    public void SaveEngin(EnginState state)
+    {
+        using var c = Open();
+        Execute(c, """
+            INSERT INTO engins(nom, data) VALUES ($n, $d)
+            ON CONFLICT(nom) DO UPDATE SET data = excluded.data;
+            """, ("$n", state.Nom), ("$d", JsonSerializer.Serialize(state, JsonOptions)));
+    }
+
+    public List<EnginState> Engins() => Query<EnginState>("SELECT data FROM engins");
+
+    // ===== Journal =====
+
+    public void AddJournal(JournalEntry entry)
+    {
+        using var c = Open();
+        Execute(c, """
+            INSERT INTO journal(at, user_id, user_name, action, target, details) VALUES ($at, $uid, $un, $a, $t, $d)
+            """,
+            ("$at", Iso(entry.At)), ("$uid", entry.UserId), ("$un", entry.UserName),
+            ("$a", entry.Action), ("$t", entry.Target), ("$d", entry.Details));
+    }
+
+    public List<JournalEntry> Journal(int limit)
+    {
+        using var c = Open();
+        using var cmd = c.CreateCommand();
+        cmd.CommandText = "SELECT id, at, user_id, user_name, action, target, details FROM journal ORDER BY id DESC LIMIT $l";
+        cmd.Parameters.AddWithValue("$l", limit);
+        using var reader = cmd.ExecuteReader();
+        var list = new List<JournalEntry>();
+        while (reader.Read())
+        {
+            list.Add(new JournalEntry
+            {
+                Id = reader.GetInt64(0),
+                At = DateTimeOffset.Parse(reader.GetString(1), null, System.Globalization.DateTimeStyles.RoundtripKind),
+                UserId = reader.GetString(2),
+                UserName = reader.GetString(3),
+                Action = reader.GetString(4),
+                Target = reader.GetString(5),
+                Details = reader.GetString(6)
+            });
+        }
+        return list;
+    }
+
+    // ===== Outils =====
+
+    private List<T> Query<T>(string sql, params (string Name, object? Value)[] parameters)
+    {
+        using var c = Open();
+        using var cmd = c.CreateCommand();
+        cmd.CommandText = sql;
+        foreach (var (name, value) in parameters)
+            cmd.Parameters.AddWithValue(name, value ?? DBNull.Value);
+        using var reader = cmd.ExecuteReader();
+        var list = new List<T>();
+        while (reader.Read())
+        {
+            var item = JsonSerializer.Deserialize<T>(reader.GetString(0), JsonOptions);
+            if (item is not null)
+                list.Add(item);
+        }
+        return list;
+    }
+
+    private T? QueryOne<T>(string sql, params (string Name, object? Value)[] parameters) where T : class
+        => Query<T>(sql, parameters).FirstOrDefault();
+}

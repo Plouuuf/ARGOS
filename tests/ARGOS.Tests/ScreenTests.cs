@@ -2,6 +2,8 @@ using Argos;
 using Argos.Shared.Contracts;
 using Argos.ViewModels;
 using Argos.Views;
+using Argos.ViewModels.Ode;
+using Argos.Views.Apps.Ode;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Headless;
@@ -16,7 +18,9 @@ namespace Argos.Tests;
 public static class TestAppBuilder
 {
     public static AppBuilder BuildAvaloniaApp()
-        => AppBuilder.Configure<App>().UseHeadless(new AvaloniaHeadlessPlatformOptions());
+        => AppBuilder.Configure<App>()
+            .UseSkia()
+            .UseHeadless(new AvaloniaHeadlessPlatformOptions { UseHeadlessDrawing = false });
 }
 
 /// <summary>Chaque écran est chargé dans une fenêtre sans écran : une exception = test en échec.</summary>
@@ -94,4 +98,74 @@ public class ScreenTests
         Show(new LockScreenView { DataContext = shell });
         Show(new LoginView { DataContext = shell });
     }
+
+    [AvaloniaFact]
+    public void Fenetres_ADAGIO_ODE_se_chargent_sans_session()
+    {
+        var desktop = new DesktopViewModel(TestUser, null, () => { }, () => { });
+        Show(new DesktopView { DataContext = desktop });
+
+        desktop.OpenWindow(OdeWindows.PriseAppel(desktop, "20261029-0001"));
+        desktop.OpenWindow(OdeWindows.CreateOde(desktop, "20261029-0001", null, "ROUGE"));
+        desktop.OpenWindow(OdeWindows.CreateOde(desktop, null, "abc", "BLANCHE"));
+        desktop.OpenWindow(OdeWindows.Intervention(desktop, "abc"));
+        desktop.OpenWindow(OdeWindows.Print(desktop, "abc", 1));
+        Dispatcher.UIThread.RunJobs();
+        Assert.Equal(5, desktop.Windows.Count);
+
+        // Même clé : la fenêtre existante revient au premier plan, pas de doublon.
+        desktop.OpenCall("20261029-0001");
+        Assert.Equal(5, desktop.Windows.Count);
+
+        foreach (var w in desktop.Windows.ToList())
+            desktop.Close(w);
+        Dispatcher.UIThread.RunJobs();
+        Assert.Empty(desktop.Windows);
+    }
+
+    [AvaloniaFact]
+    public void Prise_d_appel_touches_F_sans_session()
+    {
+        var desktop = new DesktopViewModel(TestUser, null, () => { }, () => { });
+        var vm = new PriseAppelViewModel(desktop, "X");
+        Show(new PriseAppelView { DataContext = vm }, 1180, 770);
+        Assert.Equal("Prise d'appel - v1.8.0", vm.WindowTitle);
+        Assert.Equal(9, vm.FKeys.Count);
+        Assert.False(vm.HandleKey("F12"));
+        vm.Dispose();
+    }
+
+    [AvaloniaFact]
+    public void Feuille_ODE_reprend_le_modele()
+    {
+        var intervention = new Intervention
+        {
+            Number = "210-593", NatureCode = "117", Cstc = "CRET", Address = "IMPASSE GUINER", Building = "Chantier",
+            Locality = "L'Echat", CallerPhone = "553-235-420", CallerInfo = "Feu de structure ** Une personne bloquée"
+        };
+        var order = new DepartureOrder
+        {
+            Number = 1, Procedure = "BLANCHE", ValidatedAt = DateTimeOffset.Now, OperatorName = "BERTIER",
+            Engins = ["EPAN 24 MALF", "FPTL 202 MALF"]
+        };
+        var doc = OdeDocument.From(intervention, order);
+        Assert.Equal("Mission BSPP - Procédure BLANCHE", doc.MissionTitle);
+        Assert.Equal("PREMIERS DEPARTS - INCENDIE", doc.DepartTitle);
+        Assert.Equal("EPAN 24 MALF (EPAN_1_MALF)", doc.MainEngin);
+        Assert.Equal("FPTL 202 MALF (FPTL_1_MALF)", doc.Complementary);
+        Assert.Equal("L'ECHAT", doc.Locality);
+        Assert.Equal("IMPASSE GUINER (Chantier)", doc.Address);
+        Show(new OdeDocumentView { DataContext = doc }, 900, 1100);
+    }
+
+    [AvaloniaFact]
+    public void Natures_et_engins()
+    {
+        Assert.True(Natures.All.Count > 150);
+        Assert.Equal("Feu de cheminée", Natures.Find("112")?.Label);
+        Assert.Equal(16, EnginsCatalog.All.Count);
+        Assert.NotNull(EnginsCatalog.Find("VSAV 947 CRET"));
+        Assert.NotNull(EnginsCatalog.Find("PSE 212"));
+    }
 }
+

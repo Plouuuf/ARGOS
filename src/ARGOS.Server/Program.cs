@@ -38,6 +38,8 @@ public static class Program
         builder.Services.AddSingleton<PersistentDiscordSessionStore>();
         builder.Services.AddSingleton<DiscordOAuthService>();
         builder.Services.AddSingleton<RealtimeHub>();
+        builder.Services.AddSingleton(_ => new OdeDatabase());
+        builder.Services.AddSingleton<OdeService>();
 
         var app = builder.Build();
 
@@ -116,6 +118,89 @@ public static class Program
             return user is null ? Results.Unauthorized() : Results.Ok(EnginsCatalog.All);
         });
 
+        // ===== ADAGIO ODE =====
+
+        var ode = app.MapGroup("/api/ode");
+
+        ode.MapGet("/state", async (HttpContext context, DiscordOAuthService oauth, OdeService service) =>
+            await AuthenticateAsync(context, oauth) is null ? Results.Unauthorized() : Results.Ok(service.Snapshot()));
+
+        ode.MapGet("/journal", async (HttpContext context, DiscordOAuthService oauth, OdeService service, int? limit) =>
+            await AuthenticateAsync(context, oauth) is null ? Results.Unauthorized() : Results.Ok(service.Journal(limit ?? 500)));
+
+        ode.MapPost("/calls", async (HttpContext context, DiscordOAuthService oauth, OdeService service) =>
+        {
+            var user = await AuthenticateAsync(context, oauth);
+            if (user is null) return Results.Unauthorized();
+            return Results.Ok(await service.CreateCallAsync(user));
+        });
+
+        ode.MapGet("/calls/{id}", async (string id, HttpContext context, DiscordOAuthService oauth, OdeService service) =>
+        {
+            if (await AuthenticateAsync(context, oauth) is null) return Results.Unauthorized();
+            var call = service.GetCall(id);
+            return call is null ? Results.NotFound() : Results.Ok(call);
+        });
+
+        // ?status=Enregistré | Transmis : enregistrer la fiche et changer son statut.
+        ode.MapPut("/calls/{id}", async (string id, CallRecord call, string? status, HttpContext context, DiscordOAuthService oauth, OdeService service) =>
+        {
+            var user = await AuthenticateAsync(context, oauth);
+            if (user is null) return Results.Unauthorized();
+            call.Id = id;
+            return ToResult(await service.UpdateCallAsync(user, call, status));
+        });
+
+        ode.MapPost("/calls/{id}/events", async (string id, TextRequest request, HttpContext context, DiscordOAuthService oauth, OdeService service) =>
+        {
+            var user = await AuthenticateAsync(context, oauth);
+            return user is null ? Results.Unauthorized() : ToResult(await service.AddCallEventAsync(user, id, request.Text));
+        });
+
+        ode.MapPost("/calls/{id}/sans-suite", async (string id, SansSuiteRequest request, HttpContext context, DiscordOAuthService oauth, OdeService service) =>
+        {
+            var user = await AuthenticateAsync(context, oauth);
+            return user is null ? Results.Unauthorized() : ToResult(await service.CloseWithoutDepartureAsync(user, id, request.Procedure, request.Reason));
+        });
+
+        ode.MapPost("/calls/{id}/link", async (string id, LinkCallRequest request, HttpContext context, DiscordOAuthService oauth, OdeService service) =>
+        {
+            var user = await AuthenticateAsync(context, oauth);
+            return user is null ? Results.Unauthorized() : ToResult(await service.LinkCallAsync(user, id, request.InterventionId));
+        });
+
+        ode.MapPost("/interventions", async (CreateOdeRequest request, HttpContext context, DiscordOAuthService oauth, OdeService service) =>
+        {
+            var user = await AuthenticateAsync(context, oauth);
+            if (user is null) return Results.Unauthorized();
+            var (result, _) = await service.CreateOdeAsync(user, request);
+            return ToResult(result);
+        });
+
+        ode.MapPost("/interventions/{id}/status", async (string id, EnginStatusRequest request, HttpContext context, DiscordOAuthService oauth, OdeService service) =>
+        {
+            var user = await AuthenticateAsync(context, oauth);
+            return user is null ? Results.Unauthorized() : ToResult(await service.SetEnginStatusAsync(user, id, request.Nom, request.Status));
+        });
+
+        ode.MapPost("/interventions/{id}/messages", async (string id, TextRequest request, string? kind, HttpContext context, DiscordOAuthService oauth, OdeService service) =>
+        {
+            var user = await AuthenticateAsync(context, oauth);
+            return user is null ? Results.Unauthorized() : ToResult(await service.AddInterventionMessageAsync(user, id, request.Text, kind == "renfort" ? "renfort" : "message"));
+        });
+
+        ode.MapPost("/interventions/{id}/printed/{order:int}", async (string id, int order, HttpContext context, DiscordOAuthService oauth, OdeService service) =>
+        {
+            var user = await AuthenticateAsync(context, oauth);
+            return user is null ? Results.Unauthorized() : ToResult(await service.MarkPrintedAsync(user, id, order));
+        });
+
+        ode.MapPost("/interventions/{id}/close", async (string id, HttpContext context, DiscordOAuthService oauth, OdeService service) =>
+        {
+            var user = await AuthenticateAsync(context, oauth);
+            return user is null ? Results.Unauthorized() : ToResult(await service.CloseInterventionAsync(user, id));
+        });
+
         // ===== Intégrations serveur à serveur (clé ARGOS:AccessKey dans l'en-tête X-Argos-Key) =====
 
         // Notification de test, et base des futurs liens SIMCALL / eFIBI.
@@ -133,8 +218,31 @@ public static class Program
             return Results.Ok(new { sent });
         });
 
+        // SIMCALL : un opérateur décroche un appel au 18 → fiche d'appel créée et prise d'appel ouverte sur son poste.
+        app.MapPost("/api/integrations/simcall/answered", async (HttpContext context, SimcallCallAnswered message, OdeService service, DiscordOAuthService oauth) =>
+        {
+            if (!HasIntegrationKey(context, accessKey))
+                return Results.Unauthorized();
+            var user = oauth.FindKnownUser(message.DiscordUserId)
+                       ?? new ArgosUserDto(message.DiscordUserId, message.OperatorName, null, [AccessLevels.Sapeur]);
+            var call = await service.OnSimcallAnsweredAsync(message, user);
+            return Results.Ok(new { callId = call.Id });
+        });
+
+        // SIMCALL : fin de l'appel → la durée de l'appel est figée sur la fiche.
+        app.MapPost("/api/integrations/simcall/ended", async (HttpContext context, SimcallCallEnded message, OdeService service) =>
+        {
+            if (!HasIntegrationKey(context, accessKey))
+                return Results.Unauthorized();
+            await service.OnSimcallEndedAsync(message);
+            return Results.Ok();
+        });
+
         await app.RunAsync();
     }
+
+    private static IResult ToResult(OdeResult result)
+        => result.Ok ? Results.Ok(result) : Results.BadRequest(result);
 
     private static IResult Html(string html, int statusCode = 200)
         => Results.Content(html, "text/html; charset=utf-8", Encoding.UTF8, statusCode);

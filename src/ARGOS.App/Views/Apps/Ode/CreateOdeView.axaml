@@ -1,0 +1,139 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ode="clr-namespace:Argos.Views.Apps.Ode"
+             x:Class="Argos.Views.Apps.Ode.CreateOdeView"
+             Background="{StaticResource AdagioBack}"
+             FontFamily="{StaticResource AdagioFont}"
+             Foreground="Black">
+    <Grid RowDefinitions="Auto,*,Auto">
+        <!-- En-tête -->
+        <Border Background="#2B4F6E" Padding="14,8">
+            <Grid ColumnDefinitions="*,Auto">
+                <StackPanel>
+                    <TextBlock Text="{Binding Heading}" Foreground="White" FontSize="17" FontWeight="Bold"/>
+                    <TextBlock Text="{Binding Source}" Foreground="#C3D8E6" FontSize="12"/>
+                </StackPanel>
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                    <TextBlock Text="Procédure" Foreground="White" FontWeight="Bold" VerticalAlignment="Center"/>
+                    <ComboBox Classes="adg bold" Width="180" ItemsSource="{Binding ProcedureChoices}"
+                              SelectedItem="{Binding SelectedProcedure}">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock>
+                                    <Run Text="{Binding Key}"/>
+                                    <Run Text=" - "/>
+                                    <Run Text="{Binding Label}"/>
+                                </TextBlock>
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <Grid Grid.Row="1" ColumnDefinitions="*,330">
+            <!-- ===== Renseignements ===== -->
+            <ScrollViewer>
+                <StackPanel>
+                    <HeaderedContentControl Classes="group" Header="Nature et localisation" Margin="6,8,6,2">
+                        <Grid ColumnDefinitions="150,*,12,90,140" RowDefinitions="30,30,30,30,30" IsEnabled="{Binding IsNew}">
+                            <TextBlock Classes="lbl" Text="Motif du départ"/>
+                            <AutoCompleteBox Grid.Column="1" Grid.ColumnSpan="4" Classes="adg" Margin="0,3"
+                                             ItemsSource="{Binding NatureSuggestions}" Text="{Binding Nature}"
+                                             Watermark="Tape un code ou un mot (ex. 117, feu, malaise)"/>
+                            <TextBlock Grid.Row="1" Classes="lbl" Text="Adresse d'intervention"/>
+                            <TextBox Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="4" Classes="adg" Margin="0,3" Text="{Binding Address}"/>
+                            <TextBlock Grid.Row="2" Classes="lbl" Text="Commune / quartier"/>
+                            <TextBox Grid.Row="2" Grid.Column="1" Classes="adg" Margin="0,3" Text="{Binding Locality}"
+                                     Watermark="ex. L'ECHAT"/>
+                            <TextBlock Grid.Row="2" Grid.Column="3" Classes="lbl" Text="CSTC"/>
+                            <TextBox Grid.Row="2" Grid.Column="4" Classes="adg" Margin="0,3" Text="{Binding Cstc}"/>
+                            <TextBlock Grid.Row="3" Classes="lbl" Text="Bâtiment, étage, appt."/>
+                            <TextBox Grid.Row="3" Grid.Column="1" Classes="adg" Margin="0,3" Text="{Binding Building}"/>
+                            <TextBlock Grid.Row="3" Grid.Column="3" Classes="lbl" Text="Secteur"/>
+                            <TextBox Grid.Row="3" Grid.Column="4" Classes="adg" Margin="0,3" Text="{Binding Secteur}"/>
+                            <TextBlock Grid.Row="4" Classes="lbl" Text="Accès"/>
+                            <TextBox Grid.Row="4" Grid.Column="1" Grid.ColumnSpan="4" Classes="adg" Margin="0,3" Text="{Binding Access}"
+                                     Watermark="Digicode, portail, accès engins…"/>
+                        </Grid>
+                    </HeaderedContentControl>
+
+                    <HeaderedContentControl Classes="group" Header="Requérant">
+                        <Grid ColumnDefinitions="150,*" RowDefinitions="30,Auto" IsEnabled="{Binding IsNew}">
+                            <TextBlock Classes="lbl" Text="Numéro requérant"/>
+                            <TextBox Grid.Column="1" Classes="adg" Margin="0,3" Text="{Binding CallerPhone}"/>
+                            <TextBlock Grid.Row="1" Classes="lbl" Text="Informations requérants" VerticalAlignment="Top" Margin="0,8,0,0"/>
+                            <TextBox Grid.Row="1" Grid.Column="1" Classes="adg yellow" Margin="0,3" MinHeight="60"
+                                     AcceptsReturn="True" TextWrapping="Wrap" VerticalContentAlignment="Top" Text="{Binding CallerInfo}"/>
+                        </Grid>
+                    </HeaderedContentControl>
+
+                    <HeaderedContentControl Classes="group" Header="Consignes chef d'agrès">
+                        <TextBox Classes="adg yellow" MinHeight="70" AcceptsReturn="True" TextWrapping="Wrap"
+                                 VerticalContentAlignment="Top" Text="{Binding Consignes}" Margin="0,4,0,0"/>
+                    </HeaderedContentControl>
+                </StackPanel>
+            </ScrollViewer>
+
+            <!-- ===== Moyens ===== -->
+            <Grid Grid.Column="1" RowDefinitions="Auto,*" Margin="0,8,6,0">
+                <HeaderedContentControl Classes="group" Header="Premier départ" Margin="0,0,0,2">
+                    <ComboBox Classes="adg bold" Margin="0,6,0,2" ItemsSource="{Binding AvailableEngins}"
+                              SelectedItem="{Binding FirstEngin}" PlaceholderText="Engin à engager">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock>
+                                    <Run Text="{Binding Nom}" FontWeight="Bold"/>
+                                    <Run Text=" · "/>
+                                    <Run Text="{Binding Libelle}" FontWeight="Normal" FontSize="11"/>
+                                </TextBlock>
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                </HeaderedContentControl>
+                <HeaderedContentControl Grid.Row="1" Classes="group" Header="Engins complémentaires" Margin="0">
+                    <ScrollViewer>
+                        <ItemsControl ItemsSource="{Binding AllEngins}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <CheckBox IsChecked="{Binding IsSelected}" IsEnabled="{Binding IsAvailable}" Margin="0,1">
+                                        <StackPanel>
+                                            <TextBlock Text="{Binding Nom}" FontWeight="Bold" FontSize="12"/>
+                                            <TextBlock Text="{Binding Status}" FontSize="11" Foreground="#355C8C"/>
+                                        </StackPanel>
+                                    </CheckBox>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+                </HeaderedContentControl>
+            </Grid>
+        </Grid>
+
+        <!-- ===== Actions ===== -->
+        <Border Grid.Row="2" Background="#9DBBD0" Padding="10,8">
+            <Grid ColumnDefinitions="*,Auto">
+                <TextBlock Text="{Binding Error}" IsVisible="{Binding HasError}" Foreground="#A00000"
+                           FontWeight="Bold" VerticalAlignment="Center" TextWrapping="Wrap"/>
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                    <Button Classes="adg" Content="Annuler" Command="{Binding CancelCommand}"/>
+                    <Button Classes="adg" Content="Prévisualiser" Command="{Binding PreviewCommand}"/>
+                    <Button Classes="adg primary" Content="Valider l'ordre de départ" Command="{Binding ValidateCommand}"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- ===== Prévisualisation ===== -->
+        <Border Grid.RowSpan="3" Background="#99000000" IsVisible="{Binding PreviewVisible}">
+            <Grid RowDefinitions="*,Auto" Margin="20">
+                <ScrollViewer HorizontalScrollBarVisibility="Auto">
+                    <LayoutTransformControl HorizontalAlignment="Center" LayoutTransform="scale(0.85)">
+                        <ode:OdeDocumentView DataContext="{Binding Preview}"/>
+                    </LayoutTransformControl>
+                </ScrollViewer>
+                <Button Grid.Row="1" Classes="adg" Content="Fermer l'aperçu" HorizontalAlignment="Center"
+                        Margin="0,10,0,0" Command="{Binding ClosePreviewCommand}"/>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>

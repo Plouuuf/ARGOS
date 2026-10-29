@@ -28,6 +28,10 @@ public sealed class DiscordOAuthService(
 
     public DiscordOAuthOptions Options => options.CurrentValue;
 
+    /// <summary>Dernier profil connu d'un compte Discord (s'il s'est déjà connecté à ARGOS depuis le démarrage du serveur).</summary>
+    public ArgosUserDto? FindKnownUser(string userId)
+        => _users.TryGetValue(userId, out var user) ? user : null;
+
     public bool IsConfigured =>
         !string.IsNullOrWhiteSpace(Options.ClientId) &&
         !string.IsNullOrWhiteSpace(Options.ClientSecret) &&

@@ -1,0 +1,257 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="Argos.Views.Apps.Ode.PriseAppelView"
+             Background="{StaticResource AdagioBack}"
+             FontFamily="{StaticResource AdagioFont}"
+             Foreground="Black"
+             Focusable="True">
+    <!--
+        Réplique de la fenêtre « Prise d'appel - v1.8.0 » (ADAGIO, capture vLife) :
+        menu, Informations téléphoniques, Localisation de l'événement, Adresse de l'alerte,
+        Motif de l'appel, touches F1 à F9, barre d'état.
+    -->
+    <Grid RowDefinitions="Auto,Auto,Auto,Auto,*,58,Auto">
+
+        <!-- ===== Menu ===== -->
+        <Menu Grid.Row="0" Classes="adg">
+            <MenuItem Header="Aide">
+                <MenuItem Header="À propos de la prise d'appel" Command="{Binding AboutCommand}"/>
+            </MenuItem>
+            <MenuItem Header="Demande prise d'appel">
+                <MenuItem Header="Nouvelle prise d'appel" Command="{Binding NewCallCommand}"/>
+                <MenuItem Header="Enregistrer la fiche" Command="{Binding SaveCommand}"/>
+                <MenuItem Header="Transmettre pour traitement" Command="{Binding TransmitCommand}"/>
+                <Separator/>
+                <MenuItem Header="Fermer" Command="{Binding CloseCommand}"/>
+            </MenuItem>
+            <MenuItem Header="Options">
+                <MenuItem Header="Main courante de l'appel" Command="{Binding ShowLogCommand}"/>
+                <MenuItem Header="Ouvrir l'intervention" Command="{Binding OpenInterventionCommand}"/>
+            </MenuItem>
+        </Menu>
+
+        <!-- ===== Informations téléphoniques ===== -->
+        <HeaderedContentControl Grid.Row="1" Classes="group" Header="Informations téléphoniques" Margin="6,6,6,2">
+            <Grid ColumnDefinitions="40,190,*,24,100,0.85*,24,150,*" RowDefinitions="32,32,32">
+                <TextBlock Grid.Column="1" Classes="lbl" Text="Identifiant décroché"/>
+                <Border Grid.Column="2" Classes="val" Margin="0,4">
+                    <TextBlock Text="{Binding DecrocheText}"/>
+                </Border>
+                <TextBlock Grid.Column="4" Classes="lbl" Text="Opérateur"/>
+                <Border Grid.Column="5" Classes="val" Margin="0,4">
+                    <TextBlock Text="{Binding OperatorName}"/>
+                </Border>
+                <TextBlock Grid.Column="7" Classes="lbl" Text="Numéro du requérant"/>
+                <TextBox Grid.Column="8" Classes="adg" Margin="0,4" Text="{Binding CallerPhone}" IsReadOnly="{Binding IsClosed}"/>
+
+                <TextBlock Grid.Row="1" Grid.Column="1" Classes="lbl" Text="Groupe horaire du décroché"/>
+                <Border Grid.Row="1" Grid.Column="2" Classes="val" Margin="0,4">
+                    <TextBlock Text="{Binding GroupeHoraire}"/>
+                </Border>
+                <TextBlock Grid.Row="1" Grid.Column="4" Classes="lbl" Text="Poste"/>
+                <Border Grid.Row="1" Grid.Column="5" Classes="val" Margin="0,4">
+                    <TextBlock Text="{Binding Poste}"/>
+                </Border>
+                <TextBlock Grid.Row="1" Grid.Column="7" Classes="lbl" Text="Numéro de l'impliqué"/>
+                <TextBox Grid.Row="1" Grid.Column="8" Classes="adg" Margin="0,4" Text="{Binding ImplicatedPhone}" IsReadOnly="{Binding IsClosed}"/>
+
+                <TextBlock Grid.Row="2" Grid.Column="1" Classes="lbl" Text="Durée de l'appel"/>
+                <Border Grid.Row="2" Grid.Column="2" Classes="val" Classes.green="{Binding IsRunning}" Margin="0,4">
+                    <TextBlock Text="{Binding DurationText}"/>
+                </Border>
+                <TextBlock Grid.Row="2" Grid.Column="7" Classes="lbl" Text="Origine de l'appel"/>
+                <ComboBox Grid.Row="2" Grid.Column="8" Classes="adg" Margin="0,4"
+                          ItemsSource="{Binding Origins}" SelectedItem="{Binding Origin}" IsEnabled="{Binding IsEditable}"/>
+            </Grid>
+        </HeaderedContentControl>
+
+        <!-- ===== Localisation de l'événement ===== -->
+        <HeaderedContentControl Grid.Row="2" Classes="group" Header="Localisation de l'événement">
+            <Grid ColumnDefinitions="115,8,140,8,80,8,*,8,Auto" RowDefinitions="Auto,Auto">
+                <TextBlock Grid.Column="0" Classes="cap" Text="MODE"/>
+                <TextBlock Grid.Column="2" Classes="cap" Text="RESEAU"/>
+                <TextBlock Grid.Column="4" Classes="cap" Text="NUMERO"/>
+                <TextBlock Grid.Column="6" Classes="cap" Text="VOIE - SITE - COMMUNE"/>
+
+                <ComboBox Grid.Row="1" Grid.Column="0" Classes="adg bold" ItemsSource="{Binding Modes}"
+                          SelectedItem="{Binding Mode}" IsEnabled="{Binding IsEditable}"/>
+                <ComboBox Grid.Row="1" Grid.Column="2" Classes="adg bold" ItemsSource="{Binding Networks}"
+                          SelectedItem="{Binding Network}" IsEnabled="{Binding IsEditable}"/>
+                <TextBox Grid.Row="1" Grid.Column="4" Classes="adg" Text="{Binding StreetNumber}" IsReadOnly="{Binding IsClosed}"/>
+                <Grid Grid.Row="1" Grid.Column="6" ColumnDefinitions="*,24">
+                    <AutoCompleteBox Name="StreetBox" Grid.ColumnSpan="2" Classes="adg"
+                                     ItemsSource="{Binding StreetSuggestions}" Text="{Binding Street}"
+                                     IsEnabled="{Binding IsEditable}"
+                                     Watermark="Cliquez sur la flèche à droite pour ce champ"/>
+                    <Button Name="StreetArrow" Grid.Column="1" Classes="flat" Background="Transparent"
+                            IsEnabled="{Binding IsEditable}">
+                        <Path Data="{StaticResource AdagioArrow}" Fill="Black" Width="10" Height="6"/>
+                    </Button>
+                </Grid>
+                <Button Grid.RowSpan="2" Grid.Column="8" Classes="flat confirm" VerticalAlignment="Bottom"
+                        Command="{Binding ConfirmLocationCommand}">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <Panel Width="28" Height="28">
+                            <Ellipse Fill="#2BA84A"/>
+                            <Path Data="{StaticResource AdagioCheck}" Fill="White" Stretch="Uniform" Margin="6"/>
+                        </Panel>
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock Text="CONFIRMER" FontSize="11" FontWeight="Bold" Foreground="Black"/>
+                            <TextBlock Text="LOCALISATION" FontSize="11" FontWeight="Bold" Foreground="Black"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Button>
+            </Grid>
+        </HeaderedContentControl>
+
+        <!-- ===== Adresse de l'alerte ===== -->
+        <HeaderedContentControl Grid.Row="3" Classes="group" Header="Adresse de l'alerte">
+            <Grid ColumnDefinitions="50,110,8,330,*" RowDefinitions="32,32">
+                <TextBlock Classes="lbl" Text="CSTC" FontWeight="Normal"/>
+                <TextBox Grid.Column="1" Classes="adg" Margin="0,4" Text="{Binding Cstc}" IsReadOnly="{Binding IsClosed}"/>
+                <TextBox Grid.Column="3" Grid.ColumnSpan="2" Classes="adg" Margin="0,4"
+                         Text="{Binding AlertAddress}" IsReadOnly="{Binding IsClosed}"/>
+                <TextBlock Grid.Row="1" Grid.ColumnSpan="2" Classes="lbl" Text="Observations :"
+                           HorizontalAlignment="Right" Margin="0,0,8,0"/>
+                <TextBox Grid.Row="1" Grid.Column="3" Classes="adg" Margin="0,4"
+                         Text="{Binding Observations}" IsReadOnly="{Binding IsClosed}"/>
+            </Grid>
+        </HeaderedContentControl>
+
+        <!-- ===== Motif de l'appel ===== -->
+        <HeaderedContentControl Grid.Row="4" Classes="group" Header="Motif de l'appel">
+            <Grid RowDefinitions="Auto,*" ColumnDefinitions="Auto,*">
+                <TextBlock Classes="lbl" Text="Motif de l'alerte" VerticalAlignment="Top" Margin="0,6,10,0"/>
+                <Grid Grid.Column="1" ColumnDefinitions="*,26">
+                    <AutoCompleteBox Name="MotifBox" Grid.ColumnSpan="2" Classes="adg big" MinHeight="32"
+                                     ItemsSource="{Binding MotifSuggestions}" Text="{Binding Motif}"
+                                     IsEnabled="{Binding IsEditable}"
+                                     Watermark="Cliquez sur la flèche à droite pour ce champ"/>
+                    <Button Name="MotifArrow" Grid.Column="1" Classes="flat" Background="Transparent"
+                            IsEnabled="{Binding IsEditable}">
+                        <Path Data="{StaticResource AdagioArrow}" Fill="Black" Width="10" Height="6"/>
+                    </Button>
+                </Grid>
+                <TextBox Grid.Row="1" Grid.ColumnSpan="2" Classes="adg yellow" Margin="0,8,0,0"
+                         AcceptsReturn="True" TextWrapping="Wrap" VerticalContentAlignment="Top"
+                         Text="{Binding Reason}" IsReadOnly="{Binding IsClosed}"/>
+            </Grid>
+        </HeaderedContentControl>
+
+        <!-- ===== Touches F1 à F9 ===== -->
+        <UniformGrid Grid.Row="5" Columns="9" Margin="6,4,6,4">
+            <Button Classes="flat fkey" Background="#FFFFFF" Command="{Binding FKeyCommand}" CommandParameter="F1">
+                <TextBlock TextAlignment="Center" LineHeight="21">F1<LineBreak/>BLANCHE</TextBlock>
+            </Button>
+            <Button Classes="flat fkey" Background="#EF8733" Command="{Binding FKeyCommand}" CommandParameter="F2">
+                <TextBlock TextAlignment="Center" LineHeight="21">F2<LineBreak/>ORANGE</TextBlock>
+            </Button>
+            <Button Classes="flat fkey" Background="#EA3323" Command="{Binding FKeyCommand}" CommandParameter="F3">
+                <TextBlock TextAlignment="Center" LineHeight="21">F3<LineBreak/>ROUGE</TextBlock>
+            </Button>
+            <Button Classes="flat fkey" Background="#F7CEA0" Command="{Binding FKeyCommand}" CommandParameter="F4">
+                <TextBlock TextAlignment="Center" LineHeight="21">F4<LineBreak/>EXERCICE</TextBlock>
+            </Button>
+            <Button Classes="flat fkey" Background="#3376D0" Command="{Binding FKeyCommand}" CommandParameter="F5">
+                <TextBlock TextAlignment="Center" LineHeight="21">F5<LineBreak/>INU</TextBlock>
+            </Button>
+            <Button Classes="flat fkey" Background="#A3F3A2" Command="{Binding FKeyCommand}" CommandParameter="F6">
+                <TextBlock TextAlignment="Center" LineHeight="21">F6<LineBreak/>VERTE</TextBlock>
+            </Button>
+            <Button Classes="flat fkey" Background="#7F4DBD" Command="{Binding FKeyCommand}" CommandParameter="F7">
+                <TextBlock TextAlignment="Center" LineHeight="21">F7<LineBreak/>HMB</TextBlock>
+            </Button>
+            <Button Classes="flat fkey" Background="#EF8ACD" Command="{Binding FKeyCommand}" CommandParameter="F8">
+                <TextBlock TextAlignment="Center" LineHeight="21">F8<LineBreak/>RETARD</TextBlock>
+            </Button>
+            <Button Classes="flat fkey" Background="#666666" Command="{Binding FKeyCommand}" CommandParameter="F9">
+                <TextBlock TextAlignment="Center" FontSize="13.5" LineHeight="19">F9 ADRESSE<LineBreak/>INEXISTANTE</TextBlock>
+            </Button>
+        </UniformGrid>
+
+        <!-- ===== Barre d'état ===== -->
+        <Border Grid.Row="6" Background="White" Height="24">
+            <Grid ColumnDefinitions="40,190,90,170,90,*" TextElement.FontSize="12" TextElement.FontWeight="Bold">
+                <TextBlock Grid.Column="1" Text="{Binding StatusDate}" VerticalAlignment="Center"/>
+                <TextBlock Grid.Column="2" Text="{Binding StatusTime}" VerticalAlignment="Center"/>
+                <TextBlock Grid.Column="3" Text="{Binding StatusOperator}" VerticalAlignment="Center"/>
+                <TextBlock Grid.Column="4" Text="v1.8.0" VerticalAlignment="Center"/>
+                <TextBlock Grid.Column="5" Text="{Binding Platform}" VerticalAlignment="Center"/>
+            </Grid>
+        </Border>
+
+        <!-- ===== Bandeaux (appel clos, messages) ===== -->
+        <StackPanel Grid.Row="0" Grid.RowSpan="7" VerticalAlignment="Top" HorizontalAlignment="Right"
+                    Margin="0,30,12,0" Spacing="6" MaxWidth="520">
+            <Border Background="#2C6FB7" Padding="10,6" IsVisible="{Binding IsClosed}" CornerRadius="2">
+                <StackPanel Orientation="Horizontal" Spacing="10">
+                    <TextBlock Text="{Binding ClosedBanner}" Foreground="White" FontWeight="Bold" FontSize="12"
+                               TextWrapping="Wrap" VerticalAlignment="Center" MaxWidth="360"/>
+                    <Button Classes="adg" Content="Voir l'intervention" Padding="8,3"
+                            Command="{Binding OpenInterventionCommand}" IsVisible="{Binding HasIntervention}"/>
+                </StackPanel>
+            </Border>
+            <Border Padding="10,6" IsVisible="{Binding HasMessage}" CornerRadius="2"
+                    Background="#2E7D32" Classes.error="{Binding MessageIsError}">
+                <Border.Styles>
+                    <Style Selector="Border.error">
+                        <Setter Property="Background" Value="#C62828"/>
+                    </Style>
+                </Border.Styles>
+                <TextBlock Text="{Binding Message}" Foreground="White" FontWeight="Bold" FontSize="12" TextWrapping="Wrap"/>
+            </Border>
+        </StackPanel>
+
+        <!-- ===== Main courante de l'appel (Options) ===== -->
+        <Border Grid.Row="1" Grid.RowSpan="5" IsVisible="{Binding LogVisible}" Width="420"
+                HorizontalAlignment="Right" Margin="0,6,6,0" Background="#E9F0F5"
+                BorderBrush="#5D86A6" BorderThickness="2" BoxShadow="0 4 16 0 #55000000">
+            <DockPanel Margin="10">
+                <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto" Margin="0,0,0,8">
+                    <TextBlock Text="Main courante de l'appel" FontWeight="Bold" FontSize="15"/>
+                    <Button Grid.Column="1" Classes="adg" Content="Fermer" Padding="8,2" Command="{Binding ShowLogCommand}"/>
+                </Grid>
+                <Grid DockPanel.Dock="Bottom" ColumnDefinitions="*,Auto" Margin="0,8,0,0">
+                    <TextBox Classes="adg" Text="{Binding LogText}" Watermark="Nouveau renseignement…"
+                             AcceptsReturn="True" TextWrapping="Wrap" MinHeight="44"/>
+                    <Button Grid.Column="1" Classes="adg primary" Content="Ajouter" Margin="6,0,0,0"
+                            VerticalAlignment="Bottom" Command="{Binding AddLogCommand}"/>
+                </Grid>
+                <ScrollViewer>
+                    <ItemsControl ItemsSource="{Binding Events}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border BorderBrush="#C3D4E1" BorderThickness="0,0,0,1" Padding="0,5">
+                                    <StackPanel Spacing="2">
+                                        <StackPanel Orientation="Horizontal" Spacing="8">
+                                            <TextBlock Text="{Binding LocalAt, StringFormat='{}{0:dd/MM HH:mm:ss}'}"
+                                                       FontWeight="Bold" FontSize="11"/>
+                                            <TextBlock Text="{Binding Author}" FontSize="11" Foreground="#355C8C"/>
+                                        </StackPanel>
+                                        <TextBlock Text="{Binding Text}" FontSize="12" TextWrapping="Wrap"/>
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </DockPanel>
+        </Border>
+
+        <!-- ===== Demande de motif (F5, F9) ===== -->
+        <Border Grid.RowSpan="7" Background="#66000000" IsVisible="{Binding PromptVisible}">
+            <Border Background="{StaticResource AdagioBack}" BorderBrush="White" BorderThickness="2.5" CornerRadius="6"
+                    Width="520" Padding="18" HorizontalAlignment="Center" VerticalAlignment="Center">
+                <StackPanel Spacing="10">
+                    <TextBlock Text="{Binding PromptTitle}" FontWeight="Bold" FontSize="15" TextWrapping="Wrap"/>
+                    <TextBlock Classes="lbl" Text="Motif du classement"/>
+                    <TextBox Classes="adg" Text="{Binding PromptText}" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="60"/>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
+                        <Button Classes="adg" Content="Annuler" Command="{Binding PromptCancelCommand}"/>
+                        <Button Classes="adg primary" Content="Clore l'appel" Command="{Binding PromptOkCommand}"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+        </Border>
+    </Grid>
+</UserControl>

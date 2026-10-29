@@ -1,6 +1,5 @@
 using System.ComponentModel;
 using Argos.ViewModels;
-using Argos.Views.Apps;
 using Avalonia.Controls;
 
 namespace Argos.Views;
@@ -34,5 +33,5 @@ public partial class MobileHomeView : UserControl
     }
 
     private void UpdateBody()
-        => MobileBody.Content = _vm?.MobileApp is { } app ? AppContentFactory.Create(app) : null;
+        => MobileBody.Content = _vm?.MobileApp is { } page ? page.CreateContent() : null;
 }

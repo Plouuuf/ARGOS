@@ -22,4 +22,10 @@ public static class RealtimeTypes
 
     /// <summary>Notification à afficher (coin de l'écran sur ordinateur, bandeau sur téléphone).</summary>
     public const string Notify = "notify";
+
+    /// <summary>Les données d'ADAGIO ODE ont changé : les postes rechargent l'état (Text = raison).</summary>
+    public const string OdeChanged = "ode-changed";
+
+    /// <summary>Ouvrir la prise d'appel de l'appel indiqué (Text = identifiant), au décroché d'un 18.</summary>
+    public const string OpenCall = "open-call";
 }
