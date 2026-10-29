@@ -105,7 +105,7 @@
                         <ComboBox Grid.Row="1" Classes="adg bold" ItemsSource="{Binding Availabilities}" SelectedItem="{Binding Availability}"
                                   HorizontalAlignment="Stretch" IsEnabled="{Binding CanEdit}"/>
                         <TextBox Grid.Row="1" Grid.Column="2" Classes="adg" Text="{Binding AvailabilityReason}" IsReadOnly="{Binding IsReadOnly}"/>
-                        <CalendarDatePicker Grid.Row="1" Grid.Column="4" SelectedDate="{Binding NextRevision}" HorizontalAlignment="Stretch"
+                        <CalendarDatePicker SelectedDateFormat="Custom" CustomDateFormatString="dd/MM/yyyy" Watermark="jj/mm/aaaa" Grid.Row="1" Grid.Column="4" SelectedDate="{Binding NextRevision}" HorizontalAlignment="Stretch"
                                             IsEnabled="{Binding CanEdit}" Background="{StaticResource AdagioField}"/>
                         <StackPanel Grid.Row="2" Grid.ColumnSpan="5" Orientation="Horizontal" Spacing="16" Margin="0,6,0,0">
                             <CheckBox Content="Engin au parc (décocher pour le retirer de l'ODE)" IsChecked="{Binding Active}"

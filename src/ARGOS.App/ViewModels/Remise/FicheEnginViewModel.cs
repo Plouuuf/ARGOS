@@ -215,7 +215,7 @@ public sealed class FicheEnginViewModel : ViewModelBase, IDisposable
             Fill(Verifications, snapshot.Verifications.Where(v => string.Equals(v.Engin, _nom, StringComparison.OrdinalIgnoreCase))
                 .OrderByDescending(v => v.At).Take(15)
                 .Select(v => new VerificationRow(OdeFormat.Short(v.At), v.Engin, v.By,
-                    v.Conforme ? "Conforme" : $"{v.Missing} absent(s), {v.Defective} défectueux", v.Conforme, v.Observations)));
+                    RemiseText.Result(v), v.Conforme, v.Observations)));
             OnPropertyChanged(nameof(HasAnomalies));
         }
 

@@ -227,7 +227,7 @@
                                     <TextBlock Text="17e CIE" FontSize="23" FontWeight="Bold" HorizontalAlignment="Right" Margin="0,2,4,2"/>
                                 </Border>
                                 <Border Margin="8,0,8,8" Background="#6D9EEB" Padding="0,6">
-                                    <TextBlock Text="{Binding CentreTitle}" FontSize="23" FontWeight="Bold" HorizontalAlignment="Right" Margin="0,0,6,0"/>
+                                    <TextBlock Text="{Binding CentreShort}" FontSize="23" FontWeight="Bold" HorizontalAlignment="Right" Margin="0,0,6,0"/>
                                 </Border>
                             </StackPanel>
                         </Border>
@@ -536,7 +536,7 @@
                                 <TextBlock Classes="cap" Text="RÉPARATION EFFECTUÉE"/>
                                 <TextBox Classes="adg" Text="{Binding RepairText}" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="44"/>
                                 <TextBlock Classes="cap" Text="PROCHAINE RÉVISION (facultatif)"/>
-                                <CalendarDatePicker SelectedDate="{Binding RepairNextRevision}" HorizontalAlignment="Stretch"
+                                <CalendarDatePicker SelectedDateFormat="Custom" CustomDateFormatString="dd/MM/yyyy" Watermark="jj/mm/aaaa" SelectedDate="{Binding RepairNextRevision}" HorizontalAlignment="Stretch"
                                                     Background="{StaticResource AdagioField}"/>
                                 <Button Classes="adg" Content="Enregistrer la réparation" HorizontalAlignment="Stretch"
                                         Command="{Binding AddRepairCommand}"/>

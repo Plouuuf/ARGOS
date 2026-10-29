@@ -178,6 +178,7 @@ public sealed class RemiseAppViewModel : ViewModelBase, IDisposable
         [Tous, EnginStatuses.Disponible, Engage, EnginStatuses.Indisponible, EnginStatuses.Maintenance];
     public ObservableCollection<EnginTile> Tiles { get; } = [];
     public string CentreTitle => CentreFilter == Tous ? "TOUS CENTRES" : CentreFilter;
+    public string CentreShort => CentreFilter == Tous ? "TOUS" : CentreFilter;
     public string ParcCount => $"{Tiles.Count} engin(s)";
 
     // ===== Inventaire =====
@@ -393,6 +394,7 @@ public sealed class RemiseAppViewModel : ViewModelBase, IDisposable
         Fill(Tiles, tiles);
         OnPropertyChanged(nameof(ParcCount));
         OnPropertyChanged(nameof(CentreTitle));
+        OnPropertyChanged(nameof(CentreShort));
     }
 
     private EnginTile TileOf(FleetEngin e)
@@ -440,7 +442,7 @@ public sealed class RemiseAppViewModel : ViewModelBase, IDisposable
     private void BuildVerifications()
         => Fill(Verifications, Remise.Verifications.OrderByDescending(v => v.At).Take(100).Select(v => new VerificationRow(
             OdeFormat.Short(v.At), v.Engin, v.By,
-            v.Conforme ? "Conforme" : $"{v.Missing} absent(s), {v.Defective} défectueux",
+            RemiseText.Result(v),
             v.Conforme,
             string.Join(" ; ", v.Lines.Where(l => l.Result != CheckResults.Present || l.Counted < l.Required)
                 .Select(l => $"{l.Name} : {l.Result.ToLowerInvariant()} {l.Counted}/{l.Required}")

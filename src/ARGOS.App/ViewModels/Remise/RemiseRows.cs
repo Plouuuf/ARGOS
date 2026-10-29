@@ -25,6 +25,21 @@ public static class RemiseColors
     };
 }
 
+public static class RemiseText
+{
+    /// <summary>« Conforme » ou « 1 absent, 1 incomplet ».</summary>
+    public static string Result(Verification v)
+    {
+        if (v.Conforme) return "Conforme";
+        var parts = new List<string>();
+        if (v.Missing > 0) parts.Add($"{v.Missing} absent(s)");
+        if (v.Defective > 0) parts.Add($"{v.Defective} défectueux");
+        var incomplete = v.Lines.Count(l => l.Result == CheckResults.Present && l.Counted < l.Required);
+        if (incomplete > 0) parts.Add($"{incomplete} incomplet(s)");
+        return string.Join(", ", parts);
+    }
+}
+
 /// <summary>Vignette d'engin, comme sur la feuille GDM (photo, indicatif / immatriculation, type, rang, centre, statut).</summary>
 public sealed record EnginTile(
     string Nom,
