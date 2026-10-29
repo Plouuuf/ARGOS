@@ -8,9 +8,9 @@
     1. reprend l'application Discord de SIMCALL (Client ID, secret, serveur Discord)
        depuis C:\SIMCALL\Server\appsettings.json ;
     2. crée appsettings.Local.json (clé du serveur générée une fois, puis conservée) ;
-    3. ouvre le port 8090 dans le pare-feu Windows ;
+    3. ouvre le port 8091 dans le pare-feu Windows ;
     4. installe une tâche planifiée qui démarre ARGOS au démarrage du VPS et le relance s'il s'arrête ;
-    5. démarre ARGOS et vérifie http://127.0.0.1:8090/health ;
+    5. démarre ARGOS et vérifie http://127.0.0.1:8091/health ;
     6. relie SIMCALL à ARGOS (section Argos de C:\SIMCALL\Server\appsettings.json) : au décroché
        d'un 18, la prise d'appel s'ouvre sur le poste ARGOS de l'opérateur (nécessite SIMCALL 0.7.2 ou plus).
 
@@ -23,8 +23,8 @@ param(
     [string]$OperateurRoleIds = "1560234256226193528",
     [string]$EncadrementRoleIds = "",
     [string]$AdministrationRoleIds = "",
-    [string]$PublicBaseUrl = "http://46.105.78.32:8090",
-    [int]$Port = 8090
+    [string]$PublicBaseUrl = "http://46.105.78.32:8091",
+    [int]$Port = 8091
 )
 
 $ErrorActionPreference = "Stop"
@@ -47,6 +47,15 @@ if (-not $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administra
 if (-not (Test-Path $Exe)) { throw "ARGOS.Server.exe introuvable dans $Root. Place ce script dans le dossier du serveur ARGOS." }
 
 Write-Host "Installation du serveur ARGOS dans $Root" -ForegroundColor White
+
+# Le port doit être libre (ou déjà tenu par ARGOS lui-même).
+$listener = Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue | Select-Object -First 1
+if ($listener) {
+    $owner = Get-Process -Id $listener.OwningProcess -ErrorAction SilentlyContinue
+    if ($owner -and $owner.ProcessName -ne "ARGOS.Server") {
+        throw "Le port $Port est déjà utilisé par « $($owner.ProcessName) ». Relance avec un autre port, ex. : INSTALLER-ARGOS.cmd -Port 8092 -PublicBaseUrl http://46.105.78.32:8092"
+    }
+}
 
 # --- 1. Discord (repris de SIMCALL) ---
 Step "Application Discord"

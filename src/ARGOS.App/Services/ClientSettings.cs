@@ -11,7 +11,7 @@ public sealed class ClientSettings
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web) { PropertyNameCaseInsensitive = true };
     private static ClientSettings? _current;
 
-    public string ServerUrl { get; set; } = "http://127.0.0.1:8090";
+    public string ServerUrl { get; set; } = "http://127.0.0.1:8091";
 
     public static ClientSettings Current => _current ??= Load();
 
