@@ -374,7 +374,7 @@ public class SigtaoScreenshots
                 [
                     new FeuilleGarde
                     {
-                        Id = FeuilleGarde.BuildId(DateTime.Today.ToString("yyyy-MM-dd"), "CRET"), Date = DateTime.Today.ToString("yyyy-MM-dd"), Centre = "CRET",
+                        Id = FeuilleGarde.BuildId(DateTime.Today.ToString("yyyy-MM-dd"), FeuilleGarde.TousCentres), Date = DateTime.Today.ToString("yyyy-MM-dd"), Centre = FeuilleGarde.TousCentres,
                         Statut = GardeStatuts.Validee, ValidatedBy = "Leroy", ValidatedAt = now, UpdatedBy = "Leroy", UpdatedAt = now,
                         Service = [new GardeAffectation { Poste = GardePostes.ChefDeGarde, MilitaryId = "m3", Nom = "CNE LEROY Marc" }],
                         Engins =

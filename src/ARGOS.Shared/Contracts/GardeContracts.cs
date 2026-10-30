@@ -102,6 +102,20 @@ public sealed class FeuilleGarde
 
     public static string BuildId(string date, string centre) => $"{date}-{centre.Trim().ToUpperInvariant()}";
 
+    /// <summary>FiveM : une seule feuille par jour pour tous les centres (tous les engins ensemble).</summary>
+    public const string TousCentres = "TOUS";
+
+    /// <summary>« CRET · MALF · MASS » d'après les engins de la feuille (ou le centre seul).</summary>
+    public string CentresLabel
+    {
+        get
+        {
+            if (Centre != TousCentres) return Centre;
+            var centres = Engins.Select(e => e.Engin.Trim().Split(' ').LastOrDefault() ?? string.Empty).Where(c => c.Length > 0).Distinct().ToList();
+            return centres.Count == 0 ? "tous les centres" : string.Join(" · ", centres);
+        }
+    }
+
     /// <summary>Toutes les affectations pourvues de la feuille (service, engins, réserve).</summary>
     public IEnumerable<(GardeAffectation Affectation, string? Engin)> Affectations()
     {

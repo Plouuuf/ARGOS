@@ -27,7 +27,7 @@ public sealed class GardePrintViewModel : ViewModelBase
         var text = day.ToString("dddd d MMMM yyyy", fr);
         DateText = char.ToUpper(text[0], fr) + text[1..];
         DateShort = day.ToString("dd/MM/yyyy");
-        Centre = feuille.Centre;
+        Centre = feuille.CentresLabel;
         Horaires = feuille.Horaires;
         Service = feuille.Service.Select(a => new GardePrintLine(a.Poste, a.Pourvu ? a.Nom : "—")).ToList();
         Engins = feuille.Engins.Select(e => new GardePrintEngin(
@@ -85,7 +85,7 @@ public sealed class GardePrintViewModel : ViewModelBase
             var result = await session.Api.SendAsync(HttpMethod.Post, "api/printer/submit", new PrintDocumentRequest
             {
                 Kind = "Feuille de garde",
-                Title = $"Feuille de garde {Centre} du {DateShort}",
+                Title = $"Feuille de garde du {DateShort}",
                 ImagePng = image,
                 GardeId = _feuille.Id
             });
@@ -101,7 +101,7 @@ public sealed class GardePrintViewModel : ViewModelBase
                 _ => string.Empty
             };
             Status = $"Envoyé à l'imprimante du CS à {DateTime.Now:HH:mm:ss} (copie dans Mes documents › Impressions).{discord}";
-            _desktop.ShowNotification("Imprimante", $"Feuille de garde {Centre} du {DateShort} imprimée.{discord}");
+            _desktop.ShowNotification("Imprimante", $"Feuille de garde du {DateShort} imprimée.{discord}");
             _ = session.Printer.RefreshAsync();
         }
         finally

@@ -11,7 +11,7 @@
                 </StackPanel>
                 <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Top">
                     <Button Classes="sg light" Content="M'inscrire en renfort" Command="{Binding GardeSelfReserveCommand}" IsVisible="{Binding CanSelfReserve}"
-                            ToolTip.Tip="S'inscrire sur la garde de ce centre (le tien ou un autre CS). Pour un poste précis : bouton « Moi » à côté du poste libre."/>
+                            ToolTip.Tip="S'inscrire en renfort sur la garde du jour. Pour un poste précis : bouton « Moi » à côté du poste libre."/>
                     <Button Classes="sg light" Content="Me retirer de cette garde" Command="{Binding GardeSelfRemoveCommand}" IsVisible="{Binding IAmOnGarde}"/>
                     <Button Classes="sg light" Content="Reprendre la garde précédente" Command="{Binding GardeCopyCommand}" IsVisible="{Binding !IsGardeReadOnly}"/>
                     <Button Classes="sg light" Content="Imprimer" Command="{Binding GardePrintCommand}"/>
@@ -28,8 +28,8 @@
                                         CustomDateFormatString="dd/MM/yyyy" Watermark="jj/mm/aaaa"/>
                     <Button Grid.Column="4" Classes="sg light" Content="▶" Padding="10,4" Command="{Binding GardeNextCommand}" ToolTip.Tip="Jour suivant"/>
                     <Button Grid.Column="6" Classes="sg light" Content="Aujourd'hui" Command="{Binding GardeTodayCommand}"/>
-                    <TextBlock Grid.Column="8" Classes="label" Text="CENTRE" VerticalAlignment="Center" Margin="0"/>
-                    <ComboBox Grid.Column="10" Classes="sg" ItemsSource="{Binding GardeCentres}" SelectedItem="{Binding GardeCentre}" HorizontalAlignment="Stretch"/>
+                    <TextBlock Grid.Column="8" Grid.ColumnSpan="3" Classes="label" Text="TOUS LES CS" VerticalAlignment="Center" Margin="0"
+                               ToolTip.Tip="FiveM : une seule feuille par jour, avec tous les engins de tous les centres."/>
                     <TextBlock Grid.Column="12" Classes="label" Text="HORAIRES" VerticalAlignment="Center" Margin="0"/>
                     <TextBox Grid.Column="14" Classes="sg" Text="{Binding GardeHoraires}" IsReadOnly="{Binding IsGardeReadOnly}"/>
                 </Grid>
@@ -41,7 +41,7 @@
                 </Grid>
             </Border>
             <TextBlock Classes="muted" IsVisible="{Binding IsGardeReadOnly}" Margin="0,0,0,4" TextWrapping="Wrap"
-                       Text="La feuille est préparée et validée par l'encadrement. Tu peux t'inscrire toi-même sur un poste libre (bouton « Moi ») ou en renfort, y compris dans un autre centre : choisis-le dans la liste CENTRE."/>
+                       Text="La feuille est préparée et validée par l'encadrement. Tu peux t'inscrire toi-même sur un poste libre de n'importe quel engin, tous centres confondus (bouton « Moi »), ou en renfort."/>
         </StackPanel>
 
         <ScrollViewer Margin="0,10,0,0">

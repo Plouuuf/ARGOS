@@ -13,8 +13,7 @@
                     <TextBlock Grid.Column="6" Text="{Binding PlanningTitle}" FontSize="15" FontWeight="SemiBold" Foreground="#13294B" VerticalAlignment="Center"/>
                     <Button Grid.Column="8" Classes="sg" Classes.light="{Binding !IsPlanningWeek}" Content="Semaine" Command="{Binding PlanningWeekCommand}"/>
                     <Button Grid.Column="10" Classes="sg" Classes.light="{Binding !IsPlanningMonth}" Content="Mois" Command="{Binding PlanningMonthCommand}"/>
-                    <TextBlock Grid.Column="12" Classes="label" Text="CENTRE" VerticalAlignment="Center" Margin="0"/>
-                    <ComboBox Grid.Column="14" Classes="sg" ItemsSource="{Binding PlanningCentres}" SelectedItem="{Binding PlanningCentre}" HorizontalAlignment="Stretch"/>
+
                 </Grid>
             </Border>
             <WrapPanel>

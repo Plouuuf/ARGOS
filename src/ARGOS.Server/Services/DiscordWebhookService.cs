@@ -112,7 +112,7 @@ public sealed class DiscordWebhookService(IOptionsMonitor<WebhookOptions> option
         {
             var day = DateTime.TryParseExact(feuille.Date, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var d)
                 ? d.ToString("dddd d MMMM yyyy", CultureInfo.GetCultureInfo("fr-FR")) : feuille.Date;
-            var fileName = $"Garde-{feuille.Centre}-{feuille.Date}.png";
+            var fileName = $"Garde-{feuille.Date}.png";
             var chef = feuille.Service.FirstOrDefault(a => a.Poste == GardePostes.ChefDeGarde && a.Pourvu)?.Nom;
             var armes = feuille.Engins.Where(e => e.Arme).Select(e => $"{e.Engin} ({e.Postes.Count(p => p.Pourvu)}/{e.Postes.Count})").ToList();
             var nonArmes = feuille.Engins.Where(e => !e.Arme).Select(e => e.Engin).ToList();
@@ -130,7 +130,7 @@ public sealed class DiscordWebhookService(IOptionsMonitor<WebhookOptions> option
 
             var embed = new Dictionary<string, object>
             {
-                ["title"] = $"Feuille de garde {feuille.Centre} - {day}",
+                ["title"] = feuille.Centre == FeuilleGarde.TousCentres ? $"Feuille de garde - {day}" : $"Feuille de garde {feuille.Centre} - {day}",
                 ["color"] = 0x13294B,
                 ["fields"] = fields,
                 ["footer"] = new { text = (feuille.IsValidated ? $"Validée par {feuille.ValidatedBy}" : "Non validée") + $" · publiée par {publishedBy}" },

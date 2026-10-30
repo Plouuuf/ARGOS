@@ -123,7 +123,7 @@ public sealed record PlanningDay(string Top, string Bottom, double Width, IBrush
 public sealed partial class SigtaoAppViewModel
 {
     private DateTime _gardeDate = DateTime.Today;
-    private string _gardeCentre = EnginsCatalog.Creteil;
+    private string _gardeCentre = FeuilleGarde.TousCentres;
     private string _gardeObservations = string.Empty;
     private string _gardeHoraires = "07h30 → 07h30 (J+1)";
     private string? _gardeLoadedKey;
@@ -379,12 +379,15 @@ public sealed partial class SigtaoAppViewModel
         }).ToList()
     };
 
+    private static int CentreRank(string centre) => centre switch { EnginsCatalog.Creteil => 0, EnginsCatalog.MaisonsAlfort => 1, EnginsCatalog.Mass => 2, _ => 3 };
+
     private List<FleetEngin> FleetOf(string centre)
     {
-        var fleet = Fleet.Where(f => f.Active && f.Centre == centre).OrderBy(f => f.Ordre).ToList();
+        var all = centre == FeuilleGarde.TousCentres;
+        var fleet = Fleet.Where(f => f.Active && (all || f.Centre == centre)).OrderBy(f => CentreRank(f.Centre)).ThenBy(f => f.Ordre).ToList();
         if (fleet.Count > 0) return fleet;
         // REMISE pas encore chargée : catalogue de départ.
-        return EnginsCatalog.All.Where(e => e.Centre == centre)
+        return EnginsCatalog.All.Where(e => all || e.Centre == centre)
             .Select(e => new FleetEngin { Nom = FleetEngin.BuildNom(e.Indicatif, e.Centre), Indicatif = e.Indicatif, Type = e.Type, Libelle = e.Libelle, Centre = e.Centre })
             .ToList();
     }
@@ -459,8 +462,8 @@ public sealed partial class SigtaoAppViewModel
             }
             await session.Sigtao.RefreshAsync();
             LoadGarde(force: true);
-            ShowMessage(retirer ? $"Tu es retiré de la garde {_gardeCentre} du {_gardeDate:dd/MM}."
-                : $"Inscrit sur la garde {_gardeCentre} du {_gardeDate:dd/MM} : {(engin is null ? poste : $"{poste} {engin}")}." +
+            ShowMessage(retirer ? $"Tu es retiré de la garde du {_gardeDate:dd/MM}."
+                : $"Inscrit sur la garde du {_gardeDate:dd/MM} : {(engin is null ? poste : $"{poste} {engin}")}." +
                   (_gardeSaved?.IsValidated == true ? " La feuille était déjà validée : l'encadrement la revalidera pour armer l'engin." : string.Empty), false);
         }
         finally
@@ -544,7 +547,7 @@ public sealed partial class SigtaoAppViewModel
                 : $"Feuille de garde du {_gardeDate:dd/MM/yyyy} enregistrée.";
             if (!string.IsNullOrWhiteSpace(result.Error)) text += " Attention : " + result.Error;
             ShowMessage(text, !string.IsNullOrWhiteSpace(result.Error));
-            if (valider) _desktop.ShowNotification("SIGTAO", $"Garde {_gardeCentre} du {_gardeDate:dd/MM} validée.");
+            if (valider) _desktop.ShowNotification("SIGTAO", $"Garde du {_gardeDate:dd/MM} validée.");
         }
         finally
         {
@@ -557,8 +560,6 @@ public sealed partial class SigtaoAppViewModel
     /// <summary>Ouvre la feuille d'un jour (clic sur une colonne du planning).</summary>
     private void OpenGardeDay(DateTime day)
     {
-        if (_planningCentre != "Tous") _gardeCentre = _planningCentre;
-        OnPropertyChanged(nameof(GardeCentre));
         _gardeDate = day.Date;
         OnPropertyChanged(nameof(GardeDateText));
         LoadGarde(force: true);
