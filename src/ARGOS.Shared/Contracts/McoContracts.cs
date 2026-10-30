@@ -22,7 +22,7 @@ public static class McoFonctions
         ["Chef d'agrès", "Conducteur", "Chef d'équipe", "Équipier", "Stagiaire", "Infirmier", "Médecin", "Officier"];
 
     public static readonly IReadOnlyList<string> Grades =
-        ["SAP 2CL", "SAP 1CL", "CPL", "CCH", "SGT", "SCH", "ADJ", "ADC", "MAJ", "LTN", "CNE", "CDT", "LCL", "COL", "ISP", "MED"];
+        ["SAP 2CL", "SAP 1CL", "1CL+15", "CPL", "CCH", "CCH+15", "SGT", "SCH", "ADJ", "ADC", "MAJ", "LTN", "CNE", "CDT", "LCL", "COL", "ISP", "MED"];
 }
 
 public sealed class McoPerson

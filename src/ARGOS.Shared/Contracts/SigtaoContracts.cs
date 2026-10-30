@@ -57,7 +57,8 @@ public static class BsppGrades
 {
     public static readonly IReadOnlyList<string> All =
     [
-        "Sapeur de 2e classe", "Sapeur de 1re classe", "Caporal", "Caporal-chef", "Sergent", "Sergent-chef",
+        "Sapeur de 2e classe", "Sapeur de 1re classe", "Sapeur de 1re classe +15", "Caporal", "Caporal-chef",
+        "Caporal-chef +15", "Sergent", "Sergent-chef",
         "Adjudant", "Adjudant-chef", "Major", "Aspirant", "Sous-lieutenant", "Lieutenant", "Capitaine",
         "Commandant", "Lieutenant-colonel", "Colonel", "Général"
     ];
@@ -67,6 +68,8 @@ public static class BsppGrades
     {
         "Sapeur de 2e classe" => "SAP 2CL",
         "Sapeur de 1re classe" => "SAP 1CL",
+        "Sapeur de 1re classe +15" => "1CL+15",
+        "Caporal-chef +15" => "CCH+15",
         "Caporal" => "CPL",
         "Caporal-chef" => "CCH",
         "Sergent" => "SGT",
@@ -288,7 +291,7 @@ public static class RosterImport
     private static readonly System.Text.RegularExpressions.Regex NidRx = new(@"\bNID\s*:\s*(\d+)", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
     private static readonly System.Text.RegularExpressions.Regex NmRx = new(@"\bNM\s*:\s*(\d+)", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
 
-    /// <summary>Code d'insigne Discord → (grade, échelon) : « 1CL15 » → Sapeur de 1re classe, +15.</summary>
+    /// <summary>Code d'insigne Discord → grade : « 1CL15 » → « Sapeur de 1re classe +15 ».</summary>
     public static (string Grade, string Echelon)? Grade(string code)
     {
         var m = System.Text.RegularExpressions.Regex.Match(code.ToUpperInvariant(), @"^([A-Z]*\d?[A-Z]+?)(\d{2})?$");
@@ -314,7 +317,10 @@ public static class RosterImport
             "COL" => "Colonel",
             _ => null
         };
-        return grade is null ? null : (grade, echelon);
+        if (grade is null) return null;
+        // « +15 » : grades BSPP à part entière (1CL+15, CCH+15).
+        var withEchelon = $"{grade} {echelon}".Trim();
+        return BsppGrades.All.Contains(withEchelon) ? (withEchelon, string.Empty) : (grade, echelon);
     }
 
     public static List<MilitaryRecord> Parse(string text)
@@ -329,7 +335,6 @@ public static class RosterImport
             var record = new MilitaryRecord
             {
                 Grade = grade.Grade,
-                Echelon = grade.Echelon,
                 Unite = "17e Cie",
                 Affectation = EnginsCatalog.Creteil,
                 Status = MilitaryStatuses.Actif

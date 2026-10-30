@@ -115,9 +115,10 @@ public sealed class RosterImportTests
         Assert.Equal(("Capitaine", "FAUBOURG", "Laurent", "0000109387", "Commandant d'Unité"),
             (cne.Grade, cne.Nom, cne.Prenom, cne.Matricule, cne.Fonction));
         Assert.Equal(("Sergent-chef", "765246238059790376", "CRET"), (list[1].Grade, list[1].DiscordUserId, list[1].Affectation));
-        Assert.Equal(("Caporal-chef", "+15"), (list[2].Grade, list[2].Echelon));
+        Assert.Equal(("Caporal-chef +15", ""), (list[2].Grade, list[2].Echelon));
         Assert.Equal(("Enzo", "0000109978"), (list[3].Prenom, list[3].Nid));
-        Assert.Equal(("Sapeur de 1re classe", "+15", "Diego"), (list[4].Grade, list[4].Echelon, list[4].Prenom));
+        Assert.Equal(("Sapeur de 1re classe +15", "Diego"), (list[4].Grade, list[4].Prenom));
+        Assert.Equal("1CL+15", BsppGrades.Short(list[4].Grade));
         Assert.Equal("Sapeur de 2e classe", list[5].Grade);
         Assert.Equal("SANTOS", RosterImport.NameFromNickname("[1CL+15] SANTOS D."));
     }
