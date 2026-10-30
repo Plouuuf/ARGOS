@@ -43,6 +43,9 @@ public sealed class ShellViewModel : ViewModelBase
     private string? _statusText;
     private string? _errorText;
     private DesktopViewModel? _desktop;
+    private string? _updateText;
+    private bool _updating;
+    private readonly DispatcherTimer _updates;
 
     public ShellViewModel()
     {
@@ -68,7 +71,69 @@ public sealed class ShellViewModel : ViewModelBase
         _revalidation = new DispatcherTimer { Interval = RevalidationInterval };
         _revalidation.Tick += (_, _) => _ = RevalidateAsync();
 
+        // Mise à jour automatique : au démarrage, puis toutes les 20 minutes.
+        AppUpdater.Cleanup();
+        _updates = new DispatcherTimer { Interval = TimeSpan.FromMinutes(20) };
+        _updates.Tick += (_, _) => _ = CheckUpdateAsync();
+        _updates.Start();
+
         _ = InitializeAsync();
+    }
+
+    /// <summary>Message de mise à jour (écran de verrouillage).</summary>
+    public string? UpdateText
+    {
+        get => _updateText;
+        private set
+        {
+            if (SetProperty(ref _updateText, value))
+                OnPropertyChanged(nameof(HasUpdateText));
+        }
+    }
+
+    public bool HasUpdateText => !string.IsNullOrWhiteSpace(UpdateText);
+
+    public string VersionText => "ARGOS " + BuildInfo.Label;
+
+    private async Task CheckUpdateAsync()
+    {
+        if (!AppUpdater.IsSupported || _updating) return;
+        _updating = true;
+        try
+        {
+            var info = await AppUpdater.CheckAsync();
+            if (info is null) return;
+            var idle = Screen is ShellScreen.Lock or ShellScreen.Login && !IsBusy;
+            if (idle) UpdateText = $"Mise à jour d'ARGOS ({info.Version})…";
+            var error = await AppUpdater.InstallAsync(info);
+            idle = Screen is ShellScreen.Lock or ShellScreen.Login && !IsBusy;
+            if (error is not null)
+            {
+                if (idle) UpdateText = error;
+                else Desktop?.ShowNotification("Mise à jour d'ARGOS", error);
+                return;
+            }
+            if (idle)
+            {
+                // Personne n'est connecté : on redémarre tout de suite sur la nouvelle version.
+                UpdateText = "Mise à jour installée : redémarrage…";
+                await Task.Delay(1200);
+                AppUpdater.Restart();
+            }
+            else
+            {
+                Desktop?.ShowNotification("ARGOS mis à jour",
+                    $"{info.Version} est installée : elle s'ouvrira au prochain lancement d'ARGOS.");
+            }
+        }
+        catch
+        {
+            // Serveur injoignable ou sans mise à jour : nouvel essai plus tard.
+        }
+        finally
+        {
+            _updating = false;
+        }
     }
 
     // ===== Écrans =====
@@ -237,6 +302,7 @@ public sealed class ShellViewModel : ViewModelBase
 
     private async Task InitializeAsync()
     {
+        _ = CheckUpdateAsync();
         var saved = _auth.PeekSavedUser();
         if (saved is not null)
             await ApplyUserAsync(saved);

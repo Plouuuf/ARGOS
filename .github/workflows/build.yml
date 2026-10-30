@@ -26,6 +26,8 @@ env:
   DOTNET_CLI_TELEMETRY_OPTOUT: "1"
   DOTNET_NOLOGO: "1"
   SERVER_URL: ${{ vars.ARGOS_SERVER_URL || 'http://46.105.78.32:8092' }}
+  # Numéro de compilation intégré au serveur et aux postes (mise à jour automatique).
+  ArgosBuild: ${{ github.run_number }}
 
 jobs:
   desktop-server:
@@ -142,6 +144,7 @@ jobs:
             -p:PublishSingleFile=true -p:EnableCompressionInSingleFile=true -o artifacts/server
           cp README.md artifacts/server/LISEZ-MOI.md
           cp deployment/INSTALLER-ARGOS.ps1 deployment/INSTALLER-ARGOS.cmd artifacts/server/
+          (cd artifacts/server && zip -qr ../ARGOS-server.zip .)
 
       - uses: actions/upload-artifact@v4
         with:
@@ -160,3 +163,22 @@ jobs:
           name: ARGOS-server
           path: artifacts/server/
           if-no-files-found: error
+
+      # Publication « Release » (build-N) : le serveur du VPS l'installe tout seul et la distribue aux postes.
+      - name: Publication de la mise à jour
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -e
+          cp artifacts/ARGOS-*-windows.zip artifacts/ARGOS-windows.zip
+          cp artifacts/ARGOS-*-macos.zip artifacts/ARGOS-macos.zip
+          gh release create "build-${{ github.run_number }}" \
+            artifacts/ARGOS-server.zip artifacts/ARGOS-windows.zip artifacts/ARGOS-macos.zip \
+            --repo "${{ github.repository }}" --target "${{ github.sha }}" --latest \
+            --title "ARGOS $VERSION (build ${{ github.run_number }})" \
+            --notes "$(git log -1 --pretty=%B)"
+          # On ne garde que les 8 dernières versions.
+          gh release list --repo "${{ github.repository }}" --limit 100 --json tagName -q '.[].tagName' \
+            | grep '^build-' | sort -t- -k2 -n -r | tail -n +9 \
+            | xargs -r -I{} gh release delete {} --repo "${{ github.repository }}" --yes --cleanup-tag

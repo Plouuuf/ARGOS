@@ -14,6 +14,9 @@
     6. relie SIMCALL à ARGOS (section Argos de C:\SIMCALL\Server\appsettings.json) : au décroché
        d'un 18, la prise d'appel s'ouvre sur le poste ARGOS de l'opérateur (nécessite SIMCALL 0.7.2 ou plus).
 
+  Ensuite, le serveur se met à jour tout seul : il surveille les versions publiées par GitHub
+  (onglet « Releases » du dépôt), s'installe, redémarre, et distribue la mise à jour aux postes.
+
   Relançable sans risque : les réglages existants sont conservés.
 #>
 param(
@@ -28,7 +31,9 @@ param(
     # Webhook du salon Discord qui reçoit les ODE imprimés (laisser vide pour garder le réglage actuel).
     [string]$OdeWebhookUrl = "",
     # Connexion MariaDB (lecture seule) à la base FiveM pour eFiBi, ex. "Server=127.0.0.1;Port=3306;Database=qbcore;User ID=argos_lecture;Password=…"
-    [string]$EfibiConnection = ""
+    [string]$EfibiConnection = "",
+    # Jeton GitHub en lecture, seulement si le dépôt ARGOS est privé (mise à jour automatique).
+    [string]$GitHubToken = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -114,6 +119,8 @@ $odeWebhook = if ($OdeWebhookUrl) { $OdeWebhookUrl.Trim() } elseif ($existing -a
 
 $efibiConnection = if ($EfibiConnection) { $EfibiConnection.Trim() } elseif ($existing -and $existing.Efibi) { [string]$existing.Efibi.ConnectionString } else { "" }
 
+$githubToken = if ($GitHubToken) { $GitHubToken.Trim() } elseif ($existing -and $existing.Update) { [string]$existing.Update.GitHubToken } else { "" }
+
 $settings = [ordered]@{
     Urls = "http://0.0.0.0:$Port"
     ARGOS = [ordered]@{ AccessKey = $accessKey }
@@ -127,6 +134,7 @@ $settings = [ordered]@{
     }
     Webhooks = [ordered]@{ Ode = $odeWebhook }
     Efibi = [ordered]@{ ConnectionString = $efibiConnection }
+    Update = [ordered]@{ GitHubToken = $githubToken }
 }
 $settings | ConvertTo-Json -Depth 5 | Set-Content -Path $LocalSettings -Encoding utf8
 Ok "appsettings.Local.json écrit (rôle requis : $RequiredRoleId)."

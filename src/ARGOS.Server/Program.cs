@@ -47,6 +47,8 @@ public static class Program
         builder.Services.AddSingleton<EfibiService>();
         builder.Services.AddSingleton<IliasService>();
         builder.Services.AddSingleton<MailService>();
+        builder.Services.AddSingleton<UpdateService>();
+        builder.Services.AddHostedService(sp => sp.GetRequiredService<UpdateService>());
         builder.Services.Configure<WebhookOptions>(builder.Configuration.GetSection("Webhooks"));
         builder.Services.AddSingleton<DiscordWebhookService>();
 
@@ -66,10 +68,17 @@ public static class Program
         {
             status = "ok",
             version = typeof(Program).Assembly.GetName().Version?.ToString(3),
+            build = BuildInfo.Number,
             applications = new[] { "adagio-ode", "adagio-remise", "mco", "sigtao", "efibi", "ilias", "mail" },
             utc = DateTimeOffset.UtcNow,
             connections = hub.ConnectionCount
         }));
+
+        // ===== Mise à jour des postes (sans connexion : l'écran de verrouillage se met à jour seul) =====
+
+        app.MapGet("/api/update", (UpdateService updates) => Results.Ok(updates.Current()));
+        app.MapGet("/api/update/{platform}", (string platform, UpdateService updates) =>
+            updates.PackagePath(platform) is { } path ? Results.File(path, "application/zip", $"ARGOS-{platform}.zip") : Results.NotFound());
 
         // ===== Connexion Discord =====
 

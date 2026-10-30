@@ -12,5 +12,10 @@
     <AssemblyTitle>ARGOS - $(Version) © 2026 VAL-DE-MARNE SIMULATION</AssemblyTitle>
     <Description>ARGOS - poste de travail BSPP du réseau VAL-DE-MARNE SIMULATION</Description>
     <Copyright>© 2026 VAL-DE-MARNE SIMULATION</Copyright>
+    <!-- Numéro de compilation (GitHub Actions : variable d'environnement ArgosBuild). 0 = compilation locale, jamais mise à jour. -->
+    <ArgosBuild Condition="'$(ArgosBuild)' == ''">0</ArgosBuild>
   </PropertyGroup>
+  <ItemGroup>
+    <AssemblyMetadata Include="ArgosBuild" Value="$(ArgosBuild)" />
+  </ItemGroup>
 </Project>

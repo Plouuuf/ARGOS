@@ -52,5 +52,11 @@
                    FontSize="13"
                    Opacity="0.85"
                    Text="Appuyez ou cliquez pour vous connecter"/>
+
+        <StackPanel HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,24,22" Spacing="2">
+            <TextBlock Text="{Binding UpdateText}" FontSize="14" FontWeight="SemiBold" HorizontalAlignment="Right"
+                       IsVisible="{Binding HasUpdateText}" MaxWidth="420" TextWrapping="Wrap" TextAlignment="Right"/>
+            <TextBlock Text="{Binding VersionText}" FontSize="11" Opacity="0.7" HorizontalAlignment="Right"/>
+        </StackPanel>
     </Grid>
 </UserControl>
