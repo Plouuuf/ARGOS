@@ -648,6 +648,21 @@ public class AccessoiresTests
             foreach (var k in "1 2 5 * 4 =".Split(' ')) calc.Key(k);
             Capture(new Argos.Views.Apps.Accessoires.CalculatriceView { DataContext = calc }, 340, 540, "accessoire-calculatrice");
 
+            Argos.Services.ArgosSession.Current.Printer.Apply(new PrinterSnapshot
+            {
+                Jobs =
+                [
+                    new() { Id = "p1", Title = "ODE 210-594 n°1", OwnerId = "1", OwnerName = "Santos", Status = PrintStatuses.EnAttente, CreatedAt = now },
+                    new() { Id = "p2", Title = "ODE 210-593 n°2", OwnerId = "2", OwnerName = "Martin", Status = PrintStatuses.Imprime,
+                        CreatedAt = now.AddMinutes(-12), PrintedAt = now.AddMinutes(-12), HasImage = true, Size = 240_000, Reprint = true }
+                ]
+            });
+            var printer = new Argos.ViewModels.Accessoires.ImprimanteViewModel(desktop);
+            Assert.Equal(2, printer.Jobs.Count);
+            printer.Select("p1");
+            Assert.True(printer.CanDelete);
+            Capture(new Argos.Views.Apps.Accessoires.ImprimanteView { DataContext = printer }, 1000, 500, "accessoire-imprimante");
+
             var bin = new Argos.ViewModels.Accessoires.CorbeilleViewModel();
             Assert.Single(bin.Items);
             Capture(new Argos.Views.Apps.Accessoires.CorbeilleView { DataContext = bin }, 760, 420, "accessoire-corbeille");

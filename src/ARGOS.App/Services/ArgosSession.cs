@@ -17,6 +17,7 @@ public sealed class ArgosSession
         Ilias = new IliasStore(Api);
         Mail = new MailStore(Api);
         Files = new FilesStore(Api);
+        Printer = new PrinterStore(Api);
     }
 
     /// <summary>Session courante (null sur l'écran de verrouillage et de connexion).</summary>
@@ -32,6 +33,7 @@ public sealed class ArgosSession
     public IliasStore Ilias { get; }
     public MailStore Mail { get; }
     public FilesStore Files { get; }
+    public PrinterStore Printer { get; }
 
     /// <summary>Nom d'opérateur affiché dans ADAGIO (en majuscules).</summary>
     public string OperatorName => User.DisplayName.Trim().ToUpperInvariant();

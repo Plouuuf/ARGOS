@@ -48,6 +48,7 @@ public static class Program
         builder.Services.AddSingleton<IliasService>();
         builder.Services.AddSingleton<MailService>();
         builder.Services.AddSingleton<FilesService>();
+        builder.Services.AddSingleton<PrinterService>();
         builder.Services.AddSingleton<UpdateService>();
         builder.Services.AddHostedService(sp => sp.GetRequiredService<UpdateService>());
         builder.Services.Configure<WebhookOptions>(builder.Configuration.GetSection("Webhooks"));
@@ -230,16 +231,13 @@ public static class Program
         });
 
         ode.MapPost("/interventions/{id}/printed/{order:int}", async (string id, int order, PrintRequest? request, HttpContext context,
-            DiscordOAuthService oauth, OdeService service, DiscordWebhookService webhook) =>
+            DiscordOAuthService oauth, OdeService service, DiscordWebhookService webhook, PrinterService printer) =>
         {
             var user = await AuthenticateAsync(context, oauth);
             if (user is null) return Results.Unauthorized();
             var result = await service.MarkPrintedAsync(user, id, order);
             if (!result.Ok) return ToResult(result);
 
-            // Export de l'ODE dans le salon Discord (image de la feuille envoyée par le poste).
-            if (!webhook.OdeEnabled)
-                return Results.Ok(result with { Id = PrintDiscord.Disabled });
             byte[]? png = null;
             try
             {
@@ -249,6 +247,18 @@ public static class Program
             catch (FormatException) { }
             var intervention = service.GetIntervention(id);
             var departure = intervention?.Orders.FirstOrDefault(o => o.Number == order);
+
+            // Imprimante virtuelle : le document part dans la file du centre et est conservé.
+            if (intervention is not null && departure is not null)
+                await printer.SubmitAsync(user, new PrintJob
+                {
+                    Kind = "ODE", Title = $"ODE {intervention.Number} n°{departure.Number}", InterventionId = intervention.Id,
+                    InterventionNumber = intervention.Number, OrderNumber = departure.Number, Reprint = departure.PrintCount > 1
+                }, png);
+
+            // Export de l'ODE dans le salon Discord (image de la feuille envoyée par le poste).
+            if (!webhook.OdeEnabled)
+                return Results.Ok(result with { Id = PrintDiscord.Disabled });
             var sent = intervention is not null && departure is not null
                        && await webhook.SendOdeAsync(intervention, departure, user.DisplayName, png);
             return Results.Ok(result with { Id = sent ? PrintDiscord.Sent : PrintDiscord.Failed });
@@ -606,6 +616,34 @@ public static class Program
         {
             var user = await AuthenticateAsync(context, oauth);
             return user is null ? Results.Unauthorized() : ToResult(await service.EmptyTrashAsync(user));
+        });
+
+        // ===== Imprimante virtuelle (file partagée du centre) =====
+
+        var print = app.MapGroup("/api/printer");
+
+        print.MapGet("/state", async (HttpContext context, DiscordOAuthService oauth, PrinterService printer) =>
+        {
+            var user = await AuthenticateAsync(context, oauth);
+            return user is null ? Results.Unauthorized() : Results.Ok(printer.Snapshot(user));
+        });
+
+        print.MapGet("/jobs/{id}/image", async (string id, HttpContext context, DiscordOAuthService oauth, PrinterService printer) =>
+        {
+            if (await AuthenticateAsync(context, oauth) is null) return Results.Unauthorized();
+            return printer.ImagePath(id) is { } path ? Results.File(path, "image/png") : Results.NotFound();
+        });
+
+        print.MapPost("/jobs/{id}/reprint", async (string id, HttpContext context, DiscordOAuthService oauth, PrinterService printer) =>
+        {
+            var user = await AuthenticateAsync(context, oauth);
+            return user is null ? Results.Unauthorized() : ToResult(await printer.ReprintAsync(user, id));
+        });
+
+        print.MapPost("/jobs/{id}/delete", async (string id, HttpContext context, DiscordOAuthService oauth, PrinterService printer) =>
+        {
+            var user = await AuthenticateAsync(context, oauth);
+            return user is null ? Results.Unauthorized() : ToResult(await printer.DeleteAsync(user, id));
         });
 
         // ===== Intégrations serveur à serveur (clé ARGOS:AccessKey dans l'en-tête X-Argos-Key) =====

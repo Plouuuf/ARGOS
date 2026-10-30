@@ -82,7 +82,7 @@ public sealed class OdePrintViewModel : ViewModelBase
             PrintDiscord.Failed => " Échec de la publication sur Discord.",
             _ => string.Empty
         };
-        Status = $"Envoyé à l'imprimante du CS à {DateTime.Now:HH:mm:ss}.{discord}";
+        Status = $"Envoyé à l'imprimante du CS à {DateTime.Now:HH:mm:ss} (document conservé dans l'Imprimante et dans Mes documents › Impressions).{discord}";
         OnPropertyChanged(nameof(PrintLabel));
         _desktop.ShowNotification("Imprimante ADAGIO", $"ODE {Document?.Number} imprimé.{discord}");
         _ = session.Ode.RefreshAsync();

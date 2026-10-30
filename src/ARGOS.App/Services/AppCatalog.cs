@@ -21,7 +21,8 @@ public static class AppCatalog
         new(ArgosApps.Sigtao, "SIGTAO", "Planning et personnel", "Icons/sigtao.png"),
         new(ArgosApps.Explorateur, "Explorateur de fichiers", "Mes documents", "Icons/explorateur.png", true, 940, 600),
         new(ArgosApps.BlocNotes, "Bloc-notes", "Notes et textes", "Icons/bloc-notes.png", true, 760, 560),
-        new(ArgosApps.Calculatrice, "Calculatrice", "Calculatrice standard", "Icons/calculatrice.png", true, 340, 540)
+        new(ArgosApps.Calculatrice, "Calculatrice", "Calculatrice standard", "Icons/calculatrice.png", true, 340, 540),
+        new(ArgosApps.Imprimante, "Imprimante", "Imprimante du centre de secours", "Icons/imprimante.png", true, 1000, 640)
     ];
 
     public static AppDefinition? Find(string id) => All.FirstOrDefault(a => a.Id == id);

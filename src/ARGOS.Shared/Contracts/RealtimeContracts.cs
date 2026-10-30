@@ -44,6 +44,9 @@ public static class RealtimeTypes
     /// <summary>« Mes documents » de l'utilisateur ont changé (envoyé à lui seul).</summary>
     public const string FilesChanged = "files-changed";
 
+    /// <summary>La file de l'imprimante virtuelle a changé.</summary>
+    public const string PrinterChanged = "printer-changed";
+
     /// <summary>Ouvrir la prise d'appel de l'appel indiqué (Text = identifiant), au décroché d'un 18.</summary>
     public const string OpenCall = "open-call";
 }

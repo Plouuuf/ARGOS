@@ -1,0 +1,90 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="Argos.Views.Apps.Accessoires.ImprimanteView"
+             Classes="w10" Background="White"
+             FontFamily="Segoe UI, Helvetica Neue, Arial, Liberation Sans" Foreground="#1A1A1A">
+    <DockPanel>
+        <Border DockPanel.Dock="Top" Background="#F5F6F7" BorderBrush="#DADBDC" BorderThickness="0,0,0,1" Padding="6,4">
+            <Grid ColumnDefinitions="*,Auto,8,170,8,200">
+                <WrapPanel>
+                    <Button Classes="tool" Content="Réimprimer" Command="{Binding ReprintCommand}"/>
+                    <Button Classes="tool" Name="SaveButton" Content="Enregistrer sur le poste…"/>
+                    <Button Classes="tool" Content="Ouvrir l'intervention" Command="{Binding OpenInterventionCommand}"/>
+                    <Button Classes="tool" Content="Supprimer le document" Command="{Binding DeleteCommand}"/>
+                    <Button Classes="tool" Content="Actualiser" Command="{Binding RefreshCommand}"/>
+                </WrapPanel>
+                <TextBlock Grid.Column="1" Text="Afficher" FontSize="12" VerticalAlignment="Center"/>
+                <ComboBox Grid.Column="3" ItemsSource="{Binding Filters}" SelectedItem="{Binding Filter}" FontSize="12" HorizontalAlignment="Stretch"/>
+                <TextBox Grid.Column="5" Text="{Binding Search}" Watermark="Rechercher un document" FontSize="12" CornerRadius="0" MinHeight="26"/>
+            </Grid>
+        </Border>
+        <Border DockPanel.Dock="Top" Padding="10,6" Background="#E5F3FF" IsVisible="{Binding HasMessage}">
+            <TextBlock Text="{Binding Message}" FontSize="12" TextWrapping="Wrap"/>
+        </Border>
+        <Border DockPanel.Dock="Bottom" BorderBrush="#F0F0F0" BorderThickness="0,1,0,0" Padding="10,3">
+            <TextBlock Classes="status" Text="{Binding StatusText}"/>
+        </Border>
+        <Grid ColumnDefinitions="*,380">
+            <DockPanel>
+                <Grid DockPanel.Dock="Top" ColumnDefinitions="*,130,120,110,70,70" Margin="12,6,12,2">
+                    <TextBlock Classes="head" Text="Nom du document"/>
+                    <TextBlock Grid.Column="1" Classes="head" Text="État"/>
+                    <TextBlock Grid.Column="2" Classes="head" Text="Propriétaire"/>
+                    <TextBlock Grid.Column="3" Classes="head" Text="Envoyé le"/>
+                    <TextBlock Grid.Column="4" Classes="head" Text="Imprimé"/>
+                    <TextBlock Grid.Column="5" Classes="head" Text="Taille" HorizontalAlignment="Right"/>
+                </Grid>
+                <Panel>
+                    <TextBlock Text="Aucun document dans l'imprimante." FontSize="12" Foreground="#6D6D6D" HorizontalAlignment="Center"
+                               Margin="0,30,0,0" IsVisible="{Binding !Jobs.Count}"/>
+                    <ScrollViewer>
+                        <ItemsControl ItemsSource="{Binding Jobs}" Margin="8,0">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Button Classes="row" Classes.selected="{Binding Selected}" Command="{Binding SelectCommand}">
+                                        <Grid ColumnDefinitions="*,130,120,110,70,70">
+                                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                                <Image Source="avares://ARGOS.App/Assets/Icons/imprimante.png" Width="18" Height="18"/>
+                                                <TextBlock Text="{Binding Title}" FontSize="12.5" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                            </StackPanel>
+                                            <Panel Grid.Column="1">
+                                                <TextBlock Classes="cell" Text="{Binding Status}" Foreground="#C47A00" FontWeight="SemiBold" IsVisible="{Binding Pending}"/>
+                                                <TextBlock Classes="cell" Text="{Binding Status}" Foreground="#107C10" IsVisible="{Binding !Pending}"/>
+                                            </Panel>
+                                            <TextBlock Grid.Column="2" Classes="cell" Text="{Binding Owner}" TextTrimming="CharacterEllipsis"/>
+                                            <TextBlock Grid.Column="3" Classes="cell" Text="{Binding Created}"/>
+                                            <TextBlock Grid.Column="4" Classes="cell" Text="{Binding Printed}"/>
+                                            <TextBlock Grid.Column="5" Classes="cell" Text="{Binding Size}" HorizontalAlignment="Right"/>
+                                        </Grid>
+                                    </Button>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+                </Panel>
+            </DockPanel>
+            <!-- Aperçu -->
+            <Border Grid.Column="1" Background="#E9EAEC" BorderBrush="#DADBDC" BorderThickness="1,0,0,0">
+                <DockPanel Margin="12">
+                    <StackPanel DockPanel.Dock="Top" Spacing="2" Margin="0,0,0,8" IsVisible="{Binding HasSelection}">
+                        <TextBlock Text="{Binding SelectedTitle}" FontSize="14" FontWeight="SemiBold" TextWrapping="Wrap"/>
+                        <TextBlock Text="{Binding SelectedInfo}" FontSize="11.5" Foreground="#5D5D5D" TextWrapping="Wrap"/>
+                    </StackPanel>
+                    <Panel>
+                        <TextBlock Text="Sélectionnez un document pour l'aperçu." FontSize="12" Foreground="#6D6D6D"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding !HasSelection}"/>
+                        <TextBlock Text="Chargement de l'aperçu…" FontSize="12" Foreground="#6D6D6D" HorizontalAlignment="Center"
+                                   VerticalAlignment="Center" IsVisible="{Binding PreviewLoading}"/>
+                        <TextBlock Text="Aucune image enregistrée pour ce document." FontSize="12" Foreground="#6D6D6D"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding NoImage}"/>
+                        <ScrollViewer IsVisible="{Binding HasPreview}">
+                            <Border Background="White" BoxShadow="0 2 8 0 #33000000" Margin="4">
+                                <Image Source="{Binding Preview}" Stretch="Uniform"/>
+                            </Border>
+                        </ScrollViewer>
+                    </Panel>
+                </DockPanel>
+            </Border>
+        </Grid>
+    </DockPanel>
+</UserControl>

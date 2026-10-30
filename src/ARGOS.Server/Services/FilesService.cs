@@ -90,6 +90,25 @@ public sealed class FilesService(OdeDatabase db, RealtimeHub hub)
             return new OdeResult(true, null, entry.Id);
         });
 
+    /// <summary>Range une copie dans un dossier de premier niveau (« Impressions »…), créé au besoin. Renvoie l'identifiant du fichier.</summary>
+    public async Task<string?> SaveCopyAsync(ArgosUserDto user, string folderName, string fileName, byte[] data)
+    {
+        var folder = All(user.UserId).FirstOrDefault(e => e.IsFolder && !e.Deleted && e.ParentId.Length == 0
+                                                          && string.Equals(e.Name, folderName, StringComparison.OrdinalIgnoreCase));
+        var parent = folder?.Id;
+        if (parent is null)
+        {
+            var created = await CreateFolderAsync(user, new FileFolderRequest { Name = folderName });
+            if (!created.Ok) return null;
+            parent = created.Id;
+        }
+        var result = await UploadAsync(user, new FileUploadRequest
+        {
+            ParentId = parent!, Name = fileName, ContentType = FileKinds.ContentType(fileName), Data = Convert.ToBase64String(data)
+        });
+        return result.Ok ? result.Id : null;
+    }
+
     // ===== Organisation =====
 
     public async Task<OdeResult> RenameAsync(ArgosUserDto user, string id, FileRenameRequest request)

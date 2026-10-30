@@ -39,6 +39,7 @@ public static class AppContentFactory
         ArgosApps.BlocNotes => new BlocNotesView { DataContext = new BlocNotesViewModel(desktop, app.Id, null) },
         ArgosApps.Calculatrice => new CalculatriceView { DataContext = new CalculatriceViewModel() },
         ArgosApps.Corbeille => new CorbeilleView { DataContext = new CorbeilleViewModel() },
+        ArgosApps.Imprimante => new ImprimanteView { DataContext = new ImprimanteViewModel(desktop) },
         _ => new PlaceholderAppView { DataContext = app }
     };
 }
