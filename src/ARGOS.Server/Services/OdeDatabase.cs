@@ -72,6 +72,7 @@ public sealed class OdeDatabase
             CREATE TABLE IF NOT EXISTS mail_profiles (id TEXT PRIMARY KEY, at TEXT NOT NULL, data TEXT NOT NULL);
             CREATE TABLE IF NOT EXISTS user_files (id TEXT PRIMARY KEY, at TEXT NOT NULL, data TEXT NOT NULL);
             CREATE TABLE IF NOT EXISTS print_jobs (id TEXT PRIMARY KEY, at TEXT NOT NULL, data TEXT NOT NULL);
+            CREATE TABLE IF NOT EXISTS sigtao_gardes (id TEXT PRIMARY KEY, at TEXT NOT NULL, data TEXT NOT NULL);
             -- Les mouvements de stock ne peuvent être ni modifiés ni effacés.
             CREATE TRIGGER IF NOT EXISTS movements_no_update BEFORE UPDATE ON remise_movements
                 BEGIN SELECT RAISE(ABORT, 'mouvements en lecture seule'); END;
