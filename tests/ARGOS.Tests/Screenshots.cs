@@ -481,3 +481,82 @@ public class IliasScreenshots
         }
     }
 }
+
+/// <summary>Captures de la messagerie (messages fictifs).</summary>
+public class MailScreenshots
+{
+    private static readonly string Folder = Environment.GetEnvironmentVariable("ARGOS_SCREENSHOTS")
+                                            ?? Path.Combine(Path.GetTempPath(), "argos-screenshots");
+
+    private static void Capture(Control content, double width, double height, string name)
+    {
+        Directory.CreateDirectory(Folder);
+        var window = new Window { Width = width, Height = height, Content = content };
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+        window.CaptureRenderedFrame()!.Save(Path.Combine(Folder, name + ".png"));
+        window.Close();
+    }
+
+    [AvaloniaFact]
+    public void Application_Messagerie()
+    {
+        var user = new ArgosUserDto("1", "Santos", null, [AccessLevels.Sapeur]);
+        var previous = Argos.Services.ArgosSession.Current;
+        Argos.Services.ArgosSession.Current = new Argos.Services.ArgosSession(user, "test");
+        try
+        {
+            var now = DateTimeOffset.Now;
+            var me = "diego.santos@pompiersparis.fr";
+            Argos.Services.ArgosSession.Current.Mail.Apply(new MailSnapshot
+            {
+                Address = me, Name = "Sgt SANTOS Diego", Signature = "Sgt SANTOS Diego\nChef d'agrès VSAV - CS Créteil",
+                Items =
+                [
+                    new() { Id = "i1", OwnerId = "1", Folder = MailFolders.Reception, From = "marc.leroy@pompiersparis.fr", FromName = "Cne LEROY Marc",
+                        To = [me, "paul.martin@pompiersparis.fr"], Cc = ["chef.cs@pompiersparis.fr"], Subject = "Planning de garde - semaine 45",
+                        Body = "Bonjour à tous,\n\nVous trouverez ci-joint le **planning de garde** de la semaine 45.\n- Relève à *7h30*\n- Rassemblement __obligatoire__ à 8h\n\nCordialement,\nCne LEROY",
+                        Importance = MailImportance.Haute, SentAt = now.AddMinutes(-25), UpdatedAt = now,
+                        Attachments = [new() { Id = "a1", Name = "planning-s45.pdf", Size = 182_000 }] },
+                    new() { Id = "i2", OwnerId = "1", Folder = MailFolders.Reception, From = "paul.martin@pompiersparis.fr", FromName = "Cpl MARTIN Paul",
+                        To = [me], Subject = "Échange de garde", Body = "Salut, tu serais d'accord pour échanger samedi contre dimanche ?",
+                        Read = true, Flagged = true, SentAt = now.AddDays(-1), UpdatedAt = now },
+                    new() { Id = "i3", OwnerId = "1", Folder = MailFolders.Envoyes, From = me, FromName = "Sgt SANTOS Diego",
+                        To = ["marc.leroy@pompiersparis.fr"], Subject = "CR intervention 210-593", Body = "Mon capitaine,\nci-joint le compte-rendu.", Read = true,
+                        SentAt = now.AddDays(-2), UpdatedAt = now },
+                    new() { Id = "i4", OwnerId = "1", Folder = MailFolders.Brouillons, From = me, To = [], Subject = "Demande de stage", Body = "Brouillon…",
+                        Read = true, UpdatedAt = now }
+                ],
+                Contacts = [new() { Id = "c1", OwnerId = "1", Name = "Secrétariat CS Créteil", Address = "secretariat.cret@pompiersparis.fr" }],
+                Directory =
+                [
+                    new() { Address = "marc.leroy@pompiersparis.fr", Name = "Cne LEROY Marc", Fonction = "Commandant d'unité", Unite = "17e Cie" },
+                    new() { Address = "paul.martin@pompiersparis.fr", Name = "Cpl MARTIN Paul", Fonction = "Conducteur VSAV", Unite = "17e Cie" },
+                    new() { Address = me, Name = "Sgt SANTOS Diego", Fonction = "Chef d'agrès VSAV", Unite = "17e Cie" }
+                ]
+            });
+            var desktop = new DesktopViewModel(user, null, () => { }, () => { });
+            var vm = new Argos.ViewModels.Mail.MailAppViewModel(desktop);
+            Assert.Equal(2, vm.Messages.Count);
+            Assert.Equal(1, vm.Folders.First(f => f.Id == MailFolders.Reception).Unread);
+            vm.Select("i1");
+            Assert.True(vm.HasAttachments);
+            Capture(new Argos.Views.Apps.Mail.MailAppView { DataContext = vm }, 1300, 760, "mail-reception");
+            vm.ShowContacts = true;
+            Capture(new Argos.Views.Apps.Mail.MailAppView { DataContext = vm }, 1300, 640, "mail-contacts");
+
+            var compose = new Argos.ViewModels.Mail.MailComposeViewModel(desktop, "k", new Argos.ViewModels.Mail.MailComposeInit
+            {
+                To = "marc.leroy@pompiersparis.fr", Subject = "RE: Planning de garde - semaine 45",
+                Body = "Bien reçu mon capitaine.\n\nSgt SANTOS Diego" + MailCompose.Quote(Argos.Services.ArgosSession.Current.Mail.Find("i1")!),
+                Attachments = [new() { Id = "a1", Name = "planning-s45.pdf", Size = 182_000 }]
+            }, autoSave: false);
+            Assert.Single(compose.Request().KeepAttachments);
+            Capture(new Argos.Views.Apps.Mail.MailComposeView { DataContext = compose }, 900, 720, "mail-redaction");
+        }
+        finally
+        {
+            Argos.Services.ArgosSession.Current = previous;
+        }
+    }
+}

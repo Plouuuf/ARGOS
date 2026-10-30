@@ -46,6 +46,7 @@ public static class Program
         builder.Services.Configure<EfibiOptions>(builder.Configuration.GetSection("Efibi"));
         builder.Services.AddSingleton<EfibiService>();
         builder.Services.AddSingleton<IliasService>();
+        builder.Services.AddSingleton<MailService>();
         builder.Services.Configure<WebhookOptions>(builder.Configuration.GetSection("Webhooks"));
         builder.Services.AddSingleton<DiscordWebhookService>();
 
@@ -65,7 +66,7 @@ public static class Program
         {
             status = "ok",
             version = typeof(Program).Assembly.GetName().Version?.ToString(3),
-            applications = new[] { "adagio-ode", "adagio-remise", "mco", "sigtao", "efibi", "ilias" },
+            applications = new[] { "adagio-ode", "adagio-remise", "mco", "sigtao", "efibi", "ilias", "mail" },
             utc = DateTimeOffset.UtcNow,
             connections = hub.ConnectionCount
         }));
@@ -446,6 +447,76 @@ public static class Program
             if (user is null) return Results.Unauthorized();
             var result = await service.SubmitAsync(user, id, request);
             return result is null ? Results.NotFound() : Results.Ok(result);
+        });
+
+        // ===== Messagerie =====
+
+        var mail = app.MapGroup("/api/mail").AddEndpointFilter(AppWriteFilter(ArgosApps.Mail));
+
+        mail.MapGet("/state", async (HttpContext context, DiscordOAuthService oauth, MailService service) =>
+        {
+            var user = await AuthenticateAsync(context, oauth);
+            return user is null ? Results.Unauthorized() : Results.Ok(service.Snapshot(user));
+        });
+
+        mail.MapGet("/attachments/{id}", async (string id, HttpContext context, DiscordOAuthService oauth, MailService service) =>
+        {
+            var user = await AuthenticateAsync(context, oauth);
+            if (user is null) return Results.Unauthorized();
+            var (attachment, path) = service.OpenAttachment(user, id);
+            return path is null || attachment is null ? Results.NotFound() : Results.File(path, attachment.ContentType, attachment.Name);
+        });
+
+        mail.MapPost("/drafts", async (MailDraftRequest request, HttpContext context, DiscordOAuthService oauth, MailService service) =>
+        {
+            var user = await AuthenticateAsync(context, oauth);
+            if (user is null) return Results.Unauthorized();
+            var result = await service.SaveDraftAsync(user, request);
+            return result.Ok ? Results.Ok(result) : Results.BadRequest(result);
+        });
+
+        mail.MapPost("/send", async (MailDraftRequest request, HttpContext context, DiscordOAuthService oauth, MailService service) =>
+        {
+            var user = await AuthenticateAsync(context, oauth);
+            if (user is null) return Results.Unauthorized();
+            var result = await service.SendAsync(user, request);
+            return result.Ok ? Results.Ok(result) : Results.BadRequest(result);
+        });
+
+        mail.MapPost("/items/{id}", async (string id, MailFlagRequest request, HttpContext context, DiscordOAuthService oauth, MailService service) =>
+        {
+            var user = await AuthenticateAsync(context, oauth);
+            return user is null ? Results.Unauthorized() : ToResult(await service.UpdateAsync(user, id, request));
+        });
+
+        mail.MapPost("/items/{id}/delete", async (string id, HttpContext context, DiscordOAuthService oauth, MailService service) =>
+        {
+            var user = await AuthenticateAsync(context, oauth);
+            return user is null ? Results.Unauthorized() : ToResult(await service.DeleteAsync(user, id));
+        });
+
+        mail.MapPost("/trash/empty", async (HttpContext context, DiscordOAuthService oauth, MailService service) =>
+        {
+            var user = await AuthenticateAsync(context, oauth);
+            return user is null ? Results.Unauthorized() : ToResult(await service.EmptyTrashAsync(user));
+        });
+
+        mail.MapPost("/contacts", async (MailContact contact, HttpContext context, DiscordOAuthService oauth, MailService service) =>
+        {
+            var user = await AuthenticateAsync(context, oauth);
+            return user is null ? Results.Unauthorized() : ToResult(await service.SaveContactAsync(user, contact));
+        });
+
+        mail.MapPost("/contacts/{id}/delete", async (string id, HttpContext context, DiscordOAuthService oauth, MailService service) =>
+        {
+            var user = await AuthenticateAsync(context, oauth);
+            return user is null ? Results.Unauthorized() : ToResult(await service.DeleteContactAsync(user, id));
+        });
+
+        mail.MapPost("/signature", async (MailProfileRequest request, HttpContext context, DiscordOAuthService oauth, MailService service) =>
+        {
+            var user = await AuthenticateAsync(context, oauth);
+            return user is null ? Results.Unauthorized() : ToResult(await service.SaveSignatureAsync(user, request));
         });
 
         // ===== Intégrations serveur à serveur (clé ARGOS:AccessKey dans l'en-tête X-Argos-Key) =====

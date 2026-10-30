@@ -38,6 +38,9 @@ public static class RealtimeTypes
     /// <summary>ILIAS a changé (documents, formations, questionnaires).</summary>
     public const string IliasChanged = "ilias-changed";
 
+    /// <summary>La boîte aux lettres du destinataire a changé (envoyé à lui seul).</summary>
+    public const string MailChanged = "mail-changed";
+
     /// <summary>Ouvrir la prise d'appel de l'appel indiqué (Text = identifiant), au décroché d'un 18.</summary>
     public const string OpenCall = "open-call";
 }

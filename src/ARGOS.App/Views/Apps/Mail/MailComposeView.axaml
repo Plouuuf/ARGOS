@@ -1,0 +1,100 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="Argos.Views.Apps.Mail.MailComposeView"
+             Classes="mail" Background="White"
+             FontFamily="Segoe UI, Helvetica Neue, Arial, Liberation Sans" Foreground="#201F1E">
+    <DockPanel>
+        <!-- Commandes -->
+        <Border DockPanel.Dock="Top" Background="#FAF9F8" BorderBrush="#EDEBE9" BorderThickness="0,0,0,1" Padding="10,6">
+            <Grid ColumnDefinitions="Auto,*,Auto">
+                <StackPanel Orientation="Horizontal" Spacing="4">
+                    <Button Classes="primary" Content="Envoyer" Command="{Binding SendCommand}"/>
+                    <Button Classes="cmd" Content="Joindre un fichier" Name="AttachButton"/>
+                    <Button Classes="cmd" Content="Enregistrer le brouillon" Command="{Binding SaveCommand}"/>
+                    <Button Classes="cmd" Content="Ignorer" Command="{Binding DiscardCommand}"/>
+                </StackPanel>
+                <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                    <TextBlock Classes="lbl" Text="Importance"/>
+                    <ComboBox ItemsSource="{Binding Importances}" SelectedItem="{Binding Importance}" MinWidth="110" FontSize="12.5"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+        <Border DockPanel.Dock="Bottom" Background="#FAF9F8" BorderBrush="#EDEBE9" BorderThickness="0,1,0,0" Padding="14,5">
+            <TextBlock Text="{Binding Status}" FontSize="12" Foreground="#605E5C" Classes.err="{Binding StatusIsError}" TextWrapping="Wrap">
+                <TextBlock.Styles><Style Selector="TextBlock.err"><Setter Property="Foreground" Value="#A4262C"/><Setter Property="FontWeight" Value="SemiBold"/></Style></TextBlock.Styles>
+            </TextBlock>
+        </Border>
+
+        <DockPanel Margin="18,8,18,10">
+            <StackPanel DockPanel.Dock="Top">
+                <Grid ColumnDefinitions="60,*">
+                    <TextBlock Classes="lbl" Text="De"/>
+                    <TextBlock Grid.Column="1" Text="{Binding From}" FontSize="13" Margin="6,8"/>
+                </Grid>
+                <Grid ColumnDefinitions="60,*,Auto">
+                    <TextBlock Classes="lbl" Text="À"/>
+                    <TextBox Grid.Column="1" Classes="field" Text="{Binding To}" Watermark="Adresses séparées par « ; »"/>
+                    <Button Grid.Column="2" Classes="cmd" Content="Cci" Command="{Binding ToggleBccCommand}" FontSize="12"/>
+                </Grid>
+                <Grid ColumnDefinitions="60,*">
+                    <TextBlock Classes="lbl" Text="Cc"/>
+                    <TextBox Grid.Column="1" Classes="field" Text="{Binding Cc}"/>
+                </Grid>
+                <Grid ColumnDefinitions="60,*" IsVisible="{Binding ShowBcc}">
+                    <TextBlock Classes="lbl" Text="Cci"/>
+                    <TextBox Grid.Column="1" Classes="field" Text="{Binding Bcc}" Watermark="Destinataires invisibles des autres"/>
+                </Grid>
+                <!-- Annuaire -->
+                <Border Background="#F3F2F1" CornerRadius="2" Padding="8,6" Margin="0,8,0,0">
+                    <Grid ColumnDefinitions="Auto,8,*,8,Auto">
+                        <TextBlock Classes="lbl" Text="Annuaire"/>
+                        <AutoCompleteBox Grid.Column="2" ItemsSource="{Binding Suggestions}" SelectedItem="{Binding Pick}" FilterMode="Contains"
+                                         Watermark="Rechercher un nom, une adresse…" MinHeight="30" Background="White" MaxDropDownHeight="260"/>
+                        <StackPanel Grid.Column="4" Orientation="Horizontal" Spacing="2">
+                            <Button Classes="cmd" Content="+ À" Command="{Binding AddToCommand}"/>
+                            <Button Classes="cmd" Content="+ Cc" Command="{Binding AddCcCommand}"/>
+                            <Button Classes="cmd" Content="+ Cci" Command="{Binding AddBccCommand}"/>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+                <TextBox Classes="field" Text="{Binding Subject}" Watermark="Ajouter un objet" FontSize="15" Margin="0,6,0,0"/>
+                <!-- Pièces jointes -->
+                <StackPanel IsVisible="{Binding HasAttachments}" Margin="0,8,0,0">
+                    <TextBlock Classes="muted" Text="{Binding AttachmentsLabel}"/>
+                    <ItemsControl ItemsSource="{Binding Attachments}">
+                        <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border BorderBrush="#E1DFDD" BorderThickness="1" CornerRadius="2" Padding="8,4" Margin="0,4,8,0">
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <TextBlock Text="{Binding Name}" FontSize="12.5" FontWeight="SemiBold" MaxWidth="220" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+                                        <TextBlock Classes="muted" Text="{Binding Size}" VerticalAlignment="Center"/>
+                                        <Button Classes="cmd" Content="✕" Padding="4,0" Command="{Binding RemoveCommand}"/>
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+                <!-- Mise en forme -->
+                <StackPanel Orientation="Horizontal" Spacing="2" Margin="0,8,0,4">
+                    <Button Classes="cmd" Name="BoldButton" Content="G" FontWeight="Bold" ToolTip.Tip="Gras"/>
+                    <Button Classes="cmd" Name="ItalicButton" Content="I" FontStyle="Italic" ToolTip.Tip="Italique"/>
+                    <Button Classes="cmd" Name="UnderlineButton" ToolTip.Tip="Souligné"><TextBlock Text="S" TextDecorations="Underline"/></Button>
+                    <Button Classes="cmd" Name="ListButton" Content="• Liste" ToolTip.Tip="Liste à puces"/>
+                    <ToggleButton Name="PreviewToggle" IsChecked="False" Content="Aperçu" Margin="10,0,0,0" FontSize="12.5" Background="Transparent"/>
+                </StackPanel>
+            </StackPanel>
+            <Panel>
+                <TextBox Name="BodyBox" Text="{Binding Body}" AcceptsReturn="True" TextWrapping="Wrap" FontSize="14"
+                         BorderBrush="#E1DFDD" CornerRadius="0" Padding="10" VerticalContentAlignment="Top"
+                         IsVisible="{Binding !#PreviewToggle.IsChecked}"/>
+                <Border BorderBrush="#E1DFDD" BorderThickness="1" Padding="10" IsVisible="{Binding #PreviewToggle.IsChecked}">
+                    <ScrollViewer>
+                        <TextBlock Name="Preview" FontSize="14" TextWrapping="Wrap" LineHeight="21"/>
+                    </ScrollViewer>
+                </Border>
+            </Panel>
+        </DockPanel>
+    </DockPanel>
+</UserControl>

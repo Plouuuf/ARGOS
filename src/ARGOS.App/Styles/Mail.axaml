@@ -1,0 +1,38 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <!-- Messagerie : charte « webmail » (barre bleue, volet des dossiers gris, volet de lecture). -->
+    <Style Selector=".mail TextBlock.muted"><Setter Property="FontSize" Value="12"/><Setter Property="Foreground" Value="#605E5C"/></Style>
+    <Style Selector=".mail TextBlock.lbl"><Setter Property="FontSize" Value="12"/><Setter Property="Foreground" Value="#605E5C"/><Setter Property="VerticalAlignment" Value="Center"/></Style>
+    <Style Selector=".mail Button.cmd">
+        <Setter Property="Background" Value="Transparent"/><Setter Property="Foreground" Value="#201F1E"/><Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="CornerRadius" Value="2"/><Setter Property="Padding" Value="10,6"/><Setter Property="FontSize" Value="13"/><Setter Property="Cursor" Value="Hand"/>
+    </Style>
+    <Style Selector=".mail Button.cmd:pointerover /template/ ContentPresenter#PART_ContentPresenter"><Setter Property="Background" Value="#EDEBE9"/><Setter Property="Foreground" Value="#201F1E"/></Style>
+    <Style Selector=".mail Button.cmd:disabled /template/ ContentPresenter#PART_ContentPresenter"><Setter Property="Background" Value="Transparent"/><Setter Property="Foreground" Value="#A19F9D"/></Style>
+    <Style Selector=".mail Button.primary">
+        <Setter Property="Background" Value="#0078D4"/><Setter Property="Foreground" Value="White"/><Setter Property="CornerRadius" Value="2"/>
+        <Setter Property="Padding" Value="16,6"/><Setter Property="FontSize" Value="13"/><Setter Property="FontWeight" Value="SemiBold"/><Setter Property="Cursor" Value="Hand"/>
+    </Style>
+    <Style Selector=".mail Button.primary:pointerover /template/ ContentPresenter#PART_ContentPresenter"><Setter Property="Background" Value="#106EBE"/><Setter Property="Foreground" Value="White"/></Style>
+    <Style Selector=".mail Button.primary:disabled /template/ ContentPresenter#PART_ContentPresenter"><Setter Property="Background" Value="#C8C6C4"/><Setter Property="Foreground" Value="White"/></Style>
+    <Style Selector=".mail Button.folder">
+        <Setter Property="Background" Value="Transparent"/><Setter Property="BorderThickness" Value="0"/><Setter Property="CornerRadius" Value="0"/>
+        <Setter Property="Padding" Value="18,8"/><Setter Property="HorizontalAlignment" Value="Stretch"/><Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+        <Setter Property="Foreground" Value="#201F1E"/><Setter Property="Cursor" Value="Hand"/>
+    </Style>
+    <Style Selector=".mail Button.folder:pointerover /template/ ContentPresenter#PART_ContentPresenter"><Setter Property="Background" Value="#EDEBE9"/></Style>
+    <Style Selector=".mail Button.folder.selected /template/ ContentPresenter#PART_ContentPresenter"><Setter Property="Background" Value="#C7E0F4"/></Style>
+    <Style Selector=".mail Button.row">
+        <Setter Property="Background" Value="White"/><Setter Property="BorderThickness" Value="0,0,0,1"/><Setter Property="BorderBrush" Value="#EDEBE9"/>
+        <Setter Property="CornerRadius" Value="0"/><Setter Property="Padding" Value="0"/><Setter Property="HorizontalAlignment" Value="Stretch"/>
+        <Setter Property="HorizontalContentAlignment" Value="Stretch"/><Setter Property="Cursor" Value="Hand"/>
+    </Style>
+    <Style Selector=".mail Button.row:pointerover /template/ ContentPresenter#PART_ContentPresenter"><Setter Property="Background" Value="#F3F2F1"/></Style>
+    <Style Selector=".mail Button.row.selected /template/ ContentPresenter#PART_ContentPresenter"><Setter Property="Background" Value="#C7E0F4"/></Style>
+    <Style Selector=".mail TextBox.field">
+        <Setter Property="Background" Value="Transparent"/><Setter Property="BorderThickness" Value="0,0,0,1"/><Setter Property="BorderBrush" Value="#E1DFDD"/>
+        <Setter Property="CornerRadius" Value="0"/><Setter Property="FontSize" Value="13.5"/><Setter Property="MinHeight" Value="32"/><Setter Property="Padding" Value="6,6"/>
+    </Style>
+    <Style Selector=".mail TextBox.box"><Setter Property="Background" Value="White"/><Setter Property="BorderBrush" Value="#C8C6C4"/><Setter Property="CornerRadius" Value="2"/><Setter Property="FontSize" Value="13"/><Setter Property="MinHeight" Value="30"/></Style>
+    <Style Selector=".mail Border.avatar"><Setter Property="Width" Value="40"/><Setter Property="Height" Value="40"/><Setter Property="CornerRadius" Value="20"/><Setter Property="Background" Value="#0078D4"/></Style>
+</Styles>
