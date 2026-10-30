@@ -212,6 +212,10 @@ public sealed class SigtaoService(OdeDatabase db, RealtimeHub hub)
         if (!Rights(user).ManageAccounts)
             return new(false, "Habilitation SADMIN requise.");
         incoming.DiscordUserId = (incoming.DiscordUserId ?? string.Empty).Trim();
+        // Identifiant Discord repris du dossier choisi s'il n'est pas saisi.
+        if (incoming.DiscordUserId.Length == 0
+            && db.GetDoc<MilitaryRecord>(RemiseTables.Military, incoming.DossierId ?? string.Empty) is { DiscordUserId.Length: > 0 } fromDossier)
+            incoming.DiscordUserId = fromDossier.DiscordUserId;
         if (incoming.DiscordUserId.Length == 0 || !incoming.DiscordUserId.All(char.IsDigit))
             return new(false, "Identifiant Discord du joueur obligatoire (nombre, clic droit › Copier l'identifiant).");
         incoming.Habilitations = incoming.Habilitations.Where(h => Habilitations.All.Any(a => a.Code == h)).Distinct().ToList();
@@ -230,6 +234,14 @@ public sealed class SigtaoService(OdeDatabase db, RealtimeHub hub)
                 incoming.Prenom = dossier.Prenom;
                 incoming.Nid = dossier.Nid;
                 if (string.IsNullOrWhiteSpace(incoming.Email)) incoming.Email = dossier.Email;
+                // Et le dossier reçoit l'identifiant Discord du compte s'il ne l'avait pas.
+                if (dossier.DiscordUserId.Length == 0)
+                {
+                    dossier.DiscordUserId = incoming.DiscordUserId;
+                    dossier.UpdatedAt = DateTimeOffset.UtcNow;
+                    dossier.UpdatedBy = user.DisplayName;
+                    db.SaveDoc(RemiseTables.Military, dossier.Id, dossier.UpdatedAt, dossier);
+                }
             }
 
             var existing = all.FirstOrDefault(a => a.Account.Id == incoming.Id);

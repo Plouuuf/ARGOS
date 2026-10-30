@@ -298,13 +298,13 @@
                             <TextBlock Classes="h2" Text="{Binding AccountTitle}" Margin="0"/>
                             <Grid ColumnDefinitions="*,12,*,12,*">
                                 <StackPanel>
-                                    <TextBlock Classes="label" Text="IDENTIFIANT DISCORD DU JOUEUR"/>
-                                    <TextBox Classes="sg" Text="{Binding AccountDiscord}" Watermark="ex. 312456789012345678"/>
+                                    <TextBlock Classes="label" Text="1. DOSSIER MILITAIRE"/>
+                                    <ComboBox Classes="sg" ItemsSource="{Binding DossierChoices}" SelectedItem="{Binding AccountDossier}"
+                                              PlaceholderText="Choisir le militaire"/>
                                 </StackPanel>
                                 <StackPanel Grid.Column="2">
-                                    <TextBlock Classes="label" Text="DOSSIER MILITAIRE ASSOCIÉ"/>
-                                    <ComboBox Classes="sg" ItemsSource="{Binding DossierChoices}" SelectedItem="{Binding AccountDossier}"
-                                              PlaceholderText="Grade, nom, prénom et NID repris du dossier"/>
+                                    <TextBlock Classes="label" Text="2. IDENTIFIANT DISCORD (repris du dossier)"/>
+                                    <TextBox Classes="sg" Text="{Binding AccountDiscord}" Watermark="ex. 312456789012345678"/>
                                 </StackPanel>
                                 <StackPanel Grid.Column="4">
                                     <TextBlock Classes="label" Text="ADRESSE ÉLECTRONIQUE"/>

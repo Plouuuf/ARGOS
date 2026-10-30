@@ -177,11 +177,34 @@ public sealed class SigtaoAppViewModel : ViewModelBase, IDisposable
     public ObservableCollection<AccountRow> Accounts { get; } = [];
     public bool AccountVisible { get => _accountVisible; set => SetProperty(ref _accountVisible, value); }
     public string AccountTitle => _accountId is null ? "Nouveau compte utilisateur" : "Modifier le compte";
-    public string AccountDiscord { get => _accountDiscord; set => SetProperty(ref _accountDiscord, value); }
+    /// <summary>Identifiant Discord : s'il correspond à un dossier, ce dossier est sélectionné.</summary>
+    public string AccountDiscord
+    {
+        get => _accountDiscord;
+        set
+        {
+            if (!SetProperty(ref _accountDiscord, value)) return;
+            var id = (value ?? string.Empty).Trim();
+            if (id.Length > 0 && AccountDossier is null
+                && Snapshot.Military.FirstOrDefault(m => m.DiscordUserId == id) is { } dossier)
+                AccountDossier = DossierChoices.FirstOrDefault(c => c.Id == dossier.Id);
+        }
+    }
     public string AccountEmail { get => _accountEmail; set => SetProperty(ref _accountEmail, value); }
     public bool AccountActive { get => _accountActive; set => SetProperty(ref _accountActive, value); }
     public ObservableCollection<MilitaryChoice> DossierChoices { get; } = [];
-    public MilitaryChoice? AccountDossier { get => _accountDossier; set => SetProperty(ref _accountDossier, value); }
+    /// <summary>Dossier choisi : son identifiant Discord et son adresse électronique remplissent le compte.</summary>
+    public MilitaryChoice? AccountDossier
+    {
+        get => _accountDossier;
+        set
+        {
+            if (!SetProperty(ref _accountDossier, value) || value is null) return;
+            if (Snapshot.Military.FirstOrDefault(m => m.Id == value.Id) is not { } dossier) return;
+            if (dossier.DiscordUserId.Length > 0) AccountDiscord = dossier.DiscordUserId;
+            if (dossier.Email.Length > 0 && string.IsNullOrWhiteSpace(AccountEmail)) AccountEmail = dossier.Email;
+        }
+    }
     public ObservableCollection<HabilitationChoice> AccountHabilitations { get; } = [];
     public string? TemporaryPassword
     {
