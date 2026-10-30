@@ -390,6 +390,38 @@ public sealed class RemiseAppViewModel : ViewModelBase, IDisposable
             .Where(r => GdmParcViewModel.Matches(r.Status, StatusFilter));
         Fill(EnginRows, rows);
         OnPropertyChanged(nameof(ParcCount));
+
+        // Engins retirés du parc (case « Engin au parc » décochée) : toujours visibles pour pouvoir les remettre.
+        Fill(RetiredRows, Remise.Engins.Where(e => !e.Active)
+            .Where(e => CentreFilter == Tous || e.Centre == CentreFilter)
+            .Select(e =>
+            {
+                var nom = e.Nom;
+                return new RetiredEnginRow(e.Nom, e.Libelle, e.Centre, new RelayCommand(() => OpenFiche(nom)),
+                    new RelayCommand(() => _ = RestoreAsync(nom), () => CanManage));
+            }));
+        OnPropertyChanged(nameof(HasRetired));
+    }
+
+    public ObservableCollection<RetiredEnginRow> RetiredRows { get; } = [];
+    public bool HasRetired => RetiredRows.Count > 0;
+
+    /// <summary>Remet au parc un engin retiré : il réapparaît dans REMISE, l'ODE et la feuille de garde.</summary>
+    private async Task RestoreAsync(string nom)
+    {
+        var session = ArgosSession.Current;
+        if (session?.Remise.FindEngin(nom) is not { } engin) return;
+        var copy = System.Text.Json.JsonSerializer.Deserialize<FleetEngin>(System.Text.Json.JsonSerializer.Serialize(engin))!;
+        copy.Active = true;
+        var result = await session.Api.SendAsync(HttpMethod.Post, "api/remise/engins", new SaveEnginRequest { OriginalNom = nom, Engin = copy });
+        if (!result.Ok)
+        {
+            _desktop.ShowNotification("ADAGIO REMISE", result.Error ?? "Remise au parc refusée.");
+            return;
+        }
+        await session.Remise.RefreshAsync();
+        _ = session.Ode.RefreshAsync();
+        _desktop.ShowNotification("ADAGIO REMISE", $"{nom} remis au parc.");
     }
 
     private EnginStatusRow RowOf(FleetEngin e)

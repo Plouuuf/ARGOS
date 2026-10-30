@@ -141,3 +141,6 @@ public sealed record ItemChoice(string Id, string Name, string Unit)
 {
     public override string ToString() => Name;
 }
+
+/// <summary>Engin retiré du parc, avec sa remise au parc.</summary>
+public sealed record RetiredEnginRow(string Nom, string Libelle, string Centre, RelayCommand OpenCommand, RelayCommand RestoreCommand);

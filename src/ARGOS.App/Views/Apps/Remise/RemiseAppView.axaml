@@ -221,6 +221,25 @@
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
                         <TextBlock Classes="empty" Text="Aucun engin ne correspond aux filtres." IsVisible="{Binding !EnginRows.Count}"/>
+
+                        <!-- Engins retirés du parc -->
+                        <StackPanel IsVisible="{Binding HasRetired}" Margin="0,16,0,0" Spacing="4">
+                            <TextBlock Classes="h1" Text="Engins retirés du parc" FontSize="14" Margin="0"/>
+                            <TextBlock Classes="lbl" Text="Absents de l'ODE et de la feuille de garde. « Remettre au parc » les fait réapparaître partout."/>
+                            <ItemsControl ItemsSource="{Binding RetiredRows}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid ColumnDefinitions="150,*,70,Auto,8,Auto" Margin="0,2">
+                                            <TextBlock Classes="cell" Text="{Binding Nom}" FontWeight="Bold" Foreground="#6E7B86"/>
+                                            <TextBlock Grid.Column="1" Classes="cell" Text="{Binding Libelle}" Foreground="#6E7B86"/>
+                                            <TextBlock Grid.Column="2" Classes="cell" Text="{Binding Centre}" Foreground="#6E7B86"/>
+                                            <Button Grid.Column="3" Classes="adg" Content="Fiche" Command="{Binding OpenCommand}"/>
+                                            <Button Grid.Column="5" Classes="adg primary" Content="Remettre au parc" Command="{Binding RestoreCommand}"/>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
                     </StackPanel>
                 </ScrollViewer>
             </DockPanel>
