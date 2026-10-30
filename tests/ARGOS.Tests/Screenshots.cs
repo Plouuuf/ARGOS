@@ -177,7 +177,13 @@ public class RemiseScreenshots
             var vm = new Argos.ViewModels.Remise.RemiseAppViewModel(desktop);
             Capture(new Argos.Views.Apps.Remise.RemiseAppView { DataContext = vm }, 1400, 900, "remise-tableau-de-bord");
             vm.CurrentPage = Argos.ViewModels.Remise.RemiseAppViewModel.Page.Parc;
-            Capture(new Argos.Views.Apps.Remise.RemiseAppView { DataContext = vm }, 1400, 1000, "remise-parc-gdm");
+            Capture(new Argos.Views.Apps.Remise.RemiseAppView { DataContext = vm }, 1400, 800, "remise-situation-engins");
+            Assert.Equal(16, vm.EnginRows.Count);
+
+            var ode = new OdeAppViewModel(desktop) { CurrentPage = OdeAppViewModel.Page.Engins };
+            Assert.NotNull(ode.Parc);
+            Assert.Equal(16, ode.Parc!.Tiles.Count);
+            Capture(new OdeAppView { DataContext = ode }, 1400, 1000, "ode-parc-gdm");
             vm.CurrentPage = Argos.ViewModels.Remise.RemiseAppViewModel.Page.Inventaire;
             Capture(new Argos.Views.Apps.Remise.RemiseAppView { DataContext = vm }, 1400, 800, "remise-inventaire");
             vm.VerifEngin = "VSAV 949 CRET";

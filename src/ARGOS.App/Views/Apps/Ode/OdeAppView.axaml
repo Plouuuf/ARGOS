@@ -1,6 +1,7 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="Argos.Views.Apps.Ode.OdeAppView"
+             xmlns:remise="using:Argos.Views.Apps.Remise"
              Background="{StaticResource AdagioBack}"
              FontFamily="{StaticResource AdagioFont}"
              Foreground="Black">
@@ -51,7 +52,7 @@
                             Command="{Binding NavigateCommand}" CommandParameter="Interventions"/>
                     <Button Classes="nav" Classes.selected="{Binding IsArchives}" Content="Archives ODE"
                             Command="{Binding NavigateCommand}" CommandParameter="Archives"/>
-                    <Button Classes="nav" Classes.selected="{Binding IsEngins}" Content="Engins"
+                    <Button Classes="nav" Classes.selected="{Binding IsEngins}" Content="Parc des engins"
                             Command="{Binding NavigateCommand}" CommandParameter="Engins"/>
                     <Button Classes="nav" Classes.selected="{Binding IsStats}" Content="Statistiques"
                             Command="{Binding NavigateCommand}" CommandParameter="Stats"/>
@@ -242,38 +243,8 @@
                 </ScrollViewer>
             </DockPanel>
 
-            <!-- ===== Engins ===== -->
-            <DockPanel Grid.Row="1" IsVisible="{Binding IsEngins}" Margin="14">
-                <TextBlock DockPanel.Dock="Top" Classes="h1" Text="Situation des engins"/>
-                <Border DockPanel.Dock="Top" Classes="tablehead">
-                    <Grid ColumnDefinitions="140,*,70,170,90,90">
-                        <TextBlock Text="Engin"/>
-                        <TextBlock Grid.Column="1" Text="Désignation"/>
-                        <TextBlock Grid.Column="2" Text="Centre"/>
-                        <TextBlock Grid.Column="3" Text="Statut"/>
-                        <TextBlock Grid.Column="4" Text="Intervention"/>
-                        <TextBlock Grid.Column="5" Text="Depuis"/>
-                    </Grid>
-                </Border>
-                <ScrollViewer>
-                    <ItemsControl ItemsSource="{Binding Engins}">
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate>
-                                <Border Background="#E9F0F5" BorderBrush="#C3D4E1" BorderThickness="0,0,0,1" Padding="6,5">
-                                    <Grid ColumnDefinitions="140,*,70,170,90,90">
-                                        <TextBlock Classes="cell" Text="{Binding Nom}" FontWeight="Bold"/>
-                                        <TextBlock Grid.Column="1" Classes="cell" Text="{Binding Libelle}"/>
-                                        <TextBlock Grid.Column="2" Classes="cell" Text="{Binding Centre}"/>
-                                        <TextBlock Grid.Column="3" Classes="cell" Text="{Binding Status}" FontWeight="Bold"/>
-                                        <TextBlock Grid.Column="4" Classes="cell" Text="{Binding Intervention}"/>
-                                        <TextBlock Grid.Column="5" Classes="cell" Text="{Binding Since}"/>
-                                    </Grid>
-                                </Border>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-                </ScrollViewer>
-            </DockPanel>
+            <!-- ===== Parc des engins (feuille GDM, statuts en direct) ===== -->
+            <remise:GdmParcView Grid.Row="1" IsVisible="{Binding IsEngins}" DataContext="{Binding Parc}"/>
 
             <!-- ===== Statistiques ===== -->
             <ScrollViewer Grid.Row="1" IsVisible="{Binding IsStats}">

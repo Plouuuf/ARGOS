@@ -176,10 +176,10 @@ public sealed class RemiseAppViewModel : ViewModelBase, IDisposable
     public ObservableCollection<string> Centres { get; } = [];
     public IReadOnlyList<string> StatusFilters { get; } =
         [Tous, EnginStatuses.Disponible, Engage, EnginStatuses.Indisponible, EnginStatuses.Maintenance];
-    public ObservableCollection<EnginTile> Tiles { get; } = [];
+    public ObservableCollection<EnginStatusRow> EnginRows { get; } = [];
     public string CentreTitle => CentreFilter == Tous ? "TOUS CENTRES" : CentreFilter;
     public string CentreShort => CentreFilter == Tous ? "TOUS" : CentreFilter;
-    public string ParcCount => $"{Tiles.Count} engin(s)";
+    public string ParcCount => $"{EnginRows.Count} engin(s)";
 
     // ===== Inventaire =====
 
@@ -357,7 +357,7 @@ public sealed class RemiseAppViewModel : ViewModelBase, IDisposable
             .Select(i => new StockAlertRow(i.Name, i.Category, $"{i.Stock} {i.Unit}", i.AlertThreshold.ToString())));
 
         // Listes de choix
-        Sync(Centres, new[] { Tous }.Concat(engins.Select(e => e.Centre).Distinct().OrderBy(c => CentreRank(c))));
+        Sync(Centres, new[] { Tous }.Concat(engins.Select(e => e.Centre).Distinct().OrderBy(RemiseText.CentreRank)));
         Sync(EnginNames, engins.Select(e => e.Nom));
         Sync(Categories, new[] { "Toutes" }.Concat(r.Items.Select(i => i.Category).Distinct().OrderBy(c => c, StringComparer.Create(OdeFormat.French, true))));
         var choices = r.Items.Where(i => i.Active).OrderBy(i => i.Name, StringComparer.Create(OdeFormat.French, true))
@@ -382,37 +382,30 @@ public sealed class RemiseAppViewModel : ViewModelBase, IDisposable
 
     private void BuildParc()
     {
-        var q = ParcSearch.Trim();
-        var tiles = Remise.Engins.Where(e => e.Active)
+        var q = VdmsMap.Normalize(ParcSearch);
+        var rows = Remise.Engins.Where(e => e.Active)
             .Where(e => CentreFilter == Tous || e.Centre == CentreFilter)
-            .Where(e => q.Length == 0 || Has(e.Nom, q) || Has(e.Type, q) || Has(e.Libelle, q) || Has(e.Immatriculation, q))
-            .Select(TileOf)
-            .Where(t => StatusFilter == Tous
-                        || (StatusFilter == Engage ? EnginStatuses.IsEngaged(t.Status) || t.Status == EnginStatuses.DisponibleIntervention
-                            : StatusFilter == EnginStatuses.Disponible ? EnginStatuses.IsAvailable(t.Status)
-                            : t.Status == StatusFilter));
-        Fill(Tiles, tiles);
+            .Where(e => q.Length == 0 || VdmsMap.Normalize($"{e.Nom} {e.Type} {e.Libelle} {e.Immatriculation}").Contains(q, StringComparison.Ordinal))
+            .Select(RowOf)
+            .Where(r => GdmParcViewModel.Matches(r.Status, StatusFilter));
+        Fill(EnginRows, rows);
         OnPropertyChanged(nameof(ParcCount));
-        OnPropertyChanged(nameof(CentreTitle));
-        OnPropertyChanged(nameof(CentreShort));
     }
 
-    private EnginTile TileOf(FleetEngin e)
+    private EnginStatusRow RowOf(FleetEngin e)
     {
         var state = OdeState(e.Nom);
         var status = StatusOf(e, state);
-        var since = state?.UpdatedAt ?? e.AvailabilitySince;
         var nom = e.Nom;
-        var revisionDue = e.NextRevision is { } d && d.Date <= DateTime.Today.AddDays(7);
-        return new EnginTile(
-            e.Nom, e.GdmTitle, e.TypeLabel, e.Rang, e.Centre,
-            ImageLoader.EnginPhoto(e),
-            $"{since.ToLocalTime():HH:mm - dd/MM/yyyy}    [{status}]",
-            status,
-            RemiseColors.ForStatus(status),
-            e.NextRevision is { } r ? "Révision " + r.ToString("dd/MM/yyyy") : "Révision non planifiée",
-            revisionDue,
-            state?.InterventionNumber is { Length: > 0 } inter ? "Intervention " + inter : string.Empty,
+        var overdue = e.NextRevision is { } d && d.Date < DateTime.Today;
+        var remise = e.Availability == FleetAvailability.Disponible
+            ? FleetAvailability.Disponible
+            : e.Availability + (string.IsNullOrWhiteSpace(e.AvailabilityReason) ? string.Empty : " - " + e.AvailabilityReason);
+        return new EnginStatusRow(e.Nom, e.Libelle, e.Centre, status, RemiseColors.ForStatus(status),
+            state?.InterventionNumber ?? "—", remise,
+            e.NextRevision is { } r ? r.ToLocalTime().ToString("dd/MM/yyyy") : "—",
+            overdue ? RemiseColors.Alerte : RemiseColors.Normal,
+            OdeFormat.Short(state?.UpdatedAt ?? e.AvailabilitySince),
             new RelayCommand(() => OpenFiche(nom)));
     }
 

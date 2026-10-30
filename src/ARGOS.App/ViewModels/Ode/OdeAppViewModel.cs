@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using Argos.Services;
 using Argos.Shared.Contracts;
+using Argos.ViewModels.Remise;
 using Argos.Views.Apps.Ode;
 
 namespace Argos.ViewModels.Ode;
@@ -62,6 +63,11 @@ public sealed class OdeAppViewModel : ViewModelBase, IDisposable
                 OnPropertyChanged("Is" + p);
             if (value == Page.Journal)
                 _ = LoadJournalAsync();
+            if (value == Page.Engins && Parc is null)
+            {
+                Parc = new GdmParcViewModel(_desktop);
+                OnPropertyChanged(nameof(Parc));
+            }
         }
     }
 
@@ -125,6 +131,9 @@ public sealed class OdeAppViewModel : ViewModelBase, IDisposable
     // ===== Engins =====
 
     public ObservableCollection<EnginRow> Engins { get; } = [];
+
+    /// <summary>Parc des engins façon feuille GDM, statuts en direct (créé à la première ouverture de l'onglet).</summary>
+    public GdmParcViewModel? Parc { get; private set; }
 
     // ===== Journal =====
 
@@ -296,5 +305,6 @@ public sealed class OdeAppViewModel : ViewModelBase, IDisposable
     {
         if (ArgosSession.Current is { } session)
             session.Ode.Changed -= Rebuild;
+        Parc?.Dispose();
     }
 }

@@ -1,0 +1,140 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="Argos.Views.Apps.Remise.GdmParcView"
+             FontFamily="{StaticResource AdagioFont}"
+             Foreground="Black">
+    <!-- Parc des engins présenté comme la feuille GDM : utilisé dans ADAGIO ODE (statuts en direct). -->
+    <UserControl.Styles>
+        <Style Selector="TextBlock.empty">
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Foreground" Value="#355C8C"/>
+        </Style>
+        <!-- Feuille GDM -->
+        <Style Selector="Border.gdmbox">
+            <Setter Property="Background" Value="#F2F2F2"/>
+            <Setter Property="BorderBrush" Value="#3B3B3B"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Height" Value="44"/>
+        </Style>
+        <Style Selector="Border.gdmbox > TextBlock">
+            <Setter Property="FontSize" Value="27"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="Foreground" Value="Black"/>
+        </Style>
+        <Style Selector="Button.gdm">
+            <Setter Property="Background" Value="#D9D9D9"/>
+            <Setter Property="BorderBrush" Value="#3B3B3B"/>
+            <Setter Property="BorderThickness" Value="2"/>
+            <Setter Property="CornerRadius" Value="0"/>
+            <Setter Property="Padding" Value="8,8,10,6"/>
+            <Setter Property="Margin" Value="0,0,10,10"/>
+            <Setter Property="Width" Value="570"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+        </Style>
+        <Style Selector="Button.gdm:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="#E8E8E8"/>
+            <Setter Property="BorderBrush" Value="#1F3A52"/>
+        </Style>
+        <Style Selector="Button.centre">
+            <Setter Property="Background" Value="#F2F2F2"/>
+            <Setter Property="BorderBrush" Value="#3B3B3B"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="0"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Padding" Value="12,4"/>
+            <Setter Property="Margin" Value="0,0,6,6"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+    </UserControl.Styles>
+
+    <!-- ===== Parc des engins (feuille GDM) ===== -->
+    <DockPanel Background="#C9DAF8">
+        <Border DockPanel.Dock="Top" Background="#C9DAF8" Padding="12,10,12,4">
+            <Grid ColumnDefinitions="Auto,14,*">
+                <!-- Cartouche GIS 2 / 17e CIE / centre -->
+                <Border Width="184" Background="White" BorderBrush="Black" BorderThickness="2">
+                    <StackPanel>
+                        <Border Background="Black" Padding="0,4">
+                            <TextBlock Text="GIS 2" Foreground="#FFE600" FontSize="19" FontWeight="Bold" HorizontalAlignment="Center"/>
+                        </Border>
+                        <Border Margin="8,6" BorderBrush="#3B3B3B" BorderThickness="0,1">
+                            <TextBlock Text="17e CIE" FontSize="23" FontWeight="Bold" HorizontalAlignment="Right" Margin="0,2,4,2"/>
+                        </Border>
+                        <Border Margin="8,0,8,8" Background="#6D9EEB" Padding="0,6">
+                            <TextBlock Text="{Binding CentreShort}" FontSize="23" FontWeight="Bold" HorizontalAlignment="Right" Margin="0,0,6,0"/>
+                        </Border>
+                    </StackPanel>
+                </Border>
+                <StackPanel Grid.Column="2" Spacing="6">
+                    <ItemsControl ItemsSource="{Binding Centres}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Button Classes="centre" Content="{Binding}"
+                                        Command="{Binding $parent[UserControl].DataContext.CentreCommand}" CommandParameter="{Binding}"/>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <Grid ColumnDefinitions="*,8,170,8,Auto">
+                        <TextBox Classes="adg" Text="{Binding ParcSearch}" Watermark="Rechercher : indicatif, type, désignation, immatriculation"/>
+                        <ComboBox Grid.Column="2" Classes="adg" ItemsSource="{Binding StatusFilters}" SelectedItem="{Binding StatusFilter}"
+                                  HorizontalAlignment="Stretch"/>
+                        <TextBlock Grid.Column="4" Classes="lbl" Text="{Binding ParcCount}"/>
+                    </Grid>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <Border DockPanel.Dock="Top" Background="Black" Margin="12,6,12,0" Padding="0,3">
+            <TextBlock Text="{Binding CentreTitle}" Foreground="#FFE600" FontWeight="Bold" FontSize="13" HorizontalAlignment="Center"/>
+        </Border>
+        <ScrollViewer Margin="12,0,12,12">
+            <Border Background="#6D9EEB" BorderBrush="Black" BorderThickness="2,0,2,2" Padding="14,12,4,2">
+                <StackPanel>
+                    <ItemsControl ItemsSource="{Binding Tiles}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Button Classes="gdm" Command="{Binding OpenCommand}">
+                                    <Grid ColumnDefinitions="160,10,*" RowDefinitions="Auto,Auto,Auto">
+                                        <Border Grid.RowSpan="3" Background="#666666" BorderBrush="#2F2F2F" BorderThickness="1"
+                                                Height="74" VerticalAlignment="Top" ClipToBounds="True">
+                                            <Panel>
+                                                <Image Source="{Binding Photo}" Stretch="Uniform" IsVisible="{Binding HasPhoto}"/>
+                                                <TextBlock Text="Pas de photo" Foreground="#CFCFCF" FontSize="11"
+                                                           HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                           IsVisible="{Binding !HasPhoto}"/>
+                                            </Panel>
+                                        </Border>
+                                        <TextBlock Grid.Column="2" Text="{Binding GdmTitle}" FontSize="11.5" FontWeight="Bold" Margin="0,0,0,2"/>
+                                        <Grid Grid.Row="1" Grid.Column="2" ColumnDefinitions="*,8,52,8,100">
+                                            <Border Classes="gdmbox"><TextBlock Text="{Binding TypeLabel}"/></Border>
+                                            <Border Grid.Column="2" Classes="gdmbox"><TextBlock Text="{Binding Rang}"/></Border>
+                                            <Border Grid.Column="4" Classes="gdmbox"><TextBlock Text="{Binding Centre}"/></Border>
+                                        </Grid>
+                                        <Grid Grid.Row="2" Grid.Column="2" ColumnDefinitions="*,Auto" Margin="0,3,0,0">
+                                            <TextBlock Text="{Binding StatusLine}" FontSize="10.5" FontWeight="Bold"
+                                                       Foreground="{Binding StatusBrush}" TextTrimming="CharacterEllipsis"/>
+                                            <TextBlock Grid.Column="1" Text="{Binding Affectation}" FontSize="10.5" FontWeight="Bold"
+                                                       Foreground="#C62828" Margin="8,0,0,0" IsVisible="{Binding HasAffectation}"/>
+                                        </Grid>
+                                    </Grid>
+                                </Button>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <TextBlock Classes="empty" Text="Aucun engin ne correspond aux filtres." Foreground="Black"
+                               Margin="0,0,0,12" IsVisible="{Binding !Tiles.Count}"/>
+                </StackPanel>
+            </Border>
+        </ScrollViewer>
+    </DockPanel>
+</UserControl>

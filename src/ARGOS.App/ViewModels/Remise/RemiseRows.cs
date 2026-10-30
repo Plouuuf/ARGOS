@@ -27,6 +27,14 @@ public static class RemiseColors
 
 public static class RemiseText
 {
+    public static int CentreRank(string centre) => centre switch
+    {
+        EnginsCatalog.Creteil => 0,
+        EnginsCatalog.MaisonsAlfort => 1,
+        EnginsCatalog.Mass => 2,
+        _ => 3
+    };
+
     /// <summary>« Conforme » ou « 1 absent, 1 incomplet ».</summary>
     public static string Result(Verification v)
     {
@@ -59,6 +67,10 @@ public sealed record EnginTile(
     public bool HasPhoto => Photo is not null;
     public bool HasAffectation => !string.IsNullOrEmpty(Affectation);
 }
+
+/// <summary>Ligne de la « Situation des engins » (ADAGIO REMISE).</summary>
+public sealed record EnginStatusRow(string Nom, string Libelle, string Centre, string Status, IBrush StatusBrush,
+    string Intervention, string Remise, string Revision, IBrush RevisionBrush, string Since, RelayCommand OpenCommand);
 
 public sealed record RevisionRow(string Engin, string Date, string Delay, bool Overdue, RelayCommand OpenCommand)
 {
