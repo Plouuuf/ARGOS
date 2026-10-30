@@ -127,14 +127,14 @@ public sealed class ShellViewModel : ViewModelBase
                                  "(journal : maj-poste.log).";
                 return;
             }
-            var idle = Screen is ShellScreen.Lock or ShellScreen.Login && !IsBusy;
+            var idle = Screen is ShellScreen.Boot or ShellScreen.Lock or ShellScreen.Login && !IsBusy;
             if (idle) UpdateText = $"Mise à jour d'ARGOS ({info.Version})…";
             var error = await AppUpdater.InstallAsync(info);
-            idle = Screen is ShellScreen.Lock or ShellScreen.Login && !IsBusy;
+            idle = Screen is ShellScreen.Boot or ShellScreen.Lock or ShellScreen.Login && !IsBusy;
             if (error is not null)
             {
-                if (idle) UpdateText = error;
-                else Desktop?.ShowNotification("Mise à jour d'ARGOS", error);
+                if (idle || Desktop is null) UpdateText = error;
+                else Desktop.ShowNotification("Mise à jour d'ARGOS", error);
                 return;
             }
             if (idle)
