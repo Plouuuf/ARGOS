@@ -45,6 +45,7 @@ public static class Program
         builder.Services.AddSingleton<SigtaoService>();
         builder.Services.Configure<EfibiOptions>(builder.Configuration.GetSection("Efibi"));
         builder.Services.AddSingleton<EfibiService>();
+        builder.Services.AddSingleton<IliasService>();
         builder.Services.Configure<WebhookOptions>(builder.Configuration.GetSection("Webhooks"));
         builder.Services.AddSingleton<DiscordWebhookService>();
 
@@ -64,7 +65,7 @@ public static class Program
         {
             status = "ok",
             version = typeof(Program).Assembly.GetName().Version?.ToString(3),
-            applications = new[] { "adagio-ode", "adagio-remise", "mco", "sigtao", "efibi" },
+            applications = new[] { "adagio-ode", "adagio-remise", "mco", "sigtao", "efibi", "ilias" },
             utc = DateTimeOffset.UtcNow,
             connections = hub.ConnectionCount
         }));
@@ -387,6 +388,64 @@ public static class Program
             if (user is null) return Results.Unauthorized();
             if (!AccessLevels.CanUse(user.Levels, ArgosApps.Efibi)) return Results.StatusCode(StatusCodes.Status403Forbidden);
             return Results.Ok(await service.GetAsync(user, id));
+        });
+
+        // ===== ILIAS =====
+
+        var ilias = app.MapGroup("/api/ilias").AddEndpointFilter(AppWriteFilter(ArgosApps.Ilias));
+
+        ilias.MapGet("/state", async (HttpContext context, DiscordOAuthService oauth, IliasService service) =>
+        {
+            var user = await AuthenticateAsync(context, oauth);
+            return user is null ? Results.Unauthorized() : Results.Ok(service.Snapshot(user));
+        });
+
+        ilias.MapGet("/documents/{id}/file", async (string id, HttpContext context, DiscordOAuthService oauth, IliasService service) =>
+        {
+            var user = await AuthenticateAsync(context, oauth);
+            if (user is null) return Results.Unauthorized();
+            var (doc, path, error) = service.OpenFile(user, id);
+            return path is null || doc is null
+                ? Results.NotFound(new OdeResult(false, error))
+                : Results.File(path, doc.ContentType, doc.FileName);
+        });
+
+        ilias.MapPost("/documents", async (IliasDocumentRequest request, HttpContext context, DiscordOAuthService oauth, IliasService service) =>
+        {
+            var user = await AuthenticateAsync(context, oauth);
+            return user is null ? Results.Unauthorized() : ToResult(await service.SaveDocumentAsync(user, request));
+        });
+
+        ilias.MapPost("/categories", async (IliasCategory category, HttpContext context, DiscordOAuthService oauth, IliasService service) =>
+        {
+            var user = await AuthenticateAsync(context, oauth);
+            return user is null ? Results.Unauthorized() : ToResult(await service.SaveCategoryAsync(user, category));
+        });
+
+        ilias.MapPost("/formations", async (IliasFormation formation, HttpContext context, DiscordOAuthService oauth, IliasService service) =>
+        {
+            var user = await AuthenticateAsync(context, oauth);
+            return user is null ? Results.Unauthorized() : ToResult(await service.SaveFormationAsync(user, formation));
+        });
+
+        ilias.MapPost("/formations/{id}/modules", async (string id, IliasModuleRequest request, HttpContext context, DiscordOAuthService oauth, IliasService service) =>
+        {
+            var user = await AuthenticateAsync(context, oauth);
+            return user is null ? Results.Unauthorized() : ToResult(await service.SetModuleAsync(user, id, request));
+        });
+
+        ilias.MapPost("/quizzes", async (IliasQuiz quiz, HttpContext context, DiscordOAuthService oauth, IliasService service) =>
+        {
+            var user = await AuthenticateAsync(context, oauth);
+            return user is null ? Results.Unauthorized() : ToResult(await service.SaveQuizAsync(user, quiz));
+        });
+
+        ilias.MapPost("/quizzes/{id}/submit", async (string id, IliasSubmitRequest request, HttpContext context, DiscordOAuthService oauth, IliasService service) =>
+        {
+            var user = await AuthenticateAsync(context, oauth);
+            if (user is null) return Results.Unauthorized();
+            var result = await service.SubmitAsync(user, id, request);
+            return result is null ? Results.NotFound() : Results.Ok(result);
         });
 
         // ===== Intégrations serveur à serveur (clé ARGOS:AccessKey dans l'en-tête X-Argos-Key) =====

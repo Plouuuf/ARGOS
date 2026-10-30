@@ -26,7 +26,9 @@ param(
     [string]$PublicBaseUrl = "http://46.105.78.32:8092",
     [int]$Port = 8092,
     # Webhook du salon Discord qui reçoit les ODE imprimés (laisser vide pour garder le réglage actuel).
-    [string]$OdeWebhookUrl = ""
+    [string]$OdeWebhookUrl = "",
+    # Connexion MariaDB (lecture seule) à la base FiveM pour eFiBi, ex. "Server=127.0.0.1;Port=3306;Database=qbcore;User ID=argos_lecture;Password=…"
+    [string]$EfibiConnection = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -110,6 +112,8 @@ if ($existing -and $existing.Discord.LevelRoles) {
 
 $odeWebhook = if ($OdeWebhookUrl) { $OdeWebhookUrl.Trim() } elseif ($existing -and $existing.Webhooks) { [string]$existing.Webhooks.Ode } else { "" }
 
+$efibiConnection = if ($EfibiConnection) { $EfibiConnection.Trim() } elseif ($existing -and $existing.Efibi) { [string]$existing.Efibi.ConnectionString } else { "" }
+
 $settings = [ordered]@{
     Urls = "http://0.0.0.0:$Port"
     ARGOS = [ordered]@{ AccessKey = $accessKey }
@@ -122,9 +126,12 @@ $settings = [ordered]@{
         LevelRoles = $levels
     }
     Webhooks = [ordered]@{ Ode = $odeWebhook }
+    Efibi = [ordered]@{ ConnectionString = $efibiConnection }
 }
 $settings | ConvertTo-Json -Depth 5 | Set-Content -Path $LocalSettings -Encoding utf8
 Ok "appsettings.Local.json écrit (rôle requis : $RequiredRoleId)."
+if ($efibiConnection) { Ok "eFiBi relié à la base des fiches bilans (lecture seule)." }
+else { Warn "eFiBi non relié : relancer avec -EfibiConnection ""Server=127.0.0.1;Port=3306;Database=…;User ID=…;Password=…""" }
 if ($odeWebhook) { Ok "ODE imprimés publiés sur Discord (webhook configuré)." }
 else { Warn "Pas de webhook Discord pour les ODE : relancer avec -OdeWebhookUrl ""https://discord.com/api/webhooks/…""" }
 

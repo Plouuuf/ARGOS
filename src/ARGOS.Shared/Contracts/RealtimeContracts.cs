@@ -35,6 +35,9 @@ public static class RealtimeTypes
     /// <summary>SIGTAO a changé (dossiers, comptes, comptes-rendus).</summary>
     public const string SigtaoChanged = "sigtao-changed";
 
+    /// <summary>ILIAS a changé (documents, formations, questionnaires).</summary>
+    public const string IliasChanged = "ilias-changed";
+
     /// <summary>Ouvrir la prise d'appel de l'appel indiqué (Text = identifiant), au décroché d'un 18.</summary>
     public const string OpenCall = "open-call";
 }

@@ -155,7 +155,12 @@ public sealed class EfibiService(IOptionsMonitor<EfibiOptions> options, OdeDatab
     private static EfibiSummary ReadSummary(MySqlDataReader r)
     {
         static DateTimeOffset? Date(MySqlDataReader r, int i)
-            => r.IsDBNull(i) ? null : new DateTimeOffset(DateTime.SpecifyKind(r.GetDateTime(i), DateTimeKind.Utc));
+        {
+            if (r.IsDBNull(i)) return null;
+            // Dates MariaDB sans fuseau : heure locale du VPS (même machine que le serveur FiveM).
+            var local = DateTime.SpecifyKind(r.GetDateTime(i), DateTimeKind.Unspecified);
+            return new DateTimeOffset(local, TimeZoneInfo.Local.GetUtcOffset(local));
+        }
         return new EfibiSummary
         {
             Id = Convert.ToInt64(r.GetValue(0)),

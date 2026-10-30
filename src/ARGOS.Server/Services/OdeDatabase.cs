@@ -61,6 +61,12 @@ public sealed class OdeDatabase
             CREATE TABLE IF NOT EXISTS sigtao_military (id TEXT PRIMARY KEY, at TEXT NOT NULL, data TEXT NOT NULL);
             CREATE TABLE IF NOT EXISTS sigtao_accounts (id TEXT PRIMARY KEY, at TEXT NOT NULL, data TEXT NOT NULL);
             CREATE TABLE IF NOT EXISTS sigtao_reports (id TEXT PRIMARY KEY, at TEXT NOT NULL, data TEXT NOT NULL);
+            CREATE TABLE IF NOT EXISTS ilias_categories (id TEXT PRIMARY KEY, at TEXT NOT NULL, data TEXT NOT NULL);
+            CREATE TABLE IF NOT EXISTS ilias_documents (id TEXT PRIMARY KEY, at TEXT NOT NULL, data TEXT NOT NULL);
+            CREATE TABLE IF NOT EXISTS ilias_formations (id TEXT PRIMARY KEY, at TEXT NOT NULL, data TEXT NOT NULL);
+            CREATE TABLE IF NOT EXISTS ilias_quizzes (id TEXT PRIMARY KEY, at TEXT NOT NULL, data TEXT NOT NULL);
+            CREATE TABLE IF NOT EXISTS ilias_progress (id TEXT PRIMARY KEY, at TEXT NOT NULL, data TEXT NOT NULL);
+            CREATE TABLE IF NOT EXISTS ilias_results (id TEXT PRIMARY KEY, at TEXT NOT NULL, data TEXT NOT NULL);
             -- Les mouvements de stock ne peuvent être ni modifiés ni effacés.
             CREATE TRIGGER IF NOT EXISTS movements_no_update BEFORE UPDATE ON remise_movements
                 BEGIN SELECT RAISE(ABORT, 'mouvements en lecture seule'); END;
@@ -194,6 +200,12 @@ public sealed class OdeDatabase
         public const string Military = "sigtao_military";
         public const string Accounts = "sigtao_accounts";
         public const string CrReports = "sigtao_reports";
+        public const string IliasCategories = "ilias_categories";
+        public const string IliasDocuments = "ilias_documents";
+        public const string IliasFormations = "ilias_formations";
+        public const string IliasQuizzes = "ilias_quizzes";
+        public const string IliasProgress = "ilias_progress";
+        public const string IliasResults = "ilias_results";
     }
 
     public void SaveDoc(string table, string id, DateTimeOffset at, object document)
