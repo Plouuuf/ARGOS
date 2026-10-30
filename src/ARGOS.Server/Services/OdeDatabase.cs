@@ -70,6 +70,7 @@ public sealed class OdeDatabase
             CREATE TABLE IF NOT EXISTS mail_items (id TEXT PRIMARY KEY, at TEXT NOT NULL, data TEXT NOT NULL);
             CREATE TABLE IF NOT EXISTS mail_contacts (id TEXT PRIMARY KEY, at TEXT NOT NULL, data TEXT NOT NULL);
             CREATE TABLE IF NOT EXISTS mail_profiles (id TEXT PRIMARY KEY, at TEXT NOT NULL, data TEXT NOT NULL);
+            CREATE TABLE IF NOT EXISTS user_files (id TEXT PRIMARY KEY, at TEXT NOT NULL, data TEXT NOT NULL);
             -- Les mouvements de stock ne peuvent être ni modifiés ni effacés.
             CREATE TRIGGER IF NOT EXISTS movements_no_update BEFORE UPDATE ON remise_movements
                 BEGIN SELECT RAISE(ABORT, 'mouvements en lecture seule'); END;
@@ -212,6 +213,7 @@ public sealed class OdeDatabase
         public const string MailItems = "mail_items";
         public const string MailContacts = "mail_contacts";
         public const string MailProfiles = "mail_profiles";
+        public const string Files = "user_files";
     }
 
     public void SaveDoc(string table, string id, DateTimeOffset at, object document)

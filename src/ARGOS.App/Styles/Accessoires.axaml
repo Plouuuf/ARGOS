@@ -1,0 +1,44 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <!-- Accessoires Windows 10 : Explorateur, Bloc-notes, Calculatrice, Corbeille. -->
+    <Styles.Resources>
+        <StreamGeometry x:Key="W10File">M6,2H14L20,8V22H6Z M14,2V8H20</StreamGeometry>
+    </Styles.Resources>
+    <Style Selector=".w10 Button.tool">
+        <Setter Property="Background" Value="Transparent"/><Setter Property="Foreground" Value="#1A1A1A"/><Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="BorderBrush" Value="Transparent"/><Setter Property="CornerRadius" Value="0"/><Setter Property="Padding" Value="8,4"/>
+        <Setter Property="FontSize" Value="12"/><Setter Property="Cursor" Value="Hand"/>
+    </Style>
+    <Style Selector=".w10 Button.tool:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="#E5F3FF"/><Setter Property="BorderBrush" Value="#CCE8FF"/><Setter Property="Foreground" Value="#1A1A1A"/>
+    </Style>
+    <Style Selector=".w10 Button.tool:disabled /template/ ContentPresenter#PART_ContentPresenter"><Setter Property="Background" Value="Transparent"/><Setter Property="Foreground" Value="#A0A0A0"/></Style>
+    <Style Selector=".w10 Button.row">
+        <Setter Property="Background" Value="Transparent"/><Setter Property="BorderThickness" Value="1"/><Setter Property="BorderBrush" Value="Transparent"/>
+        <Setter Property="CornerRadius" Value="0"/><Setter Property="Padding" Value="4,2"/><Setter Property="HorizontalAlignment" Value="Stretch"/>
+        <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+    </Style>
+    <Style Selector=".w10 Button.row:pointerover /template/ ContentPresenter#PART_ContentPresenter"><Setter Property="Background" Value="#E5F3FF"/><Setter Property="BorderBrush" Value="Transparent"/></Style>
+    <Style Selector=".w10 Button.row.selected /template/ ContentPresenter#PART_ContentPresenter"><Setter Property="Background" Value="#CCE8FF"/><Setter Property="BorderBrush" Value="#99D1FF"/></Style>
+    <Style Selector=".w10 TextBlock.head"><Setter Property="FontSize" Value="12"/><Setter Property="Foreground" Value="#4D6082"/></Style>
+    <Style Selector=".w10 TextBlock.cell"><Setter Property="FontSize" Value="12"/><Setter Property="Foreground" Value="#6D6D6D"/><Setter Property="VerticalAlignment" Value="Center"/></Style>
+    <Style Selector=".w10 TextBlock.status"><Setter Property="FontSize" Value="12"/><Setter Property="Foreground" Value="#1A1A1A"/></Style>
+
+    <!-- Calculatrice -->
+    <Style Selector=".calc Button.k">
+        <Setter Property="Background" Value="#F0F0F0"/><Setter Property="Foreground" Value="#1A1A1A"/><Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="CornerRadius" Value="0"/><Setter Property="Margin" Value="1"/><Setter Property="FontSize" Value="17"/>
+        <Setter Property="HorizontalAlignment" Value="Stretch"/><Setter Property="VerticalAlignment" Value="Stretch"/>
+        <Setter Property="HorizontalContentAlignment" Value="Center"/><Setter Property="VerticalContentAlignment" Value="Center"/>
+    </Style>
+    <Style Selector=".calc Button.k.num"><Setter Property="Background" Value="#FAFAFA"/><Setter Property="FontWeight" Value="SemiBold"/><Setter Property="FontSize" Value="19"/></Style>
+    <Style Selector=".calc Button.k:pointerover /template/ ContentPresenter#PART_ContentPresenter"><Setter Property="Background" Value="#D9D9D9"/><Setter Property="Foreground" Value="#1A1A1A"/></Style>
+    <Style Selector=".calc Button.k.eq:pointerover /template/ ContentPresenter#PART_ContentPresenter"><Setter Property="Background" Value="#0078D7"/><Setter Property="Foreground" Value="White"/></Style>
+    <Style Selector=".calc Button.k:pressed /template/ ContentPresenter#PART_ContentPresenter"><Setter Property="Background" Value="#BFBFBF"/></Style>
+    <Style Selector=".calc Button.m">
+        <Setter Property="Background" Value="Transparent"/><Setter Property="BorderThickness" Value="0"/><Setter Property="FontSize" Value="12"/>
+        <Setter Property="FontWeight" Value="SemiBold"/><Setter Property="HorizontalAlignment" Value="Stretch"/><Setter Property="HorizontalContentAlignment" Value="Center"/>
+    </Style>
+    <Style Selector=".calc Button.m:pointerover /template/ ContentPresenter#PART_ContentPresenter"><Setter Property="Background" Value="#D9D9D9"/></Style>
+    <Style Selector=".calc Button.m:disabled /template/ ContentPresenter#PART_ContentPresenter"><Setter Property="Background" Value="Transparent"/><Setter Property="Foreground" Value="#B0B0B0"/></Style>
+</Styles>

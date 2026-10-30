@@ -69,12 +69,12 @@ public class ScreenTests
         vm.ShowNotification("ADAGIO ODE", "Nouvel ordre de départ");
         Dispatcher.UIThread.RunJobs();
 
-        Assert.Equal(7, vm.Windows.Count);
+        Assert.Equal(Argos.Services.AppCatalog.All.Count, vm.Windows.Count);
         vm.Windows[0].IsMaximized = true;
         vm.Minimize(vm.Windows[1]);
         vm.Close(vm.Windows[2]);
         Dispatcher.UIThread.RunJobs();
-        Assert.Equal(6, vm.Windows.Count);
+        Assert.Equal(Argos.Services.AppCatalog.All.Count - 1, vm.Windows.Count);
     }
 
     [AvaloniaFact]

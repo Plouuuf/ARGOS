@@ -43,7 +43,7 @@ public sealed class DesktopViewModel : ViewModelBase
         _avatar = avatar;
 
         // Une application par rôle Discord : seules celles autorisées apparaissent sur le bureau.
-        foreach (var definition in AppCatalog.All.Where(d => AccessLevels.CanUse(user.Levels, d.Id)))
+        foreach (var definition in AppCatalog.All.Where(d => d.Accessory || AccessLevels.CanUse(user.Levels, d.Id)))
             Apps.Add(new AppTileViewModel(definition, OpenApp));
 
         // Menu Démarrer : liste alphabétique avec une lettre par section, comme Windows 10.
@@ -155,7 +155,8 @@ public sealed class DesktopViewModel : ViewModelBase
     // ===== Applications et fenêtres =====
 
     public void OpenApp(AppTileViewModel app)
-        => OpenWindow(new WindowSpec(app.Id, app.Title, app.Icon, () => AppContentFactory.Create(app, this)));
+        => OpenWindow(new WindowSpec(app.Id, app.Title, app.Icon, () => AppContentFactory.Create(app, this),
+            app.Definition.Width, app.Definition.Height));
 
     /// <summary>
     /// Ouvre une fenêtre (ou la ramène au premier plan si sa clé est déjà ouverte).
@@ -319,6 +320,10 @@ public sealed class DesktopViewModel : ViewModelBase
 
             case RealtimeTypes.MailChanged:
                 _ = ArgosSession.Current?.Mail.RefreshAsync();
+                break;
+
+            case RealtimeTypes.FilesChanged:
+                _ = ArgosSession.Current?.Files.RefreshAsync();
                 break;
 
             case RealtimeTypes.OpenCall when !string.IsNullOrWhiteSpace(message.Text):

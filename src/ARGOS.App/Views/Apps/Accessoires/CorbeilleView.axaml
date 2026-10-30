@@ -1,0 +1,64 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="Argos.Views.Apps.Accessoires.CorbeilleView"
+             Classes="w10" Background="White"
+             FontFamily="Segoe UI, Helvetica Neue, Arial, Liberation Sans" Foreground="#1A1A1A">
+    <DockPanel>
+        <Border DockPanel.Dock="Top" Background="#F5F6F7" BorderBrush="#DADBDC" BorderThickness="0,0,0,1" Padding="6,4">
+            <WrapPanel>
+                <Button Classes="tool" Content="Vider la Corbeille" Command="{Binding EmptyCommand}"/>
+                <Button Classes="tool" Content="Restaurer tous les éléments" Command="{Binding RestoreAllCommand}"/>
+                <Button Classes="tool" Content="Restaurer la sélection" Command="{Binding RestoreCommand}"/>
+                <Button Classes="tool" Content="Supprimer définitivement" Command="{Binding PurgeCommand}"/>
+            </WrapPanel>
+        </Border>
+        <Border DockPanel.Dock="Top" Padding="10,6" Background="#E5F3FF" BorderBrush="#DADBDC" BorderThickness="0,0,0,1" IsVisible="{Binding HasMessage}">
+            <TextBlock Text="{Binding Message}" FontSize="12"/>
+        </Border>
+        <Border DockPanel.Dock="Top" Background="#FFF4CE" Padding="10,8" IsVisible="{Binding ConfirmEmpty}">
+            <Grid ColumnDefinitions="*,Auto,6,Auto">
+                <TextBlock Text="Voulez-vous vraiment supprimer définitivement tous les éléments de la Corbeille ?" FontSize="12.5" VerticalAlignment="Center" TextWrapping="Wrap"/>
+                <Button Grid.Column="1" Classes="tool" Content="Oui" Command="{Binding ConfirmEmptyCommand}" BorderBrush="#ADADAD"/>
+                <Button Grid.Column="3" Classes="tool" Content="Non" Command="{Binding CancelEmptyCommand}" BorderBrush="#ADADAD"/>
+            </Grid>
+        </Border>
+        <Border DockPanel.Dock="Bottom" BorderBrush="#F0F0F0" BorderThickness="0,1,0,0" Padding="10,3">
+            <TextBlock Classes="status" Text="{Binding StatusText}"/>
+        </Border>
+        <DockPanel>
+            <Grid DockPanel.Dock="Top" ColumnDefinitions="*,170,130,80,130" Margin="12,6,12,2">
+                <TextBlock Classes="head" Text="Nom" Margin="26,0,0,0"/>
+                <TextBlock Grid.Column="1" Classes="head" Text="Emplacement d'origine"/>
+                <TextBlock Grid.Column="2" Classes="head" Text="Date de suppression"/>
+                <TextBlock Grid.Column="3" Classes="head" Text="Taille" HorizontalAlignment="Right" Margin="0,0,10,0"/>
+                <TextBlock Grid.Column="4" Classes="head" Text="Type"/>
+            </Grid>
+            <Panel>
+                <TextBlock Text="La Corbeille est vide." FontSize="12" Foreground="#6D6D6D" HorizontalAlignment="Center" Margin="0,30,0,0" IsVisible="{Binding IsEmpty}"/>
+                <ScrollViewer>
+                    <ItemsControl ItemsSource="{Binding Items}" Margin="8,0">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Button Classes="row" Classes.selected="{Binding Selected}" Command="{Binding SelectCommand}">
+                                    <Grid ColumnDefinitions="*,170,130,80,130">
+                                        <StackPanel Orientation="Horizontal" Spacing="8">
+                                            <Panel Width="18" Height="18">
+                                                <Image Source="avares://ARGOS.App/Assets/Icons/explorateur.png" IsVisible="{Binding IsFolder}"/>
+                                                <Path Data="{StaticResource W10File}" Stroke="#7A8594" StrokeThickness="1.4" Fill="White" Stretch="Uniform" IsVisible="{Binding !IsFolder}"/>
+                                            </Panel>
+                                            <TextBlock Text="{Binding Name}" FontSize="12.5" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                        </StackPanel>
+                                        <TextBlock Grid.Column="1" Classes="cell" Text="{Binding Origin}" TextTrimming="CharacterEllipsis"/>
+                                        <TextBlock Grid.Column="2" Classes="cell" Text="{Binding DeletedAt}"/>
+                                        <TextBlock Grid.Column="3" Classes="cell" Text="{Binding Size}" HorizontalAlignment="Right" Margin="0,0,10,0"/>
+                                        <TextBlock Grid.Column="4" Classes="cell" Text="{Binding Type}"/>
+                                    </Grid>
+                                </Button>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </Panel>
+        </DockPanel>
+    </DockPanel>
+</UserControl>

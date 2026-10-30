@@ -47,6 +47,7 @@ public static class Program
         builder.Services.AddSingleton<EfibiService>();
         builder.Services.AddSingleton<IliasService>();
         builder.Services.AddSingleton<MailService>();
+        builder.Services.AddSingleton<FilesService>();
         builder.Services.AddSingleton<UpdateService>();
         builder.Services.AddHostedService(sp => sp.GetRequiredService<UpdateService>());
         builder.Services.Configure<WebhookOptions>(builder.Configuration.GetSection("Webhooks"));
@@ -482,16 +483,14 @@ public static class Program
             if (user is null) return Results.Unauthorized();
             var result = await service.SaveDraftAsync(user, request);
             return result.Ok ? Results.Ok(result) : Results.BadRequest(result);
-        });
-
+        }).WithMetadata(new Microsoft.AspNetCore.Mvc.RequestSizeLimitAttribute(40L * 1024 * 1024));
         mail.MapPost("/send", async (MailDraftRequest request, HttpContext context, DiscordOAuthService oauth, MailService service) =>
         {
             var user = await AuthenticateAsync(context, oauth);
             if (user is null) return Results.Unauthorized();
             var result = await service.SendAsync(user, request);
             return result.Ok ? Results.Ok(result) : Results.BadRequest(result);
-        });
-
+        }).WithMetadata(new Microsoft.AspNetCore.Mvc.RequestSizeLimitAttribute(40L * 1024 * 1024));
         mail.MapPost("/items/{id}", async (string id, MailFlagRequest request, HttpContext context, DiscordOAuthService oauth, MailService service) =>
         {
             var user = await AuthenticateAsync(context, oauth);
@@ -526,6 +525,73 @@ public static class Program
         {
             var user = await AuthenticateAsync(context, oauth);
             return user is null ? Results.Unauthorized() : ToResult(await service.SaveSignatureAsync(user, request));
+        });
+
+        // ===== Mes documents (Explorateur, Bloc-notes, Corbeille : tous les utilisateurs d'ARGOS) =====
+
+        var files = app.MapGroup("/api/files");
+
+        files.MapGet("/state", async (HttpContext context, DiscordOAuthService oauth, FilesService service) =>
+        {
+            var user = await AuthenticateAsync(context, oauth);
+            return user is null ? Results.Unauthorized() : Results.Ok(service.Snapshot(user));
+        });
+
+        files.MapGet("/{id}/content", async (string id, HttpContext context, DiscordOAuthService oauth, FilesService service) =>
+        {
+            var user = await AuthenticateAsync(context, oauth);
+            if (user is null) return Results.Unauthorized();
+            var (entry, path) = service.Open(user, id);
+            if (entry is null) return Results.NotFound();
+            return path is null ? Results.Bytes([], entry.ContentType, entry.Name) : Results.File(path, entry.ContentType, entry.Name);
+        });
+
+        files.MapPost("/folders", async (FileFolderRequest request, HttpContext context, DiscordOAuthService oauth, FilesService service) =>
+        {
+            var user = await AuthenticateAsync(context, oauth);
+            return user is null ? Results.Unauthorized() : ToResult(await service.CreateFolderAsync(user, request));
+        });
+
+        files.MapPost("/upload", async (FileUploadRequest request, HttpContext context, DiscordOAuthService oauth, FilesService service) =>
+        {
+            var user = await AuthenticateAsync(context, oauth);
+            return user is null ? Results.Unauthorized() : ToResult(await service.UploadAsync(user, request));
+        }).WithMetadata(new Microsoft.AspNetCore.Mvc.RequestSizeLimitAttribute(40L * 1024 * 1024));
+
+        files.MapPost("/{id}/rename", async (string id, FileRenameRequest request, HttpContext context, DiscordOAuthService oauth, FilesService service) =>
+        {
+            var user = await AuthenticateAsync(context, oauth);
+            return user is null ? Results.Unauthorized() : ToResult(await service.RenameAsync(user, id, request));
+        });
+
+        files.MapPost("/{id}/move", async (string id, FileMoveRequest request, HttpContext context, DiscordOAuthService oauth, FilesService service) =>
+        {
+            var user = await AuthenticateAsync(context, oauth);
+            return user is null ? Results.Unauthorized() : ToResult(await service.MoveAsync(user, id, request));
+        });
+
+        files.MapPost("/{id}/delete", async (string id, HttpContext context, DiscordOAuthService oauth, FilesService service) =>
+        {
+            var user = await AuthenticateAsync(context, oauth);
+            return user is null ? Results.Unauthorized() : ToResult(await service.DeleteAsync(user, id));
+        });
+
+        files.MapPost("/{id}/restore", async (string id, HttpContext context, DiscordOAuthService oauth, FilesService service) =>
+        {
+            var user = await AuthenticateAsync(context, oauth);
+            return user is null ? Results.Unauthorized() : ToResult(await service.RestoreAsync(user, id));
+        });
+
+        files.MapPost("/{id}/purge", async (string id, HttpContext context, DiscordOAuthService oauth, FilesService service) =>
+        {
+            var user = await AuthenticateAsync(context, oauth);
+            return user is null ? Results.Unauthorized() : ToResult(await service.PurgeAsync(user, id));
+        });
+
+        files.MapPost("/trash/empty", async (HttpContext context, DiscordOAuthService oauth, FilesService service) =>
+        {
+            var user = await AuthenticateAsync(context, oauth);
+            return user is null ? Results.Unauthorized() : ToResult(await service.EmptyTrashAsync(user));
         });
 
         // ===== Intégrations serveur à serveur (clé ARGOS:AccessKey dans l'en-tête X-Argos-Key) =====

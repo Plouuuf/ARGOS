@@ -560,3 +560,101 @@ public class MailScreenshots
         }
     }
 }
+
+/// <summary>Accessoires Windows : Calculatrice (calculs), Explorateur, Bloc-notes, Corbeille (captures).</summary>
+public class AccessoiresTests
+{
+    private static readonly string Folder = Environment.GetEnvironmentVariable("ARGOS_SCREENSHOTS")
+                                            ?? Path.Combine(Path.GetTempPath(), "argos-screenshots");
+
+    private static void Capture(Control content, double width, double height, string name)
+    {
+        Directory.CreateDirectory(Folder);
+        var window = new Window { Width = width, Height = height, Content = content };
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+        window.CaptureRenderedFrame()!.Save(Path.Combine(Folder, name + ".png"));
+        window.Close();
+    }
+
+    private static string Run(string keys)
+    {
+        var calc = new Argos.ViewModels.Accessoires.CalculatriceViewModel();
+        foreach (var k in keys.Split(' ')) calc.Key(k);
+        return calc.Display;
+    }
+
+    [Fact]
+    public void Calculatrice_comme_Windows()
+    {
+        Assert.Equal("5", Run("2 + 3 ="));
+        Assert.Equal("20", Run("2 + 3 * 4 ="));                // de gauche à droite, comme la calculatrice standard
+        Assert.Equal("15", Run("5 + = ="));                      // « 5 + = » donne 10, « = » répété ajoute 5
+        Assert.Equal("1 234 567", Run("1 2 3 4 5 6 7").Replace(' ', ' ').Replace(' ', ' '));
+        Assert.Equal("0,5", Run("1 / 2 ="));
+        Assert.Equal("Division par zéro impossible", Run("8 / 0 ="));
+        Assert.Equal("10", Run("2 0 0 + 5 %"));
+        var calc = new Argos.ViewModels.Accessoires.CalculatriceViewModel();
+        calc.Key("9"); calc.Function("sqrt");
+        Assert.Equal("3", calc.Display);
+        calc.Memory("MS"); calc.Key("Escape"); calc.Memory("MR");
+        Assert.Equal("3", calc.Display);
+    }
+
+    [Fact]
+    public void BlocNotes_decode_les_anciens_fichiers()
+    {
+        Assert.Equal("é", Argos.ViewModels.Accessoires.BlocNotesViewModel.Decode([0xE9]));          // Windows-1252 / Latin-1
+        Assert.Equal("é", Argos.ViewModels.Accessoires.BlocNotesViewModel.Decode([0xEF, 0xBB, 0xBF, 0xC3, 0xA9]));
+    }
+
+    [AvaloniaFact]
+    public void Captures_accessoires()
+    {
+        var user = new ArgosUserDto("1", "Santos", null, [AccessLevels.Sapeur]);
+        var previous = Argos.Services.ArgosSession.Current;
+        Argos.Services.ArgosSession.Current = new Argos.Services.ArgosSession(user, "test");
+        try
+        {
+            var now = DateTimeOffset.Now;
+            Argos.Services.ArgosSession.Current.Files.Apply(new FilesSnapshot
+            {
+                Used = 3_400_000, Quota = 200L * 1024 * 1024,
+                Entries =
+                [
+                    new() { Id = "f1", OwnerId = "1", Name = "Gardes", IsFolder = true, UpdatedAt = now.AddDays(-3) },
+                    new() { Id = "f2", OwnerId = "1", Name = "Formations", IsFolder = true, UpdatedAt = now.AddDays(-9) },
+                    new() { Id = "f3", OwnerId = "1", ParentId = "f1", Name = "Novembre", IsFolder = true, UpdatedAt = now },
+                    new() { Id = "d1", OwnerId = "1", Name = "Notes de garde.txt", Size = 2_300, UpdatedAt = now.AddHours(-2) },
+                    new() { Id = "d2", OwnerId = "1", Name = "Planning S45.pdf", Size = 182_000, UpdatedAt = now.AddDays(-1) },
+                    new() { Id = "d3", OwnerId = "1", Name = "Inventaire VSAV.csv", Size = 8_400, UpdatedAt = now.AddDays(-5) },
+                    new() { Id = "t1", OwnerId = "1", Name = "Brouillon CR.txt", Size = 900, Deleted = true, DeletedAt = now.AddMinutes(-40), UpdatedAt = now }
+                ]
+            });
+            var desktop = new DesktopViewModel(user, null, () => { }, () => { });
+            var explorer = new Argos.ViewModels.Accessoires.ExplorateurViewModel(desktop);
+            Assert.Equal(5, explorer.Items.Count);
+            explorer.Select("d1");
+            Capture(new Argos.Views.Apps.Accessoires.ExplorateurView { DataContext = explorer }, 940, 600, "accessoire-explorateur");
+
+            var notes = new Argos.ViewModels.Accessoires.BlocNotesViewModel(desktop, "n", null)
+            {
+                Text = "Garde du 30/10\r\n- Relève 7h30\r\n- VSAV 1 : contrôle des bouteilles O2\r\n- Vérifier le stock de pansements"
+            };
+            Assert.StartsWith("*", notes.Title);
+            Capture(new Argos.Views.Apps.Accessoires.BlocNotesView { DataContext = notes }, 760, 520, "accessoire-bloc-notes");
+
+            var calc = new Argos.ViewModels.Accessoires.CalculatriceViewModel();
+            foreach (var k in "1 2 5 * 4 =".Split(' ')) calc.Key(k);
+            Capture(new Argos.Views.Apps.Accessoires.CalculatriceView { DataContext = calc }, 340, 540, "accessoire-calculatrice");
+
+            var bin = new Argos.ViewModels.Accessoires.CorbeilleViewModel();
+            Assert.Single(bin.Items);
+            Capture(new Argos.Views.Apps.Accessoires.CorbeilleView { DataContext = bin }, 760, 420, "accessoire-corbeille");
+        }
+        finally
+        {
+            Argos.Services.ArgosSession.Current = previous;
+        }
+    }
+}

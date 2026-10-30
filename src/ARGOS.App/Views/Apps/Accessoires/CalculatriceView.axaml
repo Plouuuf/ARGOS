@@ -1,0 +1,49 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="Argos.Views.Apps.Accessoires.CalculatriceView"
+             Classes="calc" Background="#E6E6E6" Focusable="True"
+             FontFamily="Segoe UI, Helvetica Neue, Arial, Liberation Sans" Foreground="#1A1A1A">
+    <DockPanel>
+        <TextBlock DockPanel.Dock="Top" Text="Standard" FontSize="20" FontWeight="SemiBold" Margin="14,10,0,0"/>
+        <StackPanel DockPanel.Dock="Top" Margin="12,8,14,4">
+            <TextBlock Text="{Binding Expression}" FontSize="13" Foreground="#6D6D6D" HorizontalAlignment="Right" MinHeight="18" TextTrimming="CharacterEllipsis"/>
+            <Viewbox HorizontalAlignment="Right" StretchDirection="DownOnly" MaxHeight="64">
+                <TextBlock Text="{Binding Display}" FontSize="46" FontWeight="SemiBold"/>
+            </Viewbox>
+            <TextBlock Text="{Binding MemoryText}" FontSize="11" Foreground="#6D6D6D" HorizontalAlignment="Right" MinHeight="14"/>
+        </StackPanel>
+        <UniformGrid DockPanel.Dock="Top" Columns="5" Height="30" Margin="4,0">
+            <Button Classes="m" Content="MC" Command="{Binding MemoryCommand}" CommandParameter="MC" IsEnabled="{Binding HasMemory}"/>
+            <Button Classes="m" Content="MR" Command="{Binding MemoryCommand}" CommandParameter="MR" IsEnabled="{Binding HasMemory}"/>
+            <Button Classes="m" Content="M+" Command="{Binding MemoryCommand}" CommandParameter="M+"/>
+            <Button Classes="m" Content="M-" Command="{Binding MemoryCommand}" CommandParameter="M-"/>
+            <Button Classes="m" Content="MS" Command="{Binding MemoryCommand}" CommandParameter="MS"/>
+        </UniformGrid>
+        <UniformGrid Columns="4" Rows="6" Margin="3,4,3,3">
+            <Button Classes="k" Content="%" Command="{Binding PercentCommand}"/>
+            <Button Classes="k" Content="CE" Command="{Binding ClearEntryCommand}"/>
+            <Button Classes="k" Content="C" Command="{Binding ClearCommand}"/>
+            <Button Classes="k" Content="⌫" Command="{Binding BackspaceCommand}"/>
+            <Button Classes="k" Content="¹/x" Command="{Binding FunctionCommand}" CommandParameter="inv"/>
+            <Button Classes="k" Content="x²" Command="{Binding FunctionCommand}" CommandParameter="sqr"/>
+            <Button Classes="k" Content="²√x" Command="{Binding FunctionCommand}" CommandParameter="sqrt"/>
+            <Button Classes="k" Content="÷" Command="{Binding OperatorCommand}" CommandParameter="÷"/>
+            <Button Classes="k num" Content="7" Command="{Binding DigitCommand}" CommandParameter="7"/>
+            <Button Classes="k num" Content="8" Command="{Binding DigitCommand}" CommandParameter="8"/>
+            <Button Classes="k num" Content="9" Command="{Binding DigitCommand}" CommandParameter="9"/>
+            <Button Classes="k" Content="×" Command="{Binding OperatorCommand}" CommandParameter="×"/>
+            <Button Classes="k num" Content="4" Command="{Binding DigitCommand}" CommandParameter="4"/>
+            <Button Classes="k num" Content="5" Command="{Binding DigitCommand}" CommandParameter="5"/>
+            <Button Classes="k num" Content="6" Command="{Binding DigitCommand}" CommandParameter="6"/>
+            <Button Classes="k" Content="−" Command="{Binding OperatorCommand}" CommandParameter="−"/>
+            <Button Classes="k num" Content="1" Command="{Binding DigitCommand}" CommandParameter="1"/>
+            <Button Classes="k num" Content="2" Command="{Binding DigitCommand}" CommandParameter="2"/>
+            <Button Classes="k num" Content="3" Command="{Binding DigitCommand}" CommandParameter="3"/>
+            <Button Classes="k" Content="+" Command="{Binding OperatorCommand}" CommandParameter="+"/>
+            <Button Classes="k num" Content="±" Command="{Binding NegateCommand}"/>
+            <Button Classes="k num" Content="0" Command="{Binding DigitCommand}" CommandParameter="0"/>
+            <Button Classes="k num" Content="," Command="{Binding DecimalCommand}"/>
+            <Button Classes="k eq" Content="=" Command="{Binding EqualsCommand}" Background="#8ABAE6"/>
+        </UniformGrid>
+    </DockPanel>
+</UserControl>

@@ -4,6 +4,7 @@ using Argos.ViewModels.Ode;
 using Argos.ViewModels.Efibi;
 using Argos.ViewModels.Ilias;
 using Argos.ViewModels.Mail;
+using Argos.ViewModels.Accessoires;
 using Argos.ViewModels.Mco;
 using Argos.ViewModels.Remise;
 using Argos.ViewModels.Sigtao;
@@ -11,6 +12,7 @@ using Argos.Views.Apps.Ode;
 using Argos.Views.Apps.Efibi;
 using Argos.Views.Apps.Ilias;
 using Argos.Views.Apps.Mail;
+using Argos.Views.Apps.Accessoires;
 using Argos.Views.Apps.Mco;
 using Argos.Views.Apps.Remise;
 using Argos.Views.Apps.Sigtao;
@@ -33,6 +35,10 @@ public static class AppContentFactory
         ArgosApps.Sigtao => new SigtaoAppView { DataContext = new SigtaoAppViewModel(desktop) },
         ArgosApps.Mco => new McoAppView { DataContext = new McoAppViewModel(desktop) },
         ArgosApps.AdagioRemise => new RemiseAppView { DataContext = new RemiseAppViewModel(desktop) },
+        ArgosApps.Explorateur => new ExplorateurView { DataContext = new ExplorateurViewModel(desktop) },
+        ArgosApps.BlocNotes => new BlocNotesView { DataContext = new BlocNotesViewModel(desktop, app.Id, null) },
+        ArgosApps.Calculatrice => new CalculatriceView { DataContext = new CalculatriceViewModel() },
+        ArgosApps.Corbeille => new CorbeilleView { DataContext = new CorbeilleViewModel() },
         _ => new PlaceholderAppView { DataContext = app }
     };
 }

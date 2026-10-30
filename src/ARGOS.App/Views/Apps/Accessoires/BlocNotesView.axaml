@@ -1,0 +1,80 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="Argos.Views.Apps.Accessoires.BlocNotesView"
+             Classes="w10" Background="White"
+             FontFamily="Segoe UI, Helvetica Neue, Arial, Liberation Sans" Foreground="#1A1A1A">
+    <DockPanel>
+        <Menu DockPanel.Dock="Top" Background="White" FontSize="12.5">
+            <MenuItem Header="_Fichier">
+                <MenuItem Header="_Nouveau" InputGesture="Ctrl+N" Command="{Binding NewCommand}"/>
+                <MenuItem Header="_Ouvrir…" InputGesture="Ctrl+O" Command="{Binding OpenCommand}"/>
+                <MenuItem Header="_Enregistrer" InputGesture="Ctrl+S" Command="{Binding SaveCommand}"/>
+                <MenuItem Header="Enregistrer _sous…" Command="{Binding SaveAsCommand}"/>
+                <Separator/>
+                <MenuItem Header="_Quitter" Command="{Binding CloseCommand}"/>
+            </MenuItem>
+            <MenuItem Header="_Édition">
+                <MenuItem Header="Heure/_Date" InputGesture="F5" Name="DateItem"/>
+            </MenuItem>
+            <MenuItem Header="F_ormat">
+                <MenuItem Header="_Retour automatique à la ligne" ToggleType="CheckBox" IsChecked="{Binding WordWrap}"/>
+            </MenuItem>
+            <MenuItem Header="_Affichage">
+                <MenuItem Header="Zoom _avant" Command="{Binding ZoomInCommand}"/>
+                <MenuItem Header="Zoom a_rrière" Command="{Binding ZoomOutCommand}"/>
+                <MenuItem Header="Rétablir le zoom par _défaut" Command="{Binding ZoomResetCommand}"/>
+            </MenuItem>
+        </Menu>
+
+        <!-- Enregistrer les modifications ? -->
+        <Border DockPanel.Dock="Top" Background="#FFF4CE" BorderBrush="#E6D9A6" BorderThickness="0,1" Padding="10,8" IsVisible="{Binding ConfirmDiscard}">
+            <Grid ColumnDefinitions="*,Auto,6,Auto,6,Auto">
+                <TextBlock VerticalAlignment="Center" FontSize="12.5" TextWrapping="Wrap">
+                    <Run Text="Voulez-vous enregistrer les modifications de "/><Run Text="{Binding Title}" FontWeight="SemiBold"/><Run Text=" ?"/>
+                </TextBlock>
+                <Button Grid.Column="1" Classes="tool" BorderBrush="#ADADAD" Content="Enregistrer" Command="{Binding SaveThenCommand}"/>
+                <Button Grid.Column="3" Classes="tool" BorderBrush="#ADADAD" Content="Ne pas enregistrer" Command="{Binding DiscardCommand}"/>
+                <Button Grid.Column="5" Classes="tool" BorderBrush="#ADADAD" Content="Annuler" Command="{Binding CancelPanelCommand}"/>
+            </Grid>
+        </Border>
+        <!-- Ouvrir -->
+        <Border DockPanel.Dock="Top" Background="#F5F6F7" BorderBrush="#DADBDC" BorderThickness="0,1" Padding="10,8" IsVisible="{Binding ShowOpen}">
+            <Grid ColumnDefinitions="Auto,8,*,8,Auto,6,Auto">
+                <TextBlock Text="Ouvrir" FontSize="12.5" VerticalAlignment="Center"/>
+                <ComboBox Grid.Column="2" ItemsSource="{Binding TextFiles}" SelectedItem="{Binding OpenChoice}" HorizontalAlignment="Stretch" FontSize="12.5"/>
+                <Button Grid.Column="4" Classes="tool" BorderBrush="#ADADAD" Content="Ouvrir" Command="{Binding ConfirmOpenCommand}"/>
+                <Button Grid.Column="6" Classes="tool" BorderBrush="#ADADAD" Content="Annuler" Command="{Binding CancelPanelCommand}"/>
+            </Grid>
+        </Border>
+        <!-- Enregistrer sous -->
+        <Border DockPanel.Dock="Top" Background="#F5F6F7" BorderBrush="#DADBDC" BorderThickness="0,1" Padding="10,8" IsVisible="{Binding ShowSaveAs}">
+            <Grid ColumnDefinitions="Auto,8,*,10,Auto,8,200,8,Auto,6,Auto">
+                <TextBlock Text="Nom du fichier" FontSize="12.5" VerticalAlignment="Center"/>
+                <TextBox Grid.Column="2" Text="{Binding SaveAsName}" FontSize="12.5" CornerRadius="0"/>
+                <TextBlock Grid.Column="4" Text="Dans" FontSize="12.5" VerticalAlignment="Center"/>
+                <ComboBox Grid.Column="6" ItemsSource="{Binding Folders}" SelectedItem="{Binding SaveAsFolder}" HorizontalAlignment="Stretch" FontSize="12.5">
+                    <ComboBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding Name}"/></DataTemplate></ComboBox.ItemTemplate>
+                </ComboBox>
+                <Button Grid.Column="8" Classes="tool" BorderBrush="#ADADAD" Content="Enregistrer" Command="{Binding ConfirmSaveAsCommand}"/>
+                <Button Grid.Column="10" Classes="tool" BorderBrush="#ADADAD" Content="Annuler" Command="{Binding CancelPanelCommand}"/>
+            </Grid>
+        </Border>
+
+        <!-- Barre d'état -->
+        <Border DockPanel.Dock="Bottom" Background="#F0F0F0" BorderBrush="#D9D9D9" BorderThickness="0,1,0,0" Padding="10,3">
+            <Grid ColumnDefinitions="*,Auto,24,60,24,Auto,24,Auto">
+                <TextBlock Classes="status" Text="{Binding Status}" Classes.err="{Binding StatusIsError}" TextTrimming="CharacterEllipsis">
+                    <TextBlock.Styles><Style Selector="TextBlock.err"><Setter Property="Foreground" Value="#C42B1C"/></Style></TextBlock.Styles>
+                </TextBlock>
+                <TextBlock Grid.Column="1" Classes="status" Text="{Binding Position}"/>
+                <TextBlock Grid.Column="3" Classes="status" Text="{Binding Zoom}"/>
+                <TextBlock Grid.Column="5" Classes="status" Text="Windows (CRLF)"/>
+                <TextBlock Grid.Column="7" Classes="status" Text="UTF-8"/>
+            </Grid>
+        </Border>
+        <TextBox Name="Editor" Text="{Binding Text}" CaretIndex="{Binding Caret}" AcceptsReturn="True" AcceptsTab="True"
+                 TextWrapping="{Binding Wrapping}" FontFamily="Consolas, Menlo, Liberation Mono, monospace" FontSize="{Binding FontSize}"
+                 BorderThickness="0" CornerRadius="0" Padding="4,2" Background="White"
+                 ScrollViewer.HorizontalScrollBarVisibility="Auto" ScrollViewer.VerticalScrollBarVisibility="Auto"/>
+    </DockPanel>
+</UserControl>
