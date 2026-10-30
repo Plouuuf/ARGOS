@@ -16,6 +16,13 @@ public static class SigtaoWindows
             () => new DossierView { DataContext = new DossierViewModel(desktop, id, key) }, 980, 780);
     }
 
+    public static WindowSpec GardePrint(DesktopViewModel desktop, Argos.Shared.Contracts.FeuilleGarde feuille)
+    {
+        var key = "sigtao-garde-print:" + feuille.Id + Guid.NewGuid().ToString("N")[..4];
+        return new WindowSpec(key, $"Feuille de garde {feuille.Centre} - aperçu avant impression", Icon,
+            () => new GardePrintView { DataContext = new GardePrintViewModel(desktop, key, feuille) }, 900, 900);
+    }
+
     public static WindowSpec Report(DesktopViewModel desktop, string? id)
     {
         var key = "sigtao-cr:" + (id ?? "nouveau-" + Guid.NewGuid().ToString("N")[..6]);

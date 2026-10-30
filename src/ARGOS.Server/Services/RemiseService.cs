@@ -101,6 +101,8 @@ public sealed class RemiseService(OdeDatabase db, OdeService ode, RealtimeHub hu
 
             var changes = Diff(existing, e);
             e.CreatedAt = existing.CreatedAt;
+            e.Equipage = existing.Equipage;           // tenu par la feuille de garde (SIGTAO)
+            e.EquipageGarde = existing.EquipageGarde;
             e.Ordre = existing.Ordre;
             e.AvailabilitySince = existing.AvailabilitySince;
             string? warning = null;

@@ -1,0 +1,117 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="Argos.Views.Apps.Sigtao.GardePrintView"
+             Classes="sigtao"
+             Background="#6E7B86"
+             FontFamily="{StaticResource SigtaoFont}">
+    <Grid RowDefinitions="Auto,*">
+        <Border Background="#F0F0F0" Padding="10,6" BorderBrush="#C8C8C8" BorderThickness="0,0,0,1">
+            <Grid ColumnDefinitions="*,Auto">
+                <TextBlock Text="{Binding Status}" VerticalAlignment="Center" Foreground="Black" FontSize="12" TextWrapping="Wrap"/>
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                    <Button Classes="sg" Content="Imprimer" Command="{Binding PrintCommand}"/>
+                    <Button Classes="sg light" Content="Fermer" Command="{Binding CloseCommand}"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+        <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Auto">
+            <Border Margin="20" HorizontalAlignment="Center" BoxShadow="0 4 18 0 #66000000">
+                <!-- Feuille A4 portrait -->
+                <Border Name="Sheet" Width="794" MinHeight="1123" Background="White" Padding="42,36">
+                    <StackPanel Spacing="12">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <StackPanel>
+                                <TextBlock Text="BRIGADE DE SAPEURS-POMPIERS DE PARIS" FontSize="11" FontWeight="Bold" Foreground="#13294B"/>
+                                <TextBlock Text="2e Groupement · 17e Compagnie" FontSize="11" Foreground="#4A5868"/>
+                                <TextBlock Text="{Binding Centre, StringFormat='Centre de secours : {0}'}" FontSize="11" Foreground="#4A5868"/>
+                            </StackPanel>
+                            <Image Grid.Column="1" Source="avares://ARGOS.App/Assets/Icons/sigtao.png" Width="46" Height="46"/>
+                        </Grid>
+                        <Border Height="3" Background="#C8102E"/>
+                        <StackPanel HorizontalAlignment="Center" Spacing="2">
+                            <TextBlock Text="FEUILLE DE GARDE" FontSize="24" FontWeight="Bold" Foreground="#13294B" HorizontalAlignment="Center"/>
+                            <TextBlock Text="{Binding DateText}" FontSize="15" FontWeight="SemiBold" Foreground="#13294B" HorizontalAlignment="Center"/>
+                            <TextBlock Text="{Binding Horaires, StringFormat='Garde de {0}'}" FontSize="12" Foreground="#4A5868" HorizontalAlignment="Center"/>
+                        </StackPanel>
+
+                        <TextBlock Text="PERSONNELS DE SERVICE" FontSize="12" FontWeight="Bold" Foreground="#13294B" Margin="0,6,0,0"/>
+                        <Border BorderBrush="#9AA6B4" BorderThickness="1">
+                            <ItemsControl ItemsSource="{Binding Service}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border BorderBrush="#C9D1DC" BorderThickness="0,0,0,1" Padding="8,4">
+                                            <Grid ColumnDefinitions="200,*">
+                                                <TextBlock Text="{Binding Poste}" FontSize="12" FontWeight="SemiBold" Foreground="#1D2733"/>
+                                                <TextBlock Grid.Column="1" Text="{Binding Nom}" FontSize="12" Foreground="#1D2733"/>
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </Border>
+
+                        <TextBlock Text="ARMEMENT DES ENGINS" FontSize="12" FontWeight="Bold" Foreground="#13294B" Margin="0,6,0,0"/>
+                        <ItemsControl ItemsSource="{Binding Engins}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Width="347" Margin="0,0,8,8" BorderBrush="#9AA6B4" BorderThickness="1">
+                                        <StackPanel>
+                                            <Border Background="#13294B" Padding="8,4">
+                                                <Grid ColumnDefinitions="*,Auto">
+                                                    <TextBlock Text="{Binding Titre}" Foreground="White" FontSize="12" FontWeight="Bold"/>
+                                                    <TextBlock Grid.Column="1" Text="{Binding Etat}" Foreground="White" FontSize="11"/>
+                                                </Grid>
+                                            </Border>
+                                            <ItemsControl ItemsSource="{Binding Lignes}">
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <Border BorderBrush="#E1E6EC" BorderThickness="0,0,0,1" Padding="8,3">
+                                                            <Grid ColumnDefinitions="110,*">
+                                                                <TextBlock Text="{Binding Poste}" FontSize="11.5" FontWeight="SemiBold" Foreground="#4A5868"/>
+                                                                <TextBlock Grid.Column="1" Text="{Binding Nom}" FontSize="11.5" Foreground="#1D2733"/>
+                                                            </Grid>
+                                                        </Border>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <StackPanel IsVisible="{Binding HasReserve}" Spacing="4">
+                            <TextBlock Text="RENFORTS / RÉSERVE" FontSize="12" FontWeight="Bold" Foreground="#13294B"/>
+                            <ItemsControl ItemsSource="{Binding Reserve}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock FontSize="12" Foreground="#1D2733"><Run Text="• "/><Run Text="{Binding Nom}"/></TextBlock>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+
+                        <TextBlock Text="OBSERVATIONS" FontSize="12" FontWeight="Bold" Foreground="#13294B"/>
+                        <Border BorderBrush="#9AA6B4" BorderThickness="1" Padding="8" MinHeight="70">
+                            <TextBlock Text="{Binding Observations}" FontSize="12" TextWrapping="Wrap" Foreground="#1D2733"/>
+                        </Border>
+
+                        <Grid ColumnDefinitions="*,*" Margin="0,8,0,0">
+                            <StackPanel>
+                                <TextBlock Text="{Binding Effectif}" FontSize="12.5" FontWeight="Bold" Foreground="#13294B"/>
+                                <TextBlock Text="{Binding Visa}" FontSize="11.5" Foreground="#4A5868"/>
+                            </StackPanel>
+                            <Border Grid.Column="1" BorderBrush="#9AA6B4" BorderThickness="1" Padding="8" Height="70">
+                                <TextBlock Text="Visa du chef de garde" FontSize="11" Foreground="#8A96A5"/>
+                            </Border>
+                        </Grid>
+                        <TextBlock Text="{Binding PrintedAt}" FontSize="10" Foreground="#8A96A5" HorizontalAlignment="Right"/>
+                    </StackPanel>
+                </Border>
+            </Border>
+        </ScrollViewer>
+    </Grid>
+</UserControl>
