@@ -226,6 +226,7 @@ public sealed class OdeDatabase
         public const string MailProfiles = "mail_profiles";
         public const string Files = "user_files";
         public const string PrintJobs = "print_jobs";
+        public const string Gardes = "sigtao_gardes";
     }
 
     public void SaveDoc(string table, string id, DateTimeOffset at, object document)

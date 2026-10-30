@@ -234,6 +234,8 @@ public sealed class SigtaoRights
     public bool ManageCompany { get; set; }
     public bool ManageAccounts { get; set; }
     public bool ReadAllReports { get; set; }
+    /// <summary>Préparer et valider les feuilles de garde (encadrement, RH/ADMIN).</summary>
+    public bool ManageGarde { get; set; }
     public List<string> Habilitations { get; set; } = [];
 }
 
@@ -242,6 +244,8 @@ public sealed class SigtaoSnapshot
     public List<MilitaryRecord> Military { get; set; } = [];
     public List<UserAccount> Accounts { get; set; } = [];
     public List<CompteRendu> Reports { get; set; } = [];
+    /// <summary>Feuilles de garde de J-62 à J+62.</summary>
+    public List<FeuilleGarde> Gardes { get; set; } = [];
     public SigtaoRights Rights { get; set; } = new();
     public string? MyDossierId { get; set; }
     public string? MyAccountId { get; set; }
@@ -269,8 +273,9 @@ public static class SigtaoJournal
     public const string CompteModifie = "Compte modifié";
     public const string Acces = "Accès réinitialisés";
     public const string CompteRendu = "Compte-rendu";
+    public const string Garde = "Feuille de garde";
 
-    public static readonly IReadOnlyList<string> Actions = [DossierCree, DossierModifie, Rubrique, CompteCree, CompteModifie, Acces, CompteRendu];
+    public static readonly IReadOnlyList<string> Actions = [DossierCree, DossierModifie, Rubrique, CompteCree, CompteModifie, Acces, CompteRendu, Garde];
 }
 
 /// <summary>Synthèse automatique d'un compte-rendu : objet + premières phrases du corps.</summary>

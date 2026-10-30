@@ -407,6 +407,18 @@ public static class Program
             return user is null ? Results.Unauthorized() : ToResult(await service.SaveReportAsync(user, report));
         });
 
+        sigtao.MapPost("/gardes", async (SaveGardeRequest request, HttpContext context, DiscordOAuthService oauth, SigtaoService service,
+            RemiseService remise) =>
+        {
+            var user = await AuthenticateAsync(context, oauth);
+            if (user is null) return Results.Unauthorized();
+            var saved = await service.SaveGardeAsync(user, request.Feuille, request.Valider);
+            if (!saved.Ok || !request.Valider || service.Garde(saved.Id!) is not { } feuille) return ToResult(saved);
+            // Validation : les engins sont armés dans ADAGIO REMISE (équipage, non armé = indisponible).
+            var armed = await remise.ArmFromGardeAsync(user, feuille);
+            return ToResult(new OdeResult(true, armed.Error, saved.Id));
+        });
+
         sigtao.MapPost("/reports/{id}/delete", async (string id, HttpContext context, DiscordOAuthService oauth, SigtaoService service) =>
         {
             var user = await AuthenticateAsync(context, oauth);
@@ -645,6 +657,21 @@ public static class Program
             if (await AuthenticateAsync(context, oauth) is null) return Results.Unauthorized();
             return printer.ImagePath(id) is { } path ? Results.File(path, "image/png") : Results.NotFound();
         });
+
+        print.MapPost("/submit", async (PrintDocumentRequest request, HttpContext context, DiscordOAuthService oauth, PrinterService printer) =>
+        {
+            var user = await AuthenticateAsync(context, oauth);
+            if (user is null) return Results.Unauthorized();
+            byte[]? png = null;
+            try { if (!string.IsNullOrWhiteSpace(request.ImagePng)) png = Convert.FromBase64String(request.ImagePng); }
+            catch (FormatException) { return Results.BadRequest(new OdeResult(false, "Image illisible.")); }
+            var job = await printer.SubmitAsync(user, new PrintJob
+            {
+                Kind = string.IsNullOrWhiteSpace(request.Kind) ? "Document" : request.Kind.Trim(),
+                Title = string.IsNullOrWhiteSpace(request.Title) ? "Document" : request.Title.Trim()
+            }, png);
+            return Results.Ok(new OdeResult(true, null, job.Id));
+        }).WithMetadata(new Microsoft.AspNetCore.Mvc.RequestSizeLimitAttribute(20L * 1024 * 1024));
 
         print.MapPost("/jobs/{id}/reprint", async (string id, HttpContext context, DiscordOAuthService oauth, PrinterService printer) =>
         {
