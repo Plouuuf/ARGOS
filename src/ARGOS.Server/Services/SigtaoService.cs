@@ -52,6 +52,7 @@ public sealed class SigtaoService(OdeDatabase db, RealtimeHub hub)
             ManageAccounts = rh,
             ManageCompany = rh,
             ReadAllReports = rh,
+            ManageGarde = rh || user.Levels.Contains(AccessLevels.Encadrement) || user.Levels.Contains(AccessLevels.Administration),
             Habilitations = AppCatalogLabels.Where(a => AccessLevels.CanUse(user.Levels, a.Id)).Select(a => a.Label)
                 .Concat(rh ? new[] { "RH / ADMIN" } : Array.Empty<string>()).ToList()
         };
@@ -105,6 +106,7 @@ public sealed class SigtaoService(OdeDatabase db, RealtimeHub hub)
             Military = military,
             Accounts = rights.ManageAccounts ? accounts : accounts.Where(a => a.DiscordUserId == user.UserId).ToList(),
             Reports = reports,
+            Gardes = Gardes(DateTime.Today.AddDays(-62), DateTime.Today.AddDays(62)),
             Rights = rights,
             MyDossierId = myDossier?.Id,
             MyAccountId = mine?.Id,
@@ -434,6 +436,98 @@ public sealed class SigtaoService(OdeDatabase db, RealtimeHub hub)
             _gate.Release();
         }
     }
+
+    // ===== Feuilles de garde =====
+
+    public List<FeuilleGarde> Gardes(DateTime from, DateTime to)
+    {
+        var a = from.ToString("yyyy-MM-dd");
+        var b = to.ToString("yyyy-MM-dd");
+        return db.Docs<FeuilleGarde>(RemiseTables.Gardes)
+            .Where(g => string.CompareOrdinal(g.Date, a) >= 0 && string.CompareOrdinal(g.Date, b) <= 0)
+            .OrderBy(g => g.Date).ThenBy(g => g.Centre).ToList();
+    }
+
+    /// <summary>
+    /// Enregistre (et éventuellement valide) une feuille de garde. Le nom des militaires est figé depuis leur dossier ;
+    /// un militaire ne peut tenir qu'un poste par feuille ni être de garde dans deux centres le même jour.
+    /// </summary>
+    public async Task<OdeResult> SaveGardeAsync(ArgosUserDto user, FeuilleGarde feuille, bool valider)
+    {
+        if (!Rights(user).ManageGarde)
+            return new(false, "Habilitation insuffisante : la garde est préparée par l'encadrement.");
+        if (!DateTime.TryParseExact(feuille.Date, "yyyy-MM-dd", null, System.Globalization.DateTimeStyles.None, out _))
+            return new(false, "Date de garde invalide.");
+        feuille.Centre = (feuille.Centre ?? string.Empty).Trim().ToUpperInvariant();
+        if (feuille.Centre.Length == 0)
+            return new(false, "Centre de secours obligatoire.");
+
+        await _gate.WaitAsync();
+        try
+        {
+            var military = db.Docs<MilitaryRecord>(RemiseTables.Military).ToDictionary(m => m.Id);
+            string? error = null;
+            void Fix(GardeAffectation a)
+            {
+                a.Poste = (a.Poste ?? string.Empty).Trim();
+                a.MilitaryId = (a.MilitaryId ?? string.Empty).Trim();
+                if (a.MilitaryId.Length == 0) { a.Nom = string.Empty; return; }
+                if (!military.TryGetValue(a.MilitaryId, out var m)) { error ??= "Militaire introuvable dans les dossiers."; return; }
+                a.Nom = $"{BsppGrades.Short(m.Grade)} {m.Nom.ToUpperInvariant()} {m.Prenom}".Trim();
+            }
+            feuille.Service ??= [];
+            feuille.Engins ??= [];
+            feuille.Reserve ??= [];
+            foreach (var a in feuille.Service) Fix(a);
+            foreach (var e in feuille.Engins) { e.Postes ??= []; foreach (var a in e.Postes) Fix(a); }
+            feuille.Reserve = feuille.Reserve.Where(r => !string.IsNullOrWhiteSpace(r.MilitaryId)).ToList();
+            foreach (var a in feuille.Reserve) { if (a.Poste.Length == 0) a.Poste = "Réserve"; Fix(a); }
+            if (error is not null) return new(false, error);
+
+            var doubles = feuille.Affectations().GroupBy(a => a.Affectation.MilitaryId).Where(g => g.Count() > 1)
+                .Select(g => g.First().Affectation.Nom).ToList();
+            if (doubles.Count > 0)
+                return new(false, $"Affecté(s) à plusieurs postes : {string.Join(", ", doubles)}.");
+
+            feuille.Id = FeuilleGarde.BuildId(feuille.Date, feuille.Centre);
+            var ids = feuille.Affectations().Select(a => a.Affectation.MilitaryId).ToHashSet();
+            var ailleurs = db.Docs<FeuilleGarde>(RemiseTables.Gardes)
+                .Where(g => g.Date == feuille.Date && g.Id != feuille.Id)
+                .SelectMany(g => g.Affectations().Where(a => ids.Contains(a.Affectation.MilitaryId)).Select(a => $"{a.Affectation.Nom} ({g.Centre})"))
+                .ToList();
+            if (ailleurs.Count > 0)
+                return new(false, $"Déjà de garde dans un autre centre ce jour-là : {string.Join(", ", ailleurs)}.");
+
+            var existing = db.GetDoc<FeuilleGarde>(RemiseTables.Gardes, feuille.Id);
+            var now = DateTimeOffset.UtcNow;
+            feuille.UpdatedAt = now;
+            feuille.UpdatedBy = user.DisplayName;
+            if (valider)
+            {
+                feuille.Statut = GardeStatuts.Validee;
+                feuille.ValidatedAt = now;
+                feuille.ValidatedBy = user.DisplayName;
+            }
+            else
+            {
+                feuille.Statut = existing?.Statut ?? GardeStatuts.Brouillon;
+                feuille.ValidatedAt = existing?.ValidatedAt;
+                feuille.ValidatedBy = existing?.ValidatedBy ?? string.Empty;
+            }
+            db.SaveDoc(RemiseTables.Gardes, feuille.Id, now, feuille);
+            var nonArmes = feuille.Engins.Count(e => !e.Arme);
+            Journal(user, SigtaoJournal.Garde, $"{feuille.Centre} {feuille.Date}",
+                $"{(valider ? "validée" : "enregistrée")} - effectif {feuille.Effectif}{(nonArmes > 0 ? $", {nonArmes} engin(s) non armé(s)" : string.Empty)}");
+            await NotifyAsync();
+            return new(true, null, feuille.Id);
+        }
+        finally
+        {
+            _gate.Release();
+        }
+    }
+
+    public FeuilleGarde? Garde(string id) => db.GetDoc<FeuilleGarde>(RemiseTables.Gardes, id);
 
     // ===== Import de l'effectif =====
 

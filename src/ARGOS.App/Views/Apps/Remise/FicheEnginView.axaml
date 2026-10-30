@@ -114,6 +114,20 @@
                     </Grid>
                 </HeaderedContentControl>
 
+                <!-- ===== Équipage de garde (SIGTAO) ===== -->
+                <HeaderedContentControl Classes="group" Header="Équipage de garde (SIGTAO)" IsVisible="{Binding !IsNew}">
+                    <StackPanel Spacing="3">
+                        <TextBlock Text="{Binding EquipageTitle}" FontSize="11.5" Foreground="#355C8C" TextWrapping="Wrap"/>
+                        <ItemsControl ItemsSource="{Binding EquipageLines}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding}" FontSize="12.5"/>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </HeaderedContentControl>
+
                 <!-- ===== Dotation matérielle ===== -->
                 <HeaderedContentControl Classes="group" Header="Matériel embarqué (dotation obligatoire)">
                     <StackPanel>

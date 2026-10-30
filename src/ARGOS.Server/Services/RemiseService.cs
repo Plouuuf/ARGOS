@@ -101,6 +101,8 @@ public sealed class RemiseService(OdeDatabase db, OdeService ode, RealtimeHub hu
 
             var changes = Diff(existing, e);
             e.CreatedAt = existing.CreatedAt;
+            e.Equipage = existing.Equipage;           // tenu par la feuille de garde (SIGTAO)
+            e.EquipageGarde = existing.EquipageGarde;
             e.Ordre = existing.Ordre;
             e.AvailabilitySince = existing.AvailabilitySince;
             string? warning = null;
@@ -552,6 +554,63 @@ public sealed class RemiseService(OdeDatabase db, OdeService ode, RealtimeHub hu
             Target = target,
             Details = details
         });
+
+    // ===== Armement par la feuille de garde (SIGTAO) =====
+
+    private const string NonArme = "Non armé";
+
+    /// <summary>
+    /// Arme les engins d'une feuille de garde validée : l'équipage est inscrit sur l'engin ; un engin non armé passe
+    /// indisponible (« Non armé - garde du … ») et redevient disponible quand une garde suivante l'arme.
+    /// Un engin engagé dans l'ODE garde sa disponibilité : le message le signale.
+    /// </summary>
+    public async Task<OdeResult> ArmFromGardeAsync(ArgosUserDto user, FeuilleGarde feuille)
+    {
+        var warnings = new List<string>();
+        await _gate.WaitAsync();
+        try
+        {
+            var fleet = ode.Fleet();
+            var now = DateTimeOffset.UtcNow;
+            var day = DateTime.TryParseExact(feuille.Date, "yyyy-MM-dd", null, System.Globalization.DateTimeStyles.None, out var d)
+                ? d.ToString("dd/MM") : feuille.Date;
+            foreach (var g in feuille.Engins)
+            {
+                var e = fleet.FirstOrDefault(f => Same(f.Nom, g.Engin));
+                if (e is null) continue;
+                e.Equipage = g.Arme ? g.Postes.Where(p => p.Pourvu).ToList() : [];
+                e.EquipageGarde = feuille.Date;
+                var reason = $"{NonArme} - garde du {day}";
+                string? target = null;
+                if (!g.Arme && e.Availability == FleetAvailability.Disponible) target = FleetAvailability.Indisponible;
+                else if (g.Arme && e.Availability == FleetAvailability.Indisponible && e.AvailabilityReason.StartsWith(NonArme, StringComparison.Ordinal))
+                    target = FleetAvailability.Disponible;
+                if (target is not null)
+                {
+                    var applied = await ode.ApplyAvailabilityAsync(user, e.Nom, target);
+                    if (applied.Ok)
+                    {
+                        Journal(user, RemiseJournal.Disponibilite, e.Nom, $"{e.Availability} → {target} (feuille de garde du {day})");
+                        e.Availability = target;
+                        e.AvailabilityReason = target == FleetAvailability.Disponible ? string.Empty : reason;
+                        e.AvailabilitySince = now;
+                    }
+                    else warnings.Add($"{e.Nom} : {applied.Error}");
+                }
+                else if (!g.Arme && e.Availability == FleetAvailability.Indisponible && e.AvailabilityReason.StartsWith(NonArme, StringComparison.Ordinal))
+                    e.AvailabilityReason = reason;
+                e.UpdatedAt = now;
+                e.UpdatedBy = user.DisplayName;
+                db.SaveDoc(RemiseTables.Engins, e.Nom, now, e);
+            }
+            await NotifyAsync();
+            return warnings.Count == 0 ? new(true, null) : new(true, string.Join(" ; ", warnings));
+        }
+        finally
+        {
+            _gate.Release();
+        }
+    }
 
     private Task NotifyAsync() => hub.BroadcastAsync(new RealtimeMessage(RealtimeTypes.RemiseChanged));
 

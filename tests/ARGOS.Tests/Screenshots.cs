@@ -370,7 +370,27 @@ public class SigtaoScreenshots
                 Accounts = [new UserAccount { Id = "a1", DiscordUserId = "1", DossierId = "m1", Grade = "Sergent", Nom = "Santos", Prenom = "Diego",
                     Nid = "1234567", Habilitations = [Habilitations.Sadmin, Habilitations.Sremise], HasPassword = true }],
                 Reports = [cr],
-                Rights = new SigtaoRights { ManageAccounts = true, ManageCompany = true, ReadAllReports = true, Habilitations = ["SADMIN", "SREMISE"] },
+                Gardes =
+                [
+                    new FeuilleGarde
+                    {
+                        Id = FeuilleGarde.BuildId(DateTime.Today.ToString("yyyy-MM-dd"), "CRET"), Date = DateTime.Today.ToString("yyyy-MM-dd"), Centre = "CRET",
+                        Statut = GardeStatuts.Validee, ValidatedBy = "Leroy", ValidatedAt = now, UpdatedBy = "Leroy", UpdatedAt = now,
+                        Service = [new GardeAffectation { Poste = GardePostes.ChefDeGarde, MilitaryId = "m3", Nom = "CNE LEROY Marc" }],
+                        Engins =
+                        [
+                            new GardeEngin { Engin = "VSAV 947 CRET", Type = "VSAV", Postes =
+                            [
+                                new GardeAffectation { Poste = "Chef d'agrès", MilitaryId = "m1", Nom = "SGT SANTOS Diego" },
+                                new GardeAffectation { Poste = "Conducteur", MilitaryId = "m2", Nom = "CPL MARTIN Paul" },
+                                new GardeAffectation { Poste = "Équipier" }
+                            ] },
+                            new GardeEngin { Engin = "PSE 212 CRET", Type = "PSE", Arme = false }
+                        ],
+                        Observations = "Exercice ARI à 14h00."
+                    }
+                ],
+                Rights = new SigtaoRights { ManageAccounts = true, ManageCompany = true, ReadAllReports = true, ManageGarde = true, Habilitations = ["SADMIN", "SREMISE"] },
                 MyDossierId = "m1", MyAccountId = "a1"
             });
             var desktop = new DesktopViewModel(user, null, () => { }, () => { });
@@ -384,6 +404,18 @@ public class SigtaoScreenshots
             vm.CurrentPage = Argos.ViewModels.Sigtao.SigtaoAppViewModel.Page.Annuaire;
             Capture(new Argos.Views.Apps.Sigtao.SigtaoAppView { DataContext = vm }, 1300, 700, "sigtao-annuaire");
             Assert.Equal(3, vm.Directory.Count);
+            vm.CurrentPage = Argos.ViewModels.Sigtao.SigtaoAppViewModel.Page.Garde;
+            Assert.Contains(vm.GardeEngins, e => e.Engin == "VSAV 947 CRET" && e.Pourvus == 2);
+            Assert.Contains(vm.GardeEngins, e => e.Engin == "PSE 212 CRET" && !e.Arme);
+            Capture(new Argos.Views.Apps.Sigtao.SigtaoAppView { DataContext = vm }, 1300, 900, "sigtao-feuille-de-garde");
+            vm.CurrentPage = Argos.ViewModels.Sigtao.SigtaoAppViewModel.Page.Planning;
+            Assert.Contains(vm.PlanningRows, r => r.Total == 1);
+            Capture(new Argos.Views.Apps.Sigtao.SigtaoAppView { DataContext = vm }, 1300, 600, "sigtao-planning-semaine");
+            vm.PlanningMonthCommand.Execute(null);
+            Capture(new Argos.Views.Apps.Sigtao.SigtaoAppView { DataContext = vm }, 1300, 600, "sigtao-planning-mois");
+            var feuille = Argos.Services.ArgosSession.Current.Sigtao.Snapshot.Gardes[0];
+            Capture(new Argos.Views.Apps.Sigtao.GardePrintView { DataContext = new Argos.ViewModels.Sigtao.GardePrintViewModel(desktop, "p", feuille) },
+                900, 1250, "sigtao-feuille-de-garde-impression");
 
             Capture(new Argos.Views.Apps.Sigtao.DossierView { DataContext = new Argos.ViewModels.Sigtao.DossierViewModel(desktop, "m1", "d") },
                 980, 900, "sigtao-dossier");

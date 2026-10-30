@@ -102,6 +102,52 @@ public sealed class SigtaoServiceTests : IDisposable
         Assert.False((await _sigtao.DeleteDraftAsync(Autre, sent.Id)).Ok);
     }
 
+    [Fact]
+    public async Task Feuille_de_garde_valide_arme_les_engins()
+    {
+        await _sigtao.SaveMilitaryAsync(Chef, new MilitaryRecord { Nom = "Durand", Prenom = "Léa", Grade = "Caporal" });
+        await _sigtao.SaveMilitaryAsync(Chef, new MilitaryRecord { Nom = "Petit", Prenom = "Marc", Grade = "Sergent" });
+        var all = _sigtao.Snapshot(Chef).Military;
+        var ids = new List<string> { all.Single(m => m.Nom == "Durand").Id, all.Single(m => m.Nom == "Petit").Id };
+        var date = DateTime.Today.ToString("yyyy-MM-dd");
+        var fleet = _remise.Snapshot(Chef).Engins;
+        var vsav = fleet.First(e => e.Nom == "VSAV 947 CRET");
+        var pse = fleet.First(e => e.Nom == "PSE 212 CRET");
+
+        FeuilleGarde Feuille(string a, string b) => new()
+        {
+            Date = date, Centre = "CRET",
+            Service = [new GardeAffectation { Poste = GardePostes.ChefDeGarde, MilitaryId = b }],
+            Engins =
+            [
+                new GardeEngin { Engin = vsav.Nom, Type = "VSAV", Postes = [new GardeAffectation { Poste = "Chef d'agrès", MilitaryId = a }] },
+                new GardeEngin { Engin = pse.Nom, Type = "PSE", Arme = false }
+            ]
+        };
+
+        Assert.False((await _sigtao.SaveGardeAsync(Autre, Feuille(ids[0], ids[1]), true)).Ok);         // simple sapeur
+        Assert.False((await _sigtao.SaveGardeAsync(Chef, Feuille(ids[0], ids[0]), true)).Ok);          // deux postes
+        var ok = await _sigtao.SaveGardeAsync(Chef, Feuille(ids[0], ids[1]), true);
+        Assert.True(ok.Ok, ok.Error);
+        var saved = _sigtao.Garde(ok.Id!)!;
+        Assert.True(saved.IsValidated);
+        Assert.Equal(2, saved.Effectif);
+        Assert.StartsWith("SGT PETIT", saved.Service[0].Nom);
+        Assert.Single(_sigtao.Snapshot(Autre).Gardes);                                                   // tout le monde lit la garde
+
+        Assert.True((await _remise.ArmFromGardeAsync(Chef, saved)).Ok);
+        var after = _remise.Snapshot(Chef).Engins;
+        Assert.Single(after.First(e => e.Nom == vsav.Nom).Equipage);
+        var pseAfter = after.First(e => e.Nom == pse.Nom);
+        Assert.Equal(FleetAvailability.Indisponible, pseAfter.Availability);
+        Assert.StartsWith("Non armé", pseAfter.AvailabilityReason);
+
+        // Garde suivante : le PSE est armé, il redevient disponible.
+        saved.Engins[1].Arme = true;
+        Assert.True((await _remise.ArmFromGardeAsync(Chef, saved)).Ok);
+        Assert.Equal(FleetAvailability.Disponible, _remise.Snapshot(Chef).Engins.First(e => e.Nom == pse.Nom).Availability);
+    }
+
     public void Dispose()
     {
         Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();

@@ -1,5 +1,6 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:sg="clr-namespace:Argos.Views.Apps.Sigtao"
              x:Class="Argos.Views.Apps.Sigtao.SigtaoAppView"
              Classes="sigtao"
              Background="#EEF1F5"
@@ -49,6 +50,8 @@
                     <TextBlock Text="MENU" FontSize="10.5" FontWeight="Bold" Foreground="#8A96A5" Margin="18,0,0,6"/>
                     <Button Classes="menu" Classes.selected="{Binding IsAccueil}" Content="Tableau de bord" Command="{Binding NavigateCommand}" CommandParameter="Accueil"/>
                     <Button Classes="menu" Classes.selected="{Binding IsComptesRendus}" Content="Comptes-rendus" Command="{Binding NavigateCommand}" CommandParameter="ComptesRendus"/>
+                    <Button Classes="menu" Classes.selected="{Binding IsGarde}" Content="Feuille de garde" Command="{Binding NavigateCommand}" CommandParameter="Garde"/>
+                    <Button Classes="menu" Classes.selected="{Binding IsPlanning}" Content="Planning de garde" Command="{Binding NavigateCommand}" CommandParameter="Planning"/>
                     <Button Classes="menu" Classes.selected="{Binding IsCompagnie}" Content="Gestion de la compagnie" Command="{Binding NavigateCommand}" CommandParameter="Compagnie"/>
                     <Button Classes="menu" Classes.selected="{Binding IsComptes}" Content="Comptes et habilitations" Command="{Binding NavigateCommand}" CommandParameter="Comptes"
                             IsVisible="False"/>
@@ -432,6 +435,10 @@
                     </ItemsControl>
                 </ScrollViewer>
             </DockPanel>
+
+            <!-- ===== Feuille de garde / planning ===== -->
+            <sg:GardeView Grid.Row="1" IsVisible="{Binding IsGarde}"/>
+            <sg:PlanningView Grid.Row="1" IsVisible="{Binding IsPlanning}"/>
 
             <!-- ===== Historique administratif ===== -->
             <DockPanel Grid.Row="1" IsVisible="{Binding IsHistorique}" Margin="22,18">

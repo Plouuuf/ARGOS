@@ -30,6 +30,8 @@ param(
     [int]$Port = 8092,
     # Webhook du salon Discord qui reçoit les ODE imprimés (laisser vide pour garder le réglage actuel).
     [string]$OdeWebhookUrl = "",
+    # Webhook du salon Discord qui reçoit les feuilles de garde imprimées (SIGTAO).
+    [string]$GardeWebhookUrl = "",
     # Connexion MariaDB (lecture seule) à la base FiveM pour eFiBi, ex. "Server=127.0.0.1;Port=3306;Database=qbcore;User ID=argos_lecture;Password=…"
     [string]$EfibiConnection = "",
     # Jeton GitHub en lecture, seulement si le dépôt ARGOS est privé (mise à jour automatique).
@@ -115,6 +117,7 @@ if ($existing -and $existing.Discord.LevelRoles) {
     }
 }
 
+$gardeWebhook = if ($GardeWebhookUrl) { $GardeWebhookUrl.Trim() } elseif ($existing -and $existing.Webhooks -and $existing.Webhooks.Garde) { [string]$existing.Webhooks.Garde } else { "" }
 $odeWebhook = if ($OdeWebhookUrl) { $OdeWebhookUrl.Trim() } elseif ($existing -and $existing.Webhooks) { [string]$existing.Webhooks.Ode } else { "" }
 
 $efibiConnection = if ($EfibiConnection) { $EfibiConnection.Trim() } elseif ($existing -and $existing.Efibi) { [string]$existing.Efibi.ConnectionString } else { "" }
@@ -132,7 +135,7 @@ $settings = [ordered]@{
         RequiredRoleId = $RequiredRoleId
         LevelRoles = $levels
     }
-    Webhooks = [ordered]@{ Ode = $odeWebhook }
+    Webhooks = [ordered]@{ Ode = $odeWebhook; Garde = $gardeWebhook }
     Efibi = [ordered]@{ ConnectionString = $efibiConnection }
     Update = [ordered]@{ GitHubToken = $githubToken }
 }
@@ -140,6 +143,8 @@ $settings | ConvertTo-Json -Depth 5 | Set-Content -Path $LocalSettings -Encoding
 Ok "appsettings.Local.json écrit (rôle requis : $RequiredRoleId)."
 if ($efibiConnection) { Ok "eFiBi relié à la base des fiches bilans (lecture seule)." }
 else { Warn "eFiBi non relié : relancer avec -EfibiConnection ""Server=127.0.0.1;Port=3306;Database=…;User ID=…;Password=…""" }
+if ($gardeWebhook) { Ok "Feuilles de garde publiées sur Discord (webhook configuré)." }
+else { Warn "Pas de webhook Discord pour les feuilles de garde : relancer avec -GardeWebhookUrl ""https://discord.com/api/webhooks/…""" }
 if ($odeWebhook) { Ok "ODE imprimés publiés sur Discord (webhook configuré)." }
 else { Warn "Pas de webhook Discord pour les ODE : relancer avec -OdeWebhookUrl ""https://discord.com/api/webhooks/…""" }
 

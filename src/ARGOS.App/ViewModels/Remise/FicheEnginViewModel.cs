@@ -75,6 +75,8 @@ public sealed class FicheEnginViewModel : ViewModelBase, IDisposable
     }
 
     public bool IsNew => _nom is null;
+    public List<string> EquipageLines { get; private set; } = [];
+    public string EquipageTitle { get; private set; } = string.Empty;
     public string Title => IsNew ? "Nouvel engin" : _nom!;
     public bool CanEdit => ArgosSession.Current?.Remise.Snapshot.CanManage == true;
     public bool IsReadOnly => !CanEdit;
@@ -207,6 +209,16 @@ public sealed class FicheEnginViewModel : ViewModelBase, IDisposable
             OnPropertyChanged(nameof(OdeStatus));
             OnPropertyChanged(nameof(OdeStatusBrush));
             OnPropertyChanged(nameof(OdeStatusDetail));
+
+            // Équipage armé par la feuille de garde SIGTAO.
+            EquipageLines = engin.Equipage.Select(a => $"{a.Poste} : {a.Nom}").ToList();
+            EquipageTitle = engin.EquipageGarde.Length == 0
+                ? "Aucune feuille de garde validée n'a encore armé cet engin (SIGTAO › Feuille de garde)."
+                : DateTime.TryParseExact(engin.EquipageGarde, "yyyy-MM-dd", null, System.Globalization.DateTimeStyles.None, out var garde)
+                    ? $"Garde du {garde:dd/MM/yyyy}{(EquipageLines.Count == 0 ? " : engin non armé." : string.Empty)}"
+                    : engin.EquipageGarde;
+            OnPropertyChanged(nameof(EquipageLines));
+            OnPropertyChanged(nameof(EquipageTitle));
 
             var maintenances = snapshot.Maintenances.Where(m => string.Equals(m.Engin, _nom, StringComparison.OrdinalIgnoreCase))
                 .OrderByDescending(m => m.ReportedAt).ToList();

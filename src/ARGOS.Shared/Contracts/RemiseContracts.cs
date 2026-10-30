@@ -82,6 +82,11 @@ public sealed class FleetEngin
     public List<DotationLine> Dotation { get; set; } = [];
     public bool Active { get; set; } = true;
 
+    /// <summary>Équipage armé par la dernière feuille de garde validée dans SIGTAO.</summary>
+    public List<GardeAffectation> Equipage { get; set; } = [];
+    /// <summary>Jour de garde (« yyyy-MM-dd ») qui a armé l'engin ; vide = jamais armé.</summary>
+    public string EquipageGarde { get; set; } = string.Empty;
+
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset UpdatedAt { get; set; }
     public string UpdatedBy { get; set; } = string.Empty;

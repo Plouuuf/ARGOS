@@ -43,9 +43,9 @@ public sealed class HabilitationChoice(string code, string label, bool selected)
 /// SIGTAO : tableau de bord, comptes-rendus, gestion de la compagnie, comptes et habilitations,
 /// annuaire, historique administratif.
 /// </summary>
-public sealed class SigtaoAppViewModel : ViewModelBase, IDisposable
+public sealed partial class SigtaoAppViewModel : ViewModelBase, IDisposable
 {
-    public enum Page { Accueil, ComptesRendus, Compagnie, Comptes, Annuaire, Historique }
+    public enum Page { Accueil, ComptesRendus, Compagnie, Comptes, Annuaire, Historique, Garde, Planning }
 
     private readonly DesktopViewModel _desktop;
     private Page _page = Page.Accueil;
@@ -92,6 +92,7 @@ public sealed class SigtaoAppViewModel : ViewModelBase, IDisposable
         ToggleImportCommand = new RelayCommand(() => ImportVisible = !ImportVisible, () => Rights.ManageCompany);
         ImportCommand = new RelayCommand(() => _ = ImportAsync(), () => Rights.ManageCompany);
 
+        InitGarde();
         SigtaoImages.AvatarLoaded += Build;
         if (ArgosSession.Current is { } session)
         {
@@ -125,6 +126,8 @@ public sealed class SigtaoAppViewModel : ViewModelBase, IDisposable
     public bool IsComptes => CurrentPage == Page.Comptes;
     public bool IsAnnuaire => CurrentPage == Page.Annuaire;
     public bool IsHistorique => CurrentPage == Page.Historique;
+    public bool IsGarde => CurrentPage == Page.Garde;
+    public bool IsPlanning => CurrentPage == Page.Planning;
 
     public RelayCommand NavigateCommand { get; }
     public RelayCommand NewReportCommand { get; }
@@ -289,6 +292,8 @@ public sealed class SigtaoAppViewModel : ViewModelBase, IDisposable
         BuildMilitary();
         BuildAccounts();
         BuildDirectory();
+        BuildGarde();
+        BuildPlanning();
     }
 
     private ReportRow RowOf(CompteRendu r)
@@ -476,6 +481,7 @@ public sealed class SigtaoAppViewModel : ViewModelBase, IDisposable
         SigtaoImages.AvatarLoaded -= Build;
         if (ArgosSession.Current is { } session)
             session.Sigtao.Changed -= Build;
+        DisposeGarde();
     }
 }
 
