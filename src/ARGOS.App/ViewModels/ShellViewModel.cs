@@ -120,7 +120,13 @@ public sealed class ShellViewModel : ViewModelBase
         try
         {
             var info = await AppUpdater.CheckAsync();
-            if (info is null) return;
+            if (info is null)
+            {
+                if (AppUpdater.FailedBuild > 0 && Screen is ShellScreen.Lock or ShellScreen.Login)
+                    UpdateText = $"La mise à jour automatique (build {AppUpdater.FailedBuild}) n'a pas pris : remplace ARGOS.exe à la main " +
+                                 "(journal : maj-poste.log).";
+                return;
+            }
             var idle = Screen is ShellScreen.Lock or ShellScreen.Login && !IsBusy;
             if (idle) UpdateText = $"Mise à jour d'ARGOS ({info.Version})…";
             var error = await AppUpdater.InstallAsync(info);

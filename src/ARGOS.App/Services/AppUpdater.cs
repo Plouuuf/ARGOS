@@ -26,10 +26,49 @@ public static class AppUpdater
         && BuildInfo.Number > 0 && Environment.ProcessPath is { Length: > 0 } path
         && (!OperatingSystem.IsMacOS() || path.Contains(".app/Contents/MacOS/", StringComparison.Ordinal));
 
+    /// <summary>Compilation installée puis relancée, mais le poste a redémarré sur une version plus ancienne.</summary>
+    public static int FailedBuild { get; private set; }
+
+    private static string PendingFile => Path.Combine(AppPaths.DataDirectory, "maj-en-attente.txt");
+    private static string LogFile => Path.Combine(AppPaths.DataDirectory, "maj-poste.log");
+
+    /// <summary>Journal des mises à jour du poste (%LOCALAPPDATA%\VDMS\ARGOS\maj-poste.log).</summary>
+    public static void Log(string text)
+    {
+        try
+        {
+            Directory.CreateDirectory(AppPaths.DataDirectory);
+            if (File.Exists(LogFile) && new FileInfo(LogFile).Length > 200_000) File.Delete(LogFile);
+            File.AppendAllText(LogFile, $"{DateTime.Now:yyyy-MM-dd HH:mm:ss} [build {BuildInfo.Number}] {text}{Environment.NewLine}");
+        }
+        catch
+        {
+            // Journal facultatif.
+        }
+    }
+
     /// <summary>Supprime les restes d'une mise à jour précédente (ancien exe ou ancienne app).</summary>
     public static void Cleanup()
     {
         if (!IsSupported) return;
+        // Redémarrage après mise à jour : la nouvelle version est-elle bien celle qui tourne ?
+        try
+        {
+            if (File.Exists(PendingFile) && int.TryParse(File.ReadAllText(PendingFile).Trim(), out var expected))
+            {
+                File.Delete(PendingFile);
+                if (expected > BuildInfo.Number)
+                {
+                    FailedBuild = expected;
+                    Log($"Redémarrage sur l'ancienne version (attendu : build {expected}) : mise à jour automatique suspendue. Exe : {Environment.ProcessPath}");
+                }
+                else Log($"Mise à jour vers la build {expected} réussie.");
+            }
+        }
+        catch
+        {
+            // Fichier illisible : ignoré.
+        }
         try
         {
             if (OperatingSystem.IsWindows())
@@ -55,6 +94,7 @@ public static class AppUpdater
         using var http = Client(TimeSpan.FromSeconds(15));
         var info = await http.GetFromJsonAsync<UpdateInfo>("api/update", Json, ct);
         if (info is null || info.Build <= Math.Max(BuildInfo.Number, Installed)) return null;
+        if (info.Build == FailedBuild) return null;      // déjà tenté : pas de boucle de redémarrages
         return (OperatingSystem.IsWindows() ? info.Windows : info.MacOs) ? info : null;
     }
 
@@ -72,19 +112,23 @@ public static class AppUpdater
             await using (var target = File.Create(zip))
                 await source.CopyToAsync(target, ct);
 
+            Log($"Téléchargé : build {info.Build} ({new FileInfo(zip).Length / 1024} Ko) depuis {ClientSettings.Current.HttpBaseUri}");
             if (OperatingSystem.IsWindows()) InstallWindows(zip);
             else await InstallMacAsync(zip, ct);
+            Log($"Installé sur place : {Environment.ProcessPath}");
 
             try { File.Delete(zip); } catch { /* fichier temporaire */ }
             Installed = info.Build;
             return null;
         }
-        catch (UnauthorizedAccessException)
+        catch (UnauthorizedAccessException ex)
         {
+            Log("Refusé : " + ex.Message);
             return "Mise à jour impossible : ARGOS n'a pas le droit d'écrire dans son dossier. Déplace-le (Bureau, Documents…) ou mets-le à jour à la main.";
         }
         catch (Exception ex)
         {
+            Log("Échec : " + ex);
             return "Mise à jour impossible : " + ex.Message;
         }
         finally
@@ -93,19 +137,43 @@ public static class AppUpdater
         }
     }
 
-    /// <summary>Relance ARGOS sur la nouvelle version.</summary>
+    /// <summary>
+    /// Relance ARGOS sur la nouvelle version : le nouveau processus démarre deux secondes après la fermeture de celui-ci
+    /// (Windows : via cmd, sans fenêtre). Si la fermeture normale traîne, le processus est arrêté de force.
+    /// </summary>
     public static void Restart()
     {
         try
         {
+            if (Installed > 0)
+                File.WriteAllText(PendingFile, Installed.ToString());
             if (OperatingSystem.IsWindows())
-                Process.Start(new ProcessStartInfo(Environment.ProcessPath!) { UseShellExecute = true });
+            {
+                var exe = Environment.ProcessPath!;
+                Process.Start(new ProcessStartInfo("cmd.exe", $"/c ping -n 3 127.0.0.1 >nul & start \"\" \"{exe}\"")
+                {
+                    UseShellExecute = false,
+                    CreateNoWindow = true,
+                    WorkingDirectory = Path.GetDirectoryName(exe)!
+                });
+            }
             else if (AppBundle is { } bundle)
-                Process.Start("/bin/sh", ["-c", $"sleep 1; /usr/bin/open -n \"{bundle}\""]);
+                Process.Start("/bin/sh", ["-c", $"sleep 2; /usr/bin/open -n \"{bundle}\""]);
+            Log("Redémarrage demandé.");
+        }
+        catch (Exception ex)
+        {
+            Log("Relance impossible : " + ex.Message);
         }
         finally
         {
             App.Quit();
+            // Filet de sécurité : connexions ou fenêtres qui empêcheraient la fermeture.
+            _ = Task.Run(async () =>
+            {
+                await Task.Delay(1500);
+                Environment.Exit(0);
+            });
         }
     }
 
