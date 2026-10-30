@@ -79,13 +79,13 @@ public sealed class FilesStore(ApiClient api)
 
     public FileEntry? Find(string? id) => Snapshot.Entries.FirstOrDefault(e => e.Id == id);
 
-    /// <summary>Chemin affiché : « Mes documents › Gardes › Novembre ».</summary>
+    /// <summary>Chemin affiché : « Ce PC › Documents › Gardes ».</summary>
     public string PathOf(string? folderId)
     {
         var parts = new List<string>();
         for (var e = Find(folderId); e is not null && parts.Count < 50; e = Find(e.ParentId))
             parts.Insert(0, e.Name);
-        parts.Insert(0, "Mes documents");
+        parts.Insert(0, "Ce PC");
         return string.Join(" › ", parts);
     }
 }

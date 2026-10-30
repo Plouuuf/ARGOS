@@ -50,7 +50,7 @@ public sealed class ImprimanteViewModel : ViewModelBase, IDisposable
     public IStorageProvider? Storage { get; set; }
 
     public ObservableCollection<PrintRow> Jobs { get; } = [];
-    public IReadOnlyList<string> Filters { get; } = ["Tous", "En attente", "Imprimés", "Mes documents"];
+    public IReadOnlyList<string> Filters { get; } = ["Tous", "En attente", "Imprimés", "Mes impressions"];
     public string Filter { get => _filter; set { if (SetProperty(ref _filter, value ?? "Tous")) Build(); } }
     public string Search { get => _search; set { if (SetProperty(ref _search, value ?? string.Empty)) Build(); } }
 
@@ -87,7 +87,7 @@ public sealed class ImprimanteViewModel : ViewModelBase, IDisposable
             {
                 "En attente" => j.Status != PrintStatuses.Imprime,
                 "Imprimés" => j.Status == PrintStatuses.Imprime,
-                "Mes documents" => j.OwnerId == me,
+                "Mes impressions" => j.OwnerId == me,
                 _ => true
             })
             .Where(j => q.Length == 0 || j.Title.Contains(q, StringComparison.CurrentCultureIgnoreCase)

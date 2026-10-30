@@ -10,8 +10,8 @@ namespace Argos.Server.Services;
 /// </summary>
 public sealed class PrinterService(OdeDatabase db, RealtimeHub hub, FilesService files, ILogger<PrinterService> logger)
 {
-    internal static string Dir { get; set; } = Path.Combine(AppContext.BaseDirectory, "data", "print");
-    internal static TimeSpan Step { get; set; } = TimeSpan.FromSeconds(3);
+    public static string Dir { get; set; } = Path.Combine(AppContext.BaseDirectory, "data", "print");
+    public static TimeSpan Step { get; set; } = TimeSpan.FromSeconds(3);
 
     public static bool CanManageAll(ArgosUserDto user) => AccessLevels.IsRhAdmin(user.Levels) || user.Levels.Contains(AccessLevels.Encadrement);
 

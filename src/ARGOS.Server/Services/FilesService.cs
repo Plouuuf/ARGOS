@@ -19,9 +19,22 @@ public sealed class FilesService(OdeDatabase db, RealtimeHub hub)
     private FileEntry? Own(ArgosUserDto user, string? id)
         => string.IsNullOrEmpty(id) ? null : db.GetDoc<FileEntry>(RemiseTables.Files, id) is { } e && e.OwnerId == user.UserId ? e : null;
 
+    /// <summary>Dossiers de Windows créés pour chaque utilisateur : Bureau, Documents, Téléchargements.</summary>
+    public static readonly string[] DefaultFolders = ["Bureau", "Documents", "Téléchargements"];
+
     public FilesSnapshot Snapshot(ArgosUserDto user)
     {
         var entries = All(user.UserId);
+        if (!entries.Any(e => e.IsFolder && e.ParentId.Length == 0 && e.Name == DefaultFolders[0]))
+        {
+            var now = DateTimeOffset.UtcNow;
+            foreach (var name in DefaultFolders.Where(n => !entries.Any(e => e.IsFolder && e.ParentId.Length == 0 && e.Name == n)))
+            {
+                var folder = new FileEntry { Id = NewId(), OwnerId = user.UserId, Name = name, IsFolder = true, CreatedAt = now, UpdatedAt = now };
+                db.SaveDoc(RemiseTables.Files, folder.Id, now, folder);
+                entries.Add(folder);
+            }
+        }
         return new FilesSnapshot { Entries = entries, Used = entries.Sum(e => e.Size), Quota = QuotaBytes };
     }
 
@@ -137,6 +150,42 @@ public sealed class FilesService(OdeDatabase db, RealtimeHub hub)
             entry.UpdatedAt = DateTimeOffset.UtcNow;
             db.SaveDoc(RemiseTables.Files, entry.Id, entry.UpdatedAt, entry);
             return new OdeResult(true, null, entry.Id);
+        });
+
+    /// <summary>Copie un fichier ou un dossier (et son contenu) vers un dossier (« Copier » puis « Coller »).</summary>
+    public async Task<OdeResult> CopyAsync(ArgosUserDto user, string id, FileMoveRequest request)
+        => await Locked(user, () =>
+        {
+            var source = Own(user, id);
+            if (source is null || source.Deleted) return new OdeResult(false, "Élément introuvable.");
+            if (!ValidParent(user, request.ParentId)) return new OdeResult(false, "Dossier de destination introuvable.");
+            for (var p = request.ParentId; !string.IsNullOrEmpty(p); p = Own(user, p)?.ParentId)
+                if (p == source.Id) return new OdeResult(false, "Un dossier ne peut pas être copié dans lui-même.");
+            var all = All(user.UserId);
+            var total = source.IsFolder ? Descendants(user.UserId, source.Id).Where(e => !e.Deleted).Sum(e => e.Size) : source.Size;
+            if (all.Sum(e => e.Size) + total > QuotaBytes) return new OdeResult(false, "Espace « Mes documents » plein (200 Mo).");
+
+            var now = DateTimeOffset.UtcNow;
+            string Clone(FileEntry e, string parentId, bool top)
+            {
+                var copy = new FileEntry
+                {
+                    Id = NewId(), OwnerId = user.UserId, ParentId = parentId, IsFolder = e.IsFolder, Size = e.Size, ContentType = e.ContentType,
+                    Name = top ? FreeName(user.UserId, parentId, e.Name, null) : e.Name, CreatedAt = now, UpdatedAt = now
+                };
+                if (!e.IsFolder)
+                {
+                    var from = Path.Combine(FilesDir, e.Id);
+                    if (File.Exists(from)) File.Copy(from, Path.Combine(FilesDir, copy.Id), true);
+                }
+                db.SaveDoc(RemiseTables.Files, copy.Id, now, copy);
+                if (e.IsFolder)
+                    foreach (var child in all.Where(c => c.ParentId == e.Id && !c.Deleted))
+                        Clone(child, copy.Id, false);
+                return copy.Id;
+            }
+            Directory.CreateDirectory(FilesDir);
+            return new OdeResult(true, null, Clone(source, request.ParentId, true));
         });
 
     // ===== Corbeille =====

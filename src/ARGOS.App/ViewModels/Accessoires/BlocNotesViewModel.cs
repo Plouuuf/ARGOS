@@ -201,7 +201,7 @@ public sealed class BlocNotesViewModel : ViewModelBase
         _dirty = false;
         OnPropertyChanged(nameof(Title));
         OnPropertyChanged(nameof(FileId));
-        SetStatus($"Enregistré dans {ArgosSession.Current?.Files.PathOf(SaveAsFolder?.Id) ?? "Mes documents"}", false);
+        SetStatus($"Enregistré dans {ArgosSession.Current?.Files.PathOf(SaveAsFolder?.Id) ?? "Ce PC"}", false);
         _afterSave?.Invoke();
         _afterSave = null;
     }
@@ -225,11 +225,12 @@ public sealed class BlocNotesViewModel : ViewModelBase
     {
         var store = ArgosSession.Current?.Files;
         Folders.Clear();
-        Folders.Add(new FolderNode(string.Empty, "Mes documents", 0, false, new RelayCommand(() => { })));
+        Folders.Add(new FolderNode(string.Empty, "Ce PC", 0, false, new RelayCommand(() => { })));
         foreach (var f in (store?.Snapshot.Entries ?? []).Where(e => e.IsFolder && !e.Deleted).OrderBy(e => store!.PathOf(e.Id)))
-            Folders.Add(new FolderNode(f.Id, store!.PathOf(f.Id).Replace("Mes documents › ", ""), 1, false, new RelayCommand(() => { })));
+            Folders.Add(new FolderNode(f.Id, store!.PathOf(f.Id).Replace("Ce PC › ", ""), 1, false, new RelayCommand(() => { })));
         var current = _fileId is null ? null : store?.Find(_fileId)?.ParentId;
-        SaveAsFolder = Folders.FirstOrDefault(f => f.Id == (current ?? string.Empty)) ?? Folders[0];
+        SaveAsFolder = Folders.FirstOrDefault(f => f.Id == (current ?? string.Empty) && current is not null)
+                       ?? Folders.FirstOrDefault(f => f.Name == "Documents") ?? Folders[0];
         SaveAsName = _fileId is null ? "Sans titre.txt" : _fileName;
         ShowOpen = false;
         ShowSaveAs = true;
@@ -241,7 +242,7 @@ public sealed class BlocNotesViewModel : ViewModelBase
         TextFiles.Clear();
         foreach (var f in (store?.Snapshot.Entries ?? []).Where(e => !e.IsFolder && !e.Deleted && FileKinds.IsText(e.Name))
                      .OrderByDescending(e => e.UpdatedAt))
-            TextFiles.Add(new FileChoice(f.Id, store!.PathOf(f.ParentId).Replace("Mes documents", "").TrimStart(' ', '›') is { Length: > 0 } dir ? $"{f.Name}  ({dir})" : f.Name));
+            TextFiles.Add(new FileChoice(f.Id, store!.PathOf(f.ParentId).Replace("Ce PC", "").TrimStart(' ', '›') is { Length: > 0 } dir ? $"{f.Name}  ({dir})" : f.Name));
         OpenChoice = TextFiles.FirstOrDefault();
         ShowSaveAs = false;
         ShowOpen = true;

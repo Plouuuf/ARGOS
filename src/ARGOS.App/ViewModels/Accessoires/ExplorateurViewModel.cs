@@ -72,6 +72,15 @@ public sealed class ExplorateurViewModel : ViewModelBase, IDisposable
         MoveCommand = new RelayCommand(() => _ = MoveAsync(), () => _selectedId is not null && MoveTarget is not null);
         RefreshCommand = new RelayCommand(() => _ = Store?.RefreshAsync());
         RootCommand = new RelayCommand(() => Navigate(string.Empty));
+        CopyCommand = new RelayCommand(() => SetClipboard(false), () => _selectedId is not null);
+        CutCommand = new RelayCommand(() => SetClipboard(true), () => _selectedId is not null);
+        PasteCommand = new RelayCommand(() => _ = PasteAsync(), () => Clipboard is not null);
+        PropertiesCommand = new RelayCommand(() => ShowProperties = !ShowProperties, () => _selectedId is not null);
+        OpenTrashCommand = new RelayCommand(() =>
+        {
+            var bin = _desktop.Apps.FirstOrDefault(a => a.Id == ArgosApps.Corbeille);
+            if (bin is not null) _desktop.OpenApp(bin);
+        });
 
         if (Store is { } store)
         {
@@ -100,7 +109,7 @@ public sealed class ExplorateurViewModel : ViewModelBase, IDisposable
     public ObservableCollection<ExplorerItem> Items { get; } = [];
 
     public string FolderId => _folderId;
-    public string PathText => Store?.PathOf(_folderId) ?? "Mes documents";
+    public string PathText => Store?.PathOf(_folderId) ?? "Ce PC";
     public bool IsRoot => _folderId.Length == 0;
     public bool HasItems => Items.Count > 0;
     public string StatusText => $"{Items.Count} élément(s)" + (Selected is { } s ? $"   1 élément sélectionné{(s.IsFolder ? "" : "  " + FilesApi.Size(s.Size))}" : string.Empty);
@@ -136,6 +145,70 @@ public sealed class ExplorateurViewModel : ViewModelBase, IDisposable
     public RelayCommand DeleteCommand { get; }
     public RelayCommand MoveCommand { get; }
     public RelayCommand RefreshCommand { get; }
+    public RelayCommand CopyCommand { get; }
+    public RelayCommand CutCommand { get; }
+    public RelayCommand PasteCommand { get; }
+    public RelayCommand PropertiesCommand { get; }
+    public RelayCommand OpenTrashCommand { get; }
+
+    // ===== Presse-papiers (copier / couper / coller), partagé entre les fenêtres de l'Explorateur =====
+
+    private sealed record ClipboardItem(string Id, string Name, bool Cut);
+    private static ClipboardItem? Clipboard { get; set; }
+    public string ClipboardText => Clipboard is null ? string.Empty : (Clipboard.Cut ? "Coupé : " : "Copié : ") + Clipboard.Name;
+
+    private void SetClipboard(bool cut)
+    {
+        if (Selected is not { } entry) return;
+        Clipboard = new ClipboardItem(entry.Id, entry.Name, cut);
+        Show($"« {entry.Name} » {(cut ? "coupé" : "copié")} : ouvrez le dossier de destination puis « Coller ».", false);
+        OnPropertyChanged(nameof(ClipboardText));
+        PasteCommand.RaiseCanExecuteChanged();
+    }
+
+    private async Task PasteAsync()
+    {
+        if (Clipboard is not { } item) return;
+        var result = item.Cut
+            ? await FilesApi.PostAsync($"api/files/{item.Id}/move", new FileMoveRequest { ParentId = _folderId })
+            : await FilesApi.PostAsync($"api/files/{item.Id}/copy", new FileMoveRequest { ParentId = _folderId });
+        if (Report(result, $"« {item.Name} » {(item.Cut ? "déplacé" : "collé")} ici.") && item.Cut) Clipboard = null;
+        OnPropertyChanged(nameof(ClipboardText));
+        PasteCommand.RaiseCanExecuteChanged();
+    }
+
+    // ===== Propriétés =====
+
+    private bool _showProperties;
+    public bool ShowProperties { get => _showProperties; set { if (SetProperty(ref _showProperties, value)) OnPropertyChanged(nameof(Properties)); } }
+
+    public IReadOnlyList<(string Label, string Value)> PropertiesList => Selected is not { } e ? [] : BuildProperties(e);
+    public IReadOnlyList<string> Properties => PropertiesList.Select(p => $"{p.Label} : {p.Value}").ToList();
+
+    private IReadOnlyList<(string, string)> BuildProperties(FileEntry e)
+    {
+        var all = S.Entries.Where(x => !x.Deleted).ToList();
+        var inside = e.IsFolder ? Descendants(all, e.Id) : new List<FileEntry>();
+        return
+        [
+            ("Nom", e.Name),
+            ("Type", FileKinds.Label(e)),
+            ("Emplacement", Store?.PathOf(e.ParentId) ?? "Ce PC"),
+            ("Taille", e.IsFolder ? $"{FilesApi.Size(inside.Sum(x => x.Size))} ({inside.Count(x => !x.IsFolder)} fichier(s), {inside.Count(x => x.IsFolder)} dossier(s))" : FilesApi.Size(e.Size)),
+            ("Créé le", e.CreatedAt.ToLocalTime().ToString("dddd d MMMM yyyy, HH:mm:ss", Fr)),
+            ("Modifié le", e.UpdatedAt.ToLocalTime().ToString("dddd d MMMM yyyy, HH:mm:ss", Fr))
+        ];
+    }
+
+    // ===== Ce PC =====
+
+    public bool ShowThisPc => IsRoot && Search.Trim().Length == 0;
+    public IReadOnlyList<FolderNode> SpecialFolders => S.Entries
+        .Where(e => e.IsFolder && !e.Deleted && e.ParentId.Length == 0 && SpecialNames.Contains(e.Name))
+        .OrderBy(e => Array.IndexOf(SpecialNames, e.Name))
+        .Select(e => { var id = e.Id; return new FolderNode(e.Id, e.Name, 0, false, new RelayCommand(() => Navigate(id))); })
+        .ToList();
+    private static readonly string[] SpecialNames = ["Bureau", "Documents", "Téléchargements", "Impressions"];
 
     // ===== Construction =====
 
@@ -146,7 +219,7 @@ public sealed class ExplorateurViewModel : ViewModelBase, IDisposable
         if (_selectedId is not null && entries.All(e => e.Id != _selectedId)) _selectedId = null;
         if (Store?.LastError is { } error) Show(error, true);
 
-        var tree = new List<FolderNode> { new(string.Empty, "Mes documents", 0, _folderId.Length == 0, new RelayCommand(() => Navigate(string.Empty))) };
+        var tree = new List<FolderNode> { new(string.Empty, "Ce PC", 0, _folderId.Length == 0, new RelayCommand(() => Navigate(string.Empty))) };
         void Walk(string parent, int depth)
         {
             foreach (var f in entries.Where(e => e.IsFolder && e.ParentId == parent).OrderBy(e => e.Name, StringComparer.Create(Fr, true)))
@@ -175,9 +248,10 @@ public sealed class ExplorateurViewModel : ViewModelBase, IDisposable
         }
         Replace(Items, visible.OrderByDescending(e => e.IsFolder).ThenBy(e => e.Name, StringComparer.Create(Fr, true)).Select(ItemOf));
 
-        foreach (var n in new[] { nameof(FolderId), nameof(PathText), nameof(IsRoot), nameof(HasItems), nameof(StatusText), nameof(QuotaText), nameof(QuotaRatio), nameof(Selected), nameof(MoveTarget) })
+        foreach (var n in new[] { nameof(FolderId), nameof(PathText), nameof(IsRoot), nameof(HasItems), nameof(StatusText), nameof(QuotaText), nameof(QuotaRatio),
+                                  nameof(Selected), nameof(MoveTarget), nameof(ShowThisPc), nameof(SpecialFolders), nameof(Properties), nameof(ClipboardText) })
             OnPropertyChanged(n);
-        foreach (var c in new[] { BackCommand, UpCommand, OpenCommand, RenameCommand, DeleteCommand, MoveCommand })
+        foreach (var c in new[] { BackCommand, UpCommand, OpenCommand, RenameCommand, DeleteCommand, MoveCommand, CopyCommand, CutCommand, PasteCommand, PropertiesCommand })
             c.RaiseCanExecuteChanged();
     }
 

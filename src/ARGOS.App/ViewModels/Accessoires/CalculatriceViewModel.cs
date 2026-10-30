@@ -34,14 +34,28 @@ public sealed class CalculatriceViewModel : ViewModelBase
         FunctionCommand = new RelayCommand(p => Function(p as string ?? string.Empty));
         PercentCommand = new RelayCommand(Percent);
         MemoryCommand = new RelayCommand(p => Memory(p as string ?? string.Empty));
-        ClearHistoryCommand = new RelayCommand(() => History.Clear());
+        ClearHistoryCommand = new RelayCommand(() => { History.Clear(); OnPropertyChanged(nameof(HasHistory)); });
     }
 
     public string Display => _error ? _entry : Format(Current, editing: !_newEntry);
     public string Expression => _expression;
     public bool HasMemory => _hasMemory;
     public string MemoryText => _hasMemory ? "M = " + Format(_memory) : string.Empty;
-    public ObservableCollection<string> History { get; } = [];
+    public ObservableCollection<HistoryEntry> History { get; } = [];
+    public bool HasHistory => History.Count > 0;
+    private bool _showHistory;
+    public bool ShowHistory { get => _showHistory; set => SetProperty(ref _showHistory, value); }
+    public RelayCommand ToggleHistoryCommand => new(() => ShowHistory = !ShowHistory);
+
+    /// <summary>Réutilise un résultat de l'historique (comme un clic dans l'historique de Windows).</summary>
+    public void Reuse(decimal value)
+    {
+        if (_error) Clear();
+        SetEntry(value);
+        _newEntry = false;
+        if (_pendingOp is null) _expression = string.Empty;
+        Notify();
+    }
 
     public RelayCommand DigitCommand { get; }
     public RelayCommand OperatorCommand { get; }
@@ -177,8 +191,10 @@ public sealed class CalculatriceViewModel : ViewModelBase
             return;
         }
         _expression = text;
-        History.Insert(0, $"{text} {Format(result)}");
+        var reused = result;
+        History.Insert(0, new HistoryEntry(text, Format(result), new RelayCommand(() => Reuse(reused))));
         if (History.Count > 30) History.RemoveAt(History.Count - 1);
+        OnPropertyChanged(nameof(HasHistory));
         SetEntry(result);
         _lastOp = op;
         _lastOperand = right;
@@ -320,3 +336,5 @@ public sealed class CalculatriceViewModel : ViewModelBase
         OnPropertyChanged(nameof(MemoryText));
     }
 }
+
+public sealed record HistoryEntry(string Expression, string Result, RelayCommand ReuseCommand);

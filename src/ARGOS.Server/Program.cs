@@ -594,6 +594,12 @@ public static class Program
             return user is null ? Results.Unauthorized() : ToResult(await service.MoveAsync(user, id, request));
         });
 
+        files.MapPost("/{id}/copy", async (string id, FileMoveRequest request, HttpContext context, DiscordOAuthService oauth, FilesService service) =>
+        {
+            var user = await AuthenticateAsync(context, oauth);
+            return user is null ? Results.Unauthorized() : ToResult(await service.CopyAsync(user, id, request));
+        });
+
         files.MapPost("/{id}/delete", async (string id, HttpContext context, DiscordOAuthService oauth, FilesService service) =>
         {
             var user = await AuthenticateAsync(context, oauth);

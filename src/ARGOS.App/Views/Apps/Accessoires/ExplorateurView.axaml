@@ -14,6 +14,12 @@
                 <Button Classes="tool" Content="Renommer" Command="{Binding RenameCommand}"/>
                 <Button Classes="tool" Content="Supprimer" Command="{Binding DeleteCommand}"/>
                 <Rectangle Width="1" Fill="#DADBDC" Margin="4,2"/>
+                <Button Classes="tool" Content="Copier" Command="{Binding CopyCommand}"/>
+                <Button Classes="tool" Content="Couper" Command="{Binding CutCommand}"/>
+                <Button Classes="tool" Content="Coller" Command="{Binding PasteCommand}"/>
+                <Button Classes="tool" Content="Propriétés" Command="{Binding PropertiesCommand}"/>
+                <Button Classes="tool" Content="Corbeille" Command="{Binding OpenTrashCommand}"/>
+                <Rectangle Width="1" Fill="#DADBDC" Margin="4,2"/>
                 <Button Classes="tool" Name="ImportButton" Content="Importer depuis le poste…"/>
                 <Button Classes="tool" Name="DownloadButton" Content="Télécharger sur le poste…"/>
                 <Rectangle Width="1" Fill="#DADBDC" Margin="4,2"/>
@@ -38,10 +44,11 @@
         </Grid>
         <!-- Barre d'état -->
         <Border DockPanel.Dock="Bottom" BorderBrush="#F0F0F0" BorderThickness="0,1,0,0" Padding="10,3">
-            <Grid ColumnDefinitions="*,Auto,8,120">
+            <Grid ColumnDefinitions="*,Auto,16,Auto,8,120">
                 <TextBlock Classes="status" Text="{Binding StatusText}"/>
-                <TextBlock Grid.Column="1" Classes="status" Text="{Binding QuotaText}" Foreground="#6D6D6D"/>
-                <ProgressBar Grid.Column="3" MinWidth="0" Minimum="0" Maximum="1" Value="{Binding QuotaRatio}" Height="8" Foreground="#26A0DA" Background="#E6E6E6" VerticalAlignment="Center"/>
+                <TextBlock Grid.Column="1" Classes="status" Text="{Binding ClipboardText}" Foreground="#0063B1"/>
+                <TextBlock Grid.Column="3" Classes="status" Text="{Binding QuotaText}" Foreground="#6D6D6D"/>
+                <ProgressBar Grid.Column="5" MinWidth="0" Minimum="0" Maximum="1" Value="{Binding QuotaRatio}" Height="8" Foreground="#26A0DA" Background="#E6E6E6" VerticalAlignment="Center"/>
             </Grid>
         </Border>
         <Border DockPanel.Dock="Bottom" Padding="10,6" IsVisible="{Binding HasMessage}" Classes.err="{Binding MessageIsError}">
@@ -50,6 +57,15 @@
                 <Style Selector="Border.err"><Setter Property="Background" Value="#FDE7E9"/></Style>
             </Border.Styles>
             <TextBlock Text="{Binding Message}" FontSize="12" TextWrapping="Wrap"/>
+        </Border>
+        <!-- Propriétés -->
+        <Border DockPanel.Dock="Bottom" Background="#F5F6F7" BorderBrush="#DADBDC" BorderThickness="0,1,0,0" Padding="12,8" IsVisible="{Binding ShowProperties}">
+            <StackPanel Spacing="2">
+                <TextBlock Text="Propriétés" FontWeight="SemiBold" FontSize="13"/>
+                <ItemsControl ItemsSource="{Binding Properties}">
+                    <ItemsControl.ItemTemplate><DataTemplate><TextBlock Text="{Binding}" FontSize="12" TextWrapping="Wrap"/></DataTemplate></ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
         </Border>
         <!-- Renommer -->
         <Border DockPanel.Dock="Bottom" Background="#F5F6F7" BorderBrush="#DADBDC" BorderThickness="0,1,0,0" Padding="10,6" IsVisible="{Binding IsRenaming}">
@@ -90,6 +106,35 @@
                     <TextBlock Grid.Column="2" Classes="head" Text="Type"/>
                     <TextBlock Grid.Column="3" Classes="head" Text="Taille" HorizontalAlignment="Right"/>
                 </Grid>
+                <!-- Ce PC : dossiers de Windows et lecteur -->
+                <StackPanel DockPanel.Dock="Top" Margin="12,4,12,8" IsVisible="{Binding ShowThisPc}">
+                    <TextBlock Text="Dossiers" FontSize="12" Foreground="#1E3287" Margin="0,0,0,6"/>
+                    <ItemsControl ItemsSource="{Binding SpecialFolders}">
+                        <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Button Classes="row" Width="200" Margin="0,0,8,6" Command="{Binding SelectCommand}">
+                                    <StackPanel Orientation="Horizontal" Spacing="10" Margin="4">
+                                        <Image Source="avares://ARGOS.App/Assets/Icons/explorateur.png" Width="36" Height="36"/>
+                                        <TextBlock Text="{Binding Name}" FontSize="13" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Button>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <TextBlock Text="Périphériques et lecteurs" FontSize="12" Foreground="#1E3287" Margin="0,8,0,6"/>
+                    <Border Width="260" HorizontalAlignment="Left" Padding="6">
+                        <Grid ColumnDefinitions="Auto,10,*">
+                            <PathIcon Data="{StaticResource IconWindows}" Width="30" Height="30" Foreground="#0078D7"/>
+                            <StackPanel Grid.Column="2" Spacing="3">
+                                <TextBlock Text="Disque ARGOS (C:)" FontSize="13"/>
+                                <ProgressBar MinWidth="0" Minimum="0" Maximum="1" Value="{Binding QuotaRatio}" Height="12" Foreground="#26A0DA" Background="#E6E6E6"/>
+                                <TextBlock Text="{Binding QuotaText}" FontSize="11.5" Foreground="#6D6D6D"/>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                    <TextBlock Text="Autres éléments" FontSize="12" Foreground="#1E3287" Margin="0,10,0,0"/>
+                </StackPanel>
                 <Panel>
                     <TextBlock Text="Ce dossier est vide." FontSize="12" Foreground="#6D6D6D" HorizontalAlignment="Center" Margin="0,30,0,0" IsVisible="{Binding !HasItems}"/>
                     <ScrollViewer>

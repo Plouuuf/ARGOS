@@ -38,19 +38,26 @@ public sealed class FilesServiceTests : IDisposable
         Assert.True((await _files.UploadAsync(Moi, new FileUploadRequest { ReplaceId = note.Id, Data = B64("bonjour à tous") })).Ok);
         Assert.Equal("bonjour à tous", File.ReadAllText(_files.Open(Moi, note.Id!).Path!));
         Assert.Null(_files.Open(Autre, note.Id!).Entry);                       // espace personnel
-        Assert.Empty(_files.Snapshot(Autre).Entries);
+        Assert.DoesNotContain(_files.Snapshot(Autre).Entries, e => !e.IsFolder);
 
         Assert.False((await _files.MoveAsync(Moi, folder.Id!, new FileMoveRequest { ParentId = folder.Id! })).Ok);
 
         // Corbeille : le dossier emporte son contenu, puis revient avec lui.
         Assert.True((await _files.DeleteAsync(Moi, folder.Id!)).Ok);
-        Assert.All(_files.Snapshot(Moi).Entries, e => Assert.True(e.Deleted));
+        Assert.All(_files.Snapshot(Moi).Entries.Where(e => e.Id == folder.Id || e.ParentId == folder.Id), e => Assert.True(e.Deleted));
         Assert.True((await _files.RestoreAsync(Moi, folder.Id!)).Ok);
         Assert.All(_files.Snapshot(Moi).Entries, e => Assert.False(e.Deleted));
 
+        // Copier / coller : le dossier et son contenu sont dupliqués.
+        var copied = await _files.CopyAsync(Moi, folder.Id!, new FileMoveRequest());
+        Assert.True(copied.Ok);
+        Assert.Equal("Gardes (2)", _files.Snapshot(Moi).Entries.Single(e => e.Id == copied.Id).Name);
+        Assert.Equal(2, _files.Snapshot(Moi).Entries.Count(e => e.ParentId == copied.Id));
+
         await _files.DeleteAsync(Moi, folder.Id!);
+        await _files.DeleteAsync(Moi, copied.Id!);
         Assert.True((await _files.EmptyTrashAsync(Moi)).Ok);
-        Assert.Empty(_files.Snapshot(Moi).Entries);
+        Assert.All(_files.Snapshot(Moi).Entries, e => Assert.Contains(e.Name, FilesService.DefaultFolders));   // Bureau, Documents, Téléchargements
         Assert.Equal(0, _files.Snapshot(Moi).Used);
     }
 

@@ -13,11 +13,31 @@ public partial class BlocNotesView : UserControl
     {
         InitializeComponent();
         DateItem.Click += (_, _) => Vm?.InsertDateTime();
+        UndoItem.Click += (_, _) => { Editor.Undo(); Editor.Focus(); };
+        RedoItem.Click += (_, _) => { Editor.Redo(); Editor.Focus(); };
+        CutItem.Click += (_, _) => { Editor.Cut(); Editor.Focus(); };
+        CopyItem.Click += (_, _) => { Editor.Copy(); Editor.Focus(); };
+        PasteItem.Click += (_, _) => { Editor.Paste(); Editor.Focus(); };
+        DeleteItem.Click += (_, _) => DeleteSelection();
+        SelectAllItem.Click += (_, _) => { Editor.SelectAll(); Editor.Focus(); };
         AddHandler(KeyDownEvent, OnKey, RoutingStrategies.Tunnel);
         AttachedToVisualTree += (_, _) => Editor.Focus();
     }
 
     private BlocNotesViewModel? Vm => DataContext as BlocNotesViewModel;
+
+    private void DeleteSelection()
+    {
+        var text = Editor.Text ?? string.Empty;
+        var start = Math.Clamp(Math.Min(Editor.SelectionStart, Editor.SelectionEnd), 0, text.Length);
+        var end = Math.Clamp(Math.Max(Editor.SelectionStart, Editor.SelectionEnd), 0, text.Length);
+        if (end > start)
+        {
+            Editor.Text = text[..start] + text[end..];
+            Editor.CaretIndex = start;
+        }
+        Editor.Focus();
+    }
 
     private void OnKey(object? sender, KeyEventArgs e)
     {

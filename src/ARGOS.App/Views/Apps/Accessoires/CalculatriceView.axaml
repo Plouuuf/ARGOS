@@ -4,7 +4,12 @@
              Classes="calc" Background="#E6E6E6" Focusable="True"
              FontFamily="Segoe UI, Helvetica Neue, Arial, Liberation Sans" Foreground="#1A1A1A">
     <DockPanel>
-        <TextBlock DockPanel.Dock="Top" Text="Standard" FontSize="20" FontWeight="SemiBold" Margin="14,10,0,0"/>
+        <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto" Margin="14,10,6,0">
+            <TextBlock Text="Standard" FontSize="20" FontWeight="SemiBold"/>
+            <ToggleButton Grid.Column="1" Classes="m" IsChecked="{Binding ShowHistory}" ToolTip.Tip="Historique" Background="Transparent" Padding="8,4">
+                <TextBlock Text="Historique" FontSize="12"/>
+            </ToggleButton>
+        </Grid>
         <StackPanel DockPanel.Dock="Top" Margin="12,8,14,4">
             <TextBlock Text="{Binding Expression}" FontSize="13" Foreground="#6D6D6D" HorizontalAlignment="Right" MinHeight="18" TextTrimming="CharacterEllipsis"/>
             <Viewbox HorizontalAlignment="Right" StretchDirection="DownOnly" MaxHeight="64">
@@ -19,6 +24,7 @@
             <Button Classes="m" Content="M-" Command="{Binding MemoryCommand}" CommandParameter="M-"/>
             <Button Classes="m" Content="MS" Command="{Binding MemoryCommand}" CommandParameter="MS"/>
         </UniformGrid>
+        <Panel>
         <UniformGrid Columns="4" Rows="6" Margin="3,4,3,3">
             <Button Classes="k" Content="%" Command="{Binding PercentCommand}"/>
             <Button Classes="k" Content="CE" Command="{Binding ClearEntryCommand}"/>
@@ -45,5 +51,31 @@
             <Button Classes="k num" Content="," Command="{Binding DecimalCommand}"/>
             <Button Classes="k eq" Content="=" Command="{Binding EqualsCommand}" Background="#8ABAE6"/>
         </UniformGrid>
+        <!-- Historique : cliquer un calcul réutilise son résultat -->
+        <Border Background="#F2F2F2" IsVisible="{Binding ShowHistory}" BorderBrush="#D9D9D9" BorderThickness="0,1,0,0">
+            <DockPanel>
+                <Button DockPanel.Dock="Bottom" Classes="m" HorizontalAlignment="Right" Margin="6" Content="Effacer l'historique"
+                        Command="{Binding ClearHistoryCommand}" IsEnabled="{Binding HasHistory}"/>
+                <Panel>
+                    <TextBlock Text="Il n'y a pas encore d'historique." FontSize="13" Foreground="#6D6D6D" Margin="14"
+                               IsVisible="{Binding !HasHistory}"/>
+                    <ScrollViewer>
+                        <ItemsControl ItemsSource="{Binding History}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Button Classes="m" HorizontalContentAlignment="Right" Padding="14,8" Command="{Binding ReuseCommand}">
+                                        <StackPanel HorizontalAlignment="Right">
+                                            <TextBlock Text="{Binding Expression}" FontSize="12" Foreground="#6D6D6D" HorizontalAlignment="Right" FontWeight="Normal"/>
+                                            <TextBlock Text="{Binding Result}" FontSize="20" HorizontalAlignment="Right"/>
+                                        </StackPanel>
+                                    </Button>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+                </Panel>
+            </DockPanel>
+        </Border>
+        </Panel>
     </DockPanel>
 </UserControl>

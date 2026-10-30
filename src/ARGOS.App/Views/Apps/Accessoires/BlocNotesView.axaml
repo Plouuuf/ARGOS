@@ -14,6 +14,15 @@
                 <MenuItem Header="_Quitter" Command="{Binding CloseCommand}"/>
             </MenuItem>
             <MenuItem Header="_Édition">
+                <MenuItem Header="_Annuler" InputGesture="Ctrl+Z" Name="UndoItem"/>
+                <MenuItem Header="_Rétablir" InputGesture="Ctrl+Y" Name="RedoItem"/>
+                <Separator/>
+                <MenuItem Header="Co_uper" InputGesture="Ctrl+X" Name="CutItem"/>
+                <MenuItem Header="_Copier" InputGesture="Ctrl+C" Name="CopyItem"/>
+                <MenuItem Header="C_oller" InputGesture="Ctrl+V" Name="PasteItem"/>
+                <MenuItem Header="_Supprimer" InputGesture="Delete" Name="DeleteItem"/>
+                <Separator/>
+                <MenuItem Header="Sélectionner _tout" InputGesture="Ctrl+A" Name="SelectAllItem"/>
                 <MenuItem Header="Heure/_Date" InputGesture="F5" Name="DateItem"/>
             </MenuItem>
             <MenuItem Header="F_ormat">
@@ -72,7 +81,7 @@
                 <TextBlock Grid.Column="7" Classes="status" Text="UTF-8"/>
             </Grid>
         </Border>
-        <TextBox Name="Editor" Text="{Binding Text}" CaretIndex="{Binding Caret}" AcceptsReturn="True" AcceptsTab="True"
+        <TextBox Name="Editor" Text="{Binding Text}" IsUndoEnabled="True" CaretIndex="{Binding Caret}" AcceptsReturn="True" AcceptsTab="True"
                  TextWrapping="{Binding Wrapping}" FontFamily="Consolas, Menlo, Liberation Mono, monospace" FontSize="{Binding FontSize}"
                  BorderThickness="0" CornerRadius="0" Padding="4,2" Background="White"
                  ScrollViewer.HorizontalScrollBarVisibility="Auto" ScrollViewer.VerticalScrollBarVisibility="Auto"/>
