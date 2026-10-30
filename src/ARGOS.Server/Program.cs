@@ -343,6 +343,12 @@ public static class Program
             return user is null ? Results.Unauthorized() : ToResult(await service.AddEntryAsync(user, id, entry));
         });
 
+        sigtao.MapPost("/military/import", async (RosterImportRequest request, HttpContext context, DiscordOAuthService oauth, SigtaoService service) =>
+        {
+            var user = await AuthenticateAsync(context, oauth);
+            return user is null ? Results.Unauthorized() : ToResult(await service.ImportRosterAsync(user, request.Text));
+        });
+
         sigtao.MapPost("/accounts", async (UserAccount account, HttpContext context, DiscordOAuthService oauth, SigtaoService service) =>
         {
             var user = await AuthenticateAsync(context, oauth);

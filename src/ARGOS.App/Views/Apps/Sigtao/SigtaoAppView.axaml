@@ -211,9 +211,26 @@
                 <StackPanel DockPanel.Dock="Top">
                     <Grid ColumnDefinitions="*,Auto">
                         <TextBlock Classes="h1" Text="Gestion de la compagnie"/>
-                        <Button Grid.Column="1" Classes="sg" Content="Nouveau dossier militaire" VerticalAlignment="Top"
-                                Command="{Binding NewMilitaryCommand}" IsVisible="{Binding Rights.ManageCompany}"/>
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Top"
+                                    IsVisible="{Binding Rights.ManageCompany}">
+                            <Button Classes="sg light" Content="Importer l'effectif Discord" Command="{Binding ToggleImportCommand}"/>
+                            <Button Classes="sg" Content="Nouveau dossier militaire" Command="{Binding NewMilitaryCommand}"/>
+                        </StackPanel>
                     </Grid>
+                    <Border Classes="card" BorderBrush="#1F5FAD" IsVisible="{Binding ImportVisible}">
+                        <StackPanel Spacing="8">
+                            <TextBlock Classes="h2" Text="Importer l'effectif depuis Discord" Margin="0"/>
+                            <TextBlock Classes="muted" TextWrapping="Wrap"
+                                       Text="Colle le message d'effectif de la compagnie tel qu'il est écrit sur Discord (avec les insignes de grade). Chaque ligne crée ou met à jour un dossier : grade, prénom, fonction, NID ou NM, joueur Discord. Pour les militaires cités par mention, le nom de famille est repris de leur pseudo Discord à leur première connexion à ARGOS."/>
+                            <TextBox Classes="sg" Text="{Binding ImportText}" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="140" MaxHeight="300"
+                                     VerticalContentAlignment="Top" FontFamily="Menlo, Consolas, monospace" FontSize="11.5"
+                                     Watermark="&lt;:CNE:…&gt; CNE FAUBOURG (Laurent) - *Commandant d'Unité* - NM : …"/>
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <Button Classes="sg" Content="Importer" Command="{Binding ImportCommand}"/>
+                                <Button Classes="sg light" Content="Annuler" Command="{Binding ToggleImportCommand}"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
                     <Grid ColumnDefinitions="*,10,180,10,Auto" Margin="0,0,0,10">
                         <TextBox Classes="sg" Text="{Binding MilitarySearch}" Watermark="Rechercher : nom, prénom, grade, NID, unité, fonction"/>
                         <ComboBox Grid.Column="2" Classes="sg" ItemsSource="{Binding StatusFilters}" SelectedItem="{Binding StatusFilter}"/>

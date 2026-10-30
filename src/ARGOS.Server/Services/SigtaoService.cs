@@ -60,7 +60,20 @@ public sealed class SigtaoService(OdeDatabase db, RealtimeHub hub)
         var rights = Rights(user);
         var accounts = SigtaoAccess.Accounts(db).Select(a => a.Account).ToList();
         var mine = accounts.FirstOrDefault(a => a.DiscordUserId == user.UserId);
-        var military = db.Docs<MilitaryRecord>(RemiseTables.Military).OrderBy(m => m.Nom).ThenBy(m => m.Prenom).ToList();
+        var military = db.Docs<MilitaryRecord>(RemiseTables.Military).ToList();
+
+        // Dossier importé sans nom : le nom de famille est repris du pseudo Discord à la première connexion.
+        foreach (var m in military.Where(m => m.DiscordUserId == user.UserId && string.IsNullOrWhiteSpace(m.Nom)))
+        {
+            var nom = RosterImport.NameFromNickname(user.DisplayName);
+            if (nom.Length == 0) continue;
+            m.Nom = nom;
+            m.UpdatedAt = DateTimeOffset.UtcNow;
+            m.UpdatedBy = "ARGOS";
+            db.SaveDoc(RemiseTables.Military, m.Id, m.UpdatedAt, m);
+            Journal(user, SigtaoJournal.DossierModifie, m.FullName, "nom repris du pseudo Discord");
+        }
+        military = military.OrderBy(m => GradeRank(m.Grade)).ThenBy(m => m.Nom).ThenBy(m => m.Prenom).ToList();
         var myDossier = military.FirstOrDefault(m => m.Id == mine?.DossierId) ?? military.FirstOrDefault(m => m.DiscordUserId == user.UserId);
 
         // Rubriques du dossier (carrière, sanctions, entretiens) : gestion de la compagnie ou intéressé seulement.
@@ -101,8 +114,8 @@ public sealed class SigtaoService(OdeDatabase db, RealtimeHub hub)
         incoming.Nom = (incoming.Nom ?? string.Empty).Trim();
         incoming.Prenom = (incoming.Prenom ?? string.Empty).Trim();
         incoming.Nid = (incoming.Nid ?? string.Empty).Trim();
-        if (incoming.Nom.Length == 0 || incoming.Prenom.Length == 0)
-            return new(false, "Nom et prénom obligatoires.");
+        if (incoming.Nom.Length == 0 && incoming.Prenom.Length == 0)
+            return new(false, "Nom ou prénom obligatoire.");
         if (incoming.PhotoData.Length > 1_500_000)
             return new(false, "Photo trop lourde (1 Mo maximum).");
         if (!MilitaryStatuses.All.Contains(incoming.Status))
@@ -339,6 +352,82 @@ public sealed class SigtaoService(OdeDatabase db, RealtimeHub hub)
         {
             _gate.Release();
         }
+    }
+
+    // ===== Import de l'effectif =====
+
+    /// <summary>Crée ou met à jour les dossiers depuis le tableau d'effectif Discord.</summary>
+    public async Task<OdeResult> ImportRosterAsync(ArgosUserDto user, string text)
+    {
+        if (!Rights(user).ManageCompany)
+            return new(false, "Habilitation insuffisante (gestion de la compagnie).");
+        var parsed = RosterImport.Parse(text ?? string.Empty);
+        if (parsed.Count == 0)
+            return new(false, "Aucun militaire reconnu : colle le message d'effectif tel qu'il est sur Discord (avec les insignes de grade).");
+
+        await _gate.WaitAsync();
+        try
+        {
+            var all = db.Docs<MilitaryRecord>(RemiseTables.Military);
+            var now = DateTimeOffset.UtcNow;
+            int created = 0, updated = 0;
+            foreach (var p in parsed)
+            {
+                var existing = all.FirstOrDefault(m => p.DiscordUserId.Length > 0 && m.DiscordUserId == p.DiscordUserId)
+                               ?? all.FirstOrDefault(m => p.Nid.Length > 0 && m.Nid == p.Nid)
+                               ?? all.FirstOrDefault(m => p.Matricule.Length > 0 && m.Matricule == p.Matricule)
+                               ?? all.FirstOrDefault(m => p.Nom.Length > 0 && m.Nom.Equals(p.Nom, StringComparison.OrdinalIgnoreCase)
+                                                          && m.Prenom.Equals(p.Prenom, StringComparison.OrdinalIgnoreCase));
+                if (existing is null)
+                {
+                    p.Id = Guid.NewGuid().ToString("N");
+                    p.CreatedAt = now;
+                    p.UpdatedAt = now;
+                    p.UpdatedBy = user.DisplayName;
+                    db.SaveDoc(RemiseTables.Military, p.Id, now, p);
+                    all.Add(p);
+                    created++;
+                    continue;
+                }
+                var before = existing.FullName + existing.Fonction + existing.Nid + existing.Matricule;
+                if (existing.Grade != p.Grade)
+                {
+                    existing.Entries.Add(new DossierEntry
+                    {
+                        Kind = DossierKinds.Promotion, Title = p.Grade, Date = now, By = user.DisplayName, RecordedAt = now,
+                        Details = "Mise à jour depuis l'effectif Discord."
+                    });
+                    existing.Grade = p.Grade;
+                    existing.GradeDate = now;
+                }
+                existing.Echelon = p.Echelon;
+                if (p.Prenom.Length > 0) existing.Prenom = p.Prenom;
+                if (p.Nom.Length > 0) existing.Nom = p.Nom;
+                if (p.Fonction.Length > 0) existing.Fonction = p.Fonction;
+                if (p.Nid.Length > 0) existing.Nid = p.Nid;
+                if (p.Matricule.Length > 0) existing.Matricule = p.Matricule;
+                if (p.DiscordUserId.Length > 0) existing.DiscordUserId = p.DiscordUserId;
+                if (existing.FullName + existing.Fonction + existing.Nid + existing.Matricule == before) continue;
+                existing.UpdatedAt = now;
+                existing.UpdatedBy = user.DisplayName;
+                db.SaveDoc(RemiseTables.Military, existing.Id, now, existing);
+                updated++;
+            }
+            Journal(user, SigtaoJournal.DossierModifie, "Effectif de la compagnie",
+                $"Import Discord : {created} dossier(s) créé(s), {updated} mis à jour.");
+            await NotifyAsync();
+            return new(true, $"{created} dossier(s) créé(s), {updated} mis à jour.");
+        }
+        finally
+        {
+            _gate.Release();
+        }
+    }
+
+    private static int GradeRank(string grade)
+    {
+        var index = BsppGrades.All.ToList().IndexOf(grade);
+        return index < 0 ? 0 : -index;                       // du plus haut grade au plus bas
     }
 
     // ===== Outils =====

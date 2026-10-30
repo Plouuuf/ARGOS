@@ -105,6 +105,7 @@ public sealed class MilitaryRecord
     public string Matricule { get; set; } = string.Empty;
     public string Grade { get; set; } = BsppGrades.All[0];
     public DateTimeOffset? GradeDate { get; set; }
+    public string Echelon { get; set; } = string.Empty;             // « +15 » (insigne Discord 1CL15)
     public string Nom { get; set; } = string.Empty;
     public string Prenom { get; set; } = string.Empty;
     public string PhotoData { get; set; } = string.Empty;           // photo d'identité (base 64)
@@ -122,7 +123,10 @@ public sealed class MilitaryRecord
     public DateTimeOffset UpdatedAt { get; set; }
     public string UpdatedBy { get; set; } = string.Empty;
 
-    public string FullName => $"{BsppGrades.Short(Grade)} {Nom.ToUpperInvariant()} {Prenom}".Trim();
+    public string FullName => $"{BsppGrades.Short(Grade)}{Echelon} {Nom.ToUpperInvariant()} {Prenom}".Replace("  ", " ").Trim();
+
+    /// <summary>« Sapeur de 1re classe +15 »</summary>
+    public string GradeLabel => string.IsNullOrEmpty(Echelon) ? Grade : $"{Grade} {Echelon}";
 }
 
 /// <summary>Compte utilisateur ARGOS (le mot de passe n'est jamais renvoyé par le serveur).</summary>
@@ -261,5 +265,114 @@ public static class CrText
         var years = months / 12;
         months %= 12;
         return (years > 0 ? $"{years} an{(years > 1 ? "s" : string.Empty)} " : string.Empty) + $"{months} mois";
+    }
+}
+
+/// <summary>Import de l'effectif depuis le message Discord de la compagnie.</summary>
+public sealed class RosterImportRequest
+{
+    public string Text { get; set; } = string.Empty;
+}
+
+/// <summary>
+/// Lecture du tableau d'effectif Discord, une ligne par militaire :
+/// « &lt;:CNE:…&gt; CNE FAUBOURG (Laurent) - *Commandant d'Unité* - NM : 0000109387 »
+/// « &lt;:1CL15:…&gt; &lt;@560037927695024139&gt; (Diego) - NID : 0000109823 ».
+/// </summary>
+public static class RosterImport
+{
+    private static readonly System.Text.RegularExpressions.Regex GradeRx = new(@"<:([A-Za-z0-9]+):\d+>");
+    private static readonly System.Text.RegularExpressions.Regex MentionRx = new(@"<@!?(\d+)>");
+    private static readonly System.Text.RegularExpressions.Regex PrenomRx = new(@"\(\s*([^)\-]+?)\s*(?:\)|-)");
+    private static readonly System.Text.RegularExpressions.Regex FonctionRx = new(@"\*([^*]+)\*");
+    private static readonly System.Text.RegularExpressions.Regex NidRx = new(@"\bNID\s*:\s*(\d+)", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+    private static readonly System.Text.RegularExpressions.Regex NmRx = new(@"\bNM\s*:\s*(\d+)", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
+    /// <summary>Code d'insigne Discord → (grade, échelon) : « 1CL15 » → Sapeur de 1re classe, +15.</summary>
+    public static (string Grade, string Echelon)? Grade(string code)
+    {
+        var m = System.Text.RegularExpressions.Regex.Match(code.ToUpperInvariant(), @"^([A-Z]*\d?[A-Z]+?)(\d{2})?$");
+        var key = m.Success ? m.Groups[1].Value : code.ToUpperInvariant();
+        var echelon = m.Success && m.Groups[2].Success ? "+" + m.Groups[2].Value : string.Empty;
+        var grade = key switch
+        {
+            "SAP" or "SAP2CL" or "2CL" => "Sapeur de 2e classe",
+            "1CL" or "SAP1CL" => "Sapeur de 1re classe",
+            "CPL" => "Caporal",
+            "CCH" => "Caporal-chef",
+            "SGT" => "Sergent",
+            "SCH" => "Sergent-chef",
+            "ADJ" => "Adjudant",
+            "ADC" => "Adjudant-chef",
+            "MAJ" => "Major",
+            "ASP" => "Aspirant",
+            "SLT" => "Sous-lieutenant",
+            "LTN" => "Lieutenant",
+            "CNE" => "Capitaine",
+            "CDT" => "Commandant",
+            "LCL" => "Lieutenant-colonel",
+            "COL" => "Colonel",
+            _ => null
+        };
+        return grade is null ? null : (grade, echelon);
+    }
+
+    public static List<MilitaryRecord> Parse(string text)
+    {
+        var list = new List<MilitaryRecord>();
+        foreach (var raw in text.Replace("\r", string.Empty).Split('\n'))
+        {
+            var line = raw.Trim();
+            var g = GradeRx.Match(line);
+            if (!g.Success || Grade(g.Groups[1].Value) is not { } grade)
+                continue;
+            var record = new MilitaryRecord
+            {
+                Grade = grade.Grade,
+                Echelon = grade.Echelon,
+                Unite = "17e Cie",
+                Affectation = EnginsCatalog.Creteil,
+                Status = MilitaryStatuses.Actif
+            };
+            var mention = MentionRx.Match(line);
+            if (mention.Success) record.DiscordUserId = mention.Groups[1].Value;
+            var prenom = PrenomRx.Match(line);
+            if (prenom.Success) record.Prenom = prenom.Groups[1].Value.Trim();
+            var fonction = FonctionRx.Match(line);
+            if (fonction.Success) record.Fonction = fonction.Groups[1].Value.Trim();
+            if (NidRx.Match(line) is { Success: true } nid) record.Nid = nid.Groups[1].Value;
+            if (NmRx.Match(line) is { Success: true } nm) record.Matricule = nm.Groups[1].Value;
+
+            // Nom écrit en clair (officiers) : « CNE FAUBOURG (Laurent) ».
+            if (!mention.Success)
+            {
+                var start = g.Index + g.Length;
+                var end = prenom.Success ? prenom.Index : line.Length;
+                var words = line[start..end].Split(' ', StringSplitOptions.RemoveEmptyEntries)
+                    .Where(w => !string.Equals(w, g.Groups[1].Value, StringComparison.OrdinalIgnoreCase)
+                                && Grade(w) is null && w != "-")
+                    .ToList();
+                record.Nom = string.Join(" ", words).ToUpperInvariant();
+            }
+
+            // CS d'affectation cité dans la fonction (« Chef de Centre Adjoint CS CRET »).
+            foreach (var cs in new[] { EnginsCatalog.Creteil, EnginsCatalog.MaisonsAlfort, EnginsCatalog.Mass })
+                if (record.Fonction.Contains("CS " + cs, StringComparison.OrdinalIgnoreCase))
+                    record.Affectation = cs;
+
+            if (record.Prenom.Length > 0 || record.Nom.Length > 0 || record.DiscordUserId.Length > 0)
+                list.Add(record);
+        }
+        return list;
+    }
+
+    /// <summary>Nom de famille tiré d'un pseudo Discord VDMS : « [1CL+15] SANTOS D. » → « SANTOS ».</summary>
+    public static string NameFromNickname(string nickname)
+    {
+        var text = System.Text.RegularExpressions.Regex.Replace(nickname, @"^\s*[\[\(][^\]\)]*[\]\)]\s*", string.Empty).Trim();
+        var words = text.Split(' ', StringSplitOptions.RemoveEmptyEntries)
+            .Where(w => !(w.Length <= 2 && w.EndsWith('.')))       // initiale du prénom
+            .ToList();
+        return words.Count == 0 ? string.Empty : string.Join(" ", words).ToUpperInvariant();
     }
 }

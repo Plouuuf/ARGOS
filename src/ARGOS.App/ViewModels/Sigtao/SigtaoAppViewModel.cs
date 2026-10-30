@@ -63,6 +63,8 @@ public sealed class SigtaoAppViewModel : ViewModelBase, IDisposable
     private bool _accountActive = true;
     private MilitaryChoice? _accountDossier;
     private string? _temporaryPassword;
+    private bool _importVisible;
+    private string _importText = string.Empty;
 
     public SigtaoAppViewModel(DesktopViewModel desktop)
     {
@@ -82,6 +84,8 @@ public sealed class SigtaoAppViewModel : ViewModelBase, IDisposable
         CancelAccountCommand = new RelayCommand(() => AccountVisible = false);
         ResetAccessCommand = new RelayCommand(() => _ = ResetAccessAsync(), () => Rights.ManageAccounts && _accountId is not null);
         RefreshCommand = new RelayCommand(() => _ = RefreshAsync());
+        ToggleImportCommand = new RelayCommand(() => ImportVisible = !ImportVisible, () => Rights.ManageCompany);
+        ImportCommand = new RelayCommand(() => _ = ImportAsync(), () => Rights.ManageCompany);
 
         if (ArgosSession.Current is { } session)
         {
@@ -125,6 +129,10 @@ public sealed class SigtaoAppViewModel : ViewModelBase, IDisposable
     public RelayCommand CancelAccountCommand { get; }
     public RelayCommand ResetAccessCommand { get; }
     public RelayCommand RefreshCommand { get; }
+    public RelayCommand ToggleImportCommand { get; }
+    public RelayCommand ImportCommand { get; }
+    public bool ImportVisible { get => _importVisible; set => SetProperty(ref _importVisible, value); }
+    public string ImportText { get => _importText; set => SetProperty(ref _importText, value); }
 
     public string? Message
     {
@@ -215,7 +223,7 @@ public sealed class SigtaoAppViewModel : ViewModelBase, IDisposable
                                   nameof(MeFonction), nameof(MeService), nameof(MePhoto), nameof(HasMePhoto), nameof(MeHabilitations),
                                   nameof(ReportsScope), nameof(CanSeeHistory) })
             OnPropertyChanged(n);
-        foreach (var c in new[] { NewMilitaryCommand, NewAccountCommand, SaveAccountCommand, ResetAccessCommand })
+        foreach (var c in new[] { NewMilitaryCommand, NewAccountCommand, SaveAccountCommand, ResetAccessCommand, ToggleImportCommand, ImportCommand })
             c.RaiseCanExecuteChanged();
 
         Fill(LatestReports, s.Reports.OrderByDescending(r => r.CreatedAt).Take(6).Select(RowOf));
@@ -278,7 +286,7 @@ public sealed class SigtaoAppViewModel : ViewModelBase, IDisposable
     private MilitaryRow MilitaryRowOf(MilitaryRecord m)
     {
         var id = m.Id;
-        return new MilitaryRow(m.Id, m.Grade, m.Nom.ToUpperInvariant(), m.Prenom, OdeFormat.OrDash(m.Nid), m.Unite, m.Affectation,
+        return new MilitaryRow(m.Id, m.GradeLabel, m.Nom.Length == 0 ? "(nom à la 1re connexion)" : m.Nom.ToUpperInvariant(), m.Prenom, OdeFormat.OrDash(m.Nid), m.Unite, m.Affectation,
             OdeFormat.OrDash(m.Fonction), m.Status, OdeFormat.OrDash(m.Email), OdeFormat.OrDash(m.Telephone),
             SigtaoImages.Photo(m.PhotoData),
             new RelayCommand(() => _desktop.OpenWindow(SigtaoWindows.Dossier(_desktop, id))));
@@ -370,6 +378,22 @@ public sealed class SigtaoAppViewModel : ViewModelBase, IDisposable
         catch (Exception ex)
         {
             ShowMessage("Réinitialisation refusée : " + ex.Message, true);
+        }
+        await session.Sigtao.RefreshAsync();
+    }
+
+    // ===== Import de l'effectif Discord =====
+
+    private async Task ImportAsync()
+    {
+        var session = ArgosSession.Current;
+        if (session is null) return;
+        var result = await session.Api.SendAsync(HttpMethod.Post, "api/sigtao/military/import", new RosterImportRequest { Text = ImportText });
+        ShowMessage(result.Ok ? "Effectif importé : " + result.Error : result.Error ?? "Import refusé.", !result.Ok);
+        if (result.Ok)
+        {
+            ImportText = string.Empty;
+            ImportVisible = false;
         }
         await session.Sigtao.RefreshAsync();
     }

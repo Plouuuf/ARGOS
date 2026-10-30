@@ -92,3 +92,33 @@ public sealed class SigtaoServiceTests : IDisposable
         try { Directory.Delete(_dir, true); } catch { }
     }
 }
+
+public sealed class RosterImportTests
+{
+    private const string Roster = """
+        **CORPS DES OFFICIERS**
+
+        <:CNE:1544832422741549118> CNE FAUBOURG (Laurent) - *Commandant d'Unité* - NM : 0000109387
+        <:SCH:1544832342600843386> <@765246238059790376> (Kamron) - *Chef de Centre Adjoint CS CRET* - NID : 0000109942
+        <:CCH15:1544832227366412369> <@383609121754185741> (Alexandre) - NID : 0000109476
+        <:CCH:1544832202154704907> <@501436869024808973> (Enzo - NID : 0000109978
+        <:1CL15:1544832148413095967> <@560037927695024139> (Diego) - NID : 0000109823
+        <:SAP:1544840069347803258> <@396005111345971200> (Matthieu) - NID : 0000109921
+        """;
+
+    [Fact]
+    public void Lit_le_tableau_d_effectif()
+    {
+        var list = RosterImport.Parse(Roster);
+        Assert.Equal(6, list.Count);
+        var cne = list[0];
+        Assert.Equal(("Capitaine", "FAUBOURG", "Laurent", "0000109387", "Commandant d'Unité"),
+            (cne.Grade, cne.Nom, cne.Prenom, cne.Matricule, cne.Fonction));
+        Assert.Equal(("Sergent-chef", "765246238059790376", "CRET"), (list[1].Grade, list[1].DiscordUserId, list[1].Affectation));
+        Assert.Equal(("Caporal-chef", "+15"), (list[2].Grade, list[2].Echelon));
+        Assert.Equal(("Enzo", "0000109978"), (list[3].Prenom, list[3].Nid));
+        Assert.Equal(("Sapeur de 1re classe", "+15", "Diego"), (list[4].Grade, list[4].Echelon, list[4].Prenom));
+        Assert.Equal("Sapeur de 2e classe", list[5].Grade);
+        Assert.Equal("SANTOS", RosterImport.NameFromNickname("[1CL+15] SANTOS D."));
+    }
+}
