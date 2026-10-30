@@ -41,6 +41,7 @@ public static class Program
         builder.Services.AddSingleton(_ => new OdeDatabase());
         builder.Services.AddSingleton<OdeService>();
         builder.Services.AddSingleton<RemiseService>();
+        builder.Services.AddSingleton<McoService>();
         builder.Services.Configure<WebhookOptions>(builder.Configuration.GetSection("Webhooks"));
         builder.Services.AddSingleton<DiscordWebhookService>();
 
@@ -60,7 +61,7 @@ public static class Program
         {
             status = "ok",
             version = typeof(Program).Assembly.GetName().Version?.ToString(3),
-            applications = new[] { "adagio-ode", "adagio-remise" },
+            applications = new[] { "adagio-ode", "adagio-remise", "mco" },
             utc = DateTimeOffset.UtcNow,
             connections = hub.ConnectionCount
         }));
@@ -286,6 +287,31 @@ public static class Program
         {
             var user = await AuthenticateAsync(context, oauth);
             return user is null ? Results.Unauthorized() : ToResult(await service.MoveStockAsync(user, request));
+        });
+
+        // ===== MCO (main courante opérationnelle) =====
+
+        var mco = app.MapGroup("/api/mco");
+
+        mco.MapGet("/state", async (HttpContext context, DiscordOAuthService oauth, McoService service) =>
+            await AuthenticateAsync(context, oauth) is null ? Results.Unauthorized() : Results.Ok(service.Snapshot()));
+
+        mco.MapPost("/reports", async (McoReport report, HttpContext context, DiscordOAuthService oauth, McoService service) =>
+        {
+            var user = await AuthenticateAsync(context, oauth);
+            return user is null ? Results.Unauthorized() : ToResult(await service.SaveAsync(user, report));
+        });
+
+        mco.MapPost("/reports/{id}/validate", async (string id, HttpContext context, DiscordOAuthService oauth, McoService service) =>
+        {
+            var user = await AuthenticateAsync(context, oauth);
+            return user is null ? Results.Unauthorized() : ToResult(await service.ValidateAsync(user, id));
+        });
+
+        mco.MapPost("/reports/{id}/archive", async (string id, HttpContext context, DiscordOAuthService oauth, McoService service) =>
+        {
+            var user = await AuthenticateAsync(context, oauth);
+            return user is null ? Results.Unauthorized() : ToResult(await service.ArchiveAsync(user, id));
         });
 
         // ===== Intégrations serveur à serveur (clé ARGOS:AccessKey dans l'en-tête X-Argos-Key) =====
