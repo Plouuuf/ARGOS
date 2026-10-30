@@ -102,7 +102,10 @@ public sealed class DiscordOAuthService(
         if (string.IsNullOrWhiteSpace(appToken))
             return new(false, true, "Connexion Discord requise.", null);
 
-        if (!forceRoleCheck && sessions.ValidateToken(appToken, out var memory))
+        // Jeton connu en mémoire : réponse immédiate, sauf si les rôles n'ont pas été relus depuis 5 minutes
+        // (un rôle ajouté ou retiré sur Discord s'applique alors sans redémarrer ARGOS).
+        if (!forceRoleCheck && sessions.ValidateToken(appToken, out var memory)
+            && (!persistentSessions.TryGet(appToken, out var known) || DateTimeOffset.UtcNow - known.LastValidatedAt < RoleCheckInterval))
             return new(true, false, null, memory.User);
 
         if (!persistentSessions.TryGet(appToken, out var stored))
