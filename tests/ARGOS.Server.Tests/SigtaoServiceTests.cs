@@ -49,7 +49,7 @@ public sealed class SigtaoServiceTests : IDisposable
 
         var account = await _sigtao.SaveAccountAsync(Chef, new UserAccount
         {
-            DiscordUserId = "100", DossierId = created.Id!, Habilitations = [Habilitations.Sadmin, Habilitations.Sremise]
+            DiscordUserId = "100", DossierId = created.Id!, Habilitations = [Habilitations.Sadmin, Habilitations.Sremise, Habilitations.Srh]
         });
         Assert.True(account.Ok, account.Error);
         Assert.Equal("Santos", _sigtao.Snapshot(Chef).Accounts.Single().Nom);
