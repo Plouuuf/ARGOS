@@ -79,6 +79,7 @@ public sealed class UpdateService(IConfiguration configuration, RealtimeHub hub,
                 catch (Exception ex)
                 {
                     logger.LogWarning("Vérification des mises à jour impossible : {Message}", ex.Message);
+                    Trace("ERREUR : " + ex);
                 }
             }
             try { await Task.Delay(TimeSpan.FromMinutes(Math.Max(2, options.CheckMinutes)), stoppingToken); }
@@ -101,6 +102,7 @@ public sealed class UpdateService(IConfiguration configuration, RealtimeHub hub,
         using var response = await _http.SendAsync(Request(options, $"https://api.github.com/repos/{options.Repository}/releases/latest", false), ct);
         if (!response.IsSuccessStatusCode)
         {
+            Trace($"GitHub a répondu {(int)response.StatusCode} sur releases/latest ({options.Repository}).");
             logger.LogWarning("GitHub ({Status}) : aucune version publiée lisible{Hint}.", (int)response.StatusCode,
                 string.IsNullOrWhiteSpace(options.GitHubToken) ? " (dépôt privé ? renseigner Update:GitHubToken)" : string.Empty);
             return;
@@ -139,6 +141,10 @@ public sealed class UpdateService(IConfiguration configuration, RealtimeHub hub,
             logger.LogInformation("Postes : version {Version} (build {Build}) disponible.", version, build);
         }
 
+        Trace($"Dernière version : {tag} ; serveur en service : build {BuildInfo.Number} ; postes : build {Current().Build} ; " +
+              $"auto-installation {(options.AutoInstallServer ? "activée" : "désactivée")}, Windows : {OperatingSystem.IsWindows()}, " +
+              $"paquet serveur : {assets.ContainsKey(UpdatePackages.Server)}, déjà tentée : {AlreadyTried(build)}.");
+
         // Le serveur lui-même (VPS Windows, compilation officielle uniquement).
         if (options.AutoInstallServer && OperatingSystem.IsWindows() && BuildInfo.Number > 0 && build > BuildInfo.Number
             && assets.TryGetValue(UpdatePackages.Server, out var serverUrl) && !AlreadyTried(build))
@@ -147,9 +153,26 @@ public sealed class UpdateService(IConfiguration configuration, RealtimeHub hub,
             await DownloadAsync(options, serverUrl, zip, ct);
             File.WriteAllText(Path.Combine(Dir, "tentative.txt"), build.ToString());
             logger.LogWarning("Installation du serveur ARGOS build {Build} : redémarrage.", build);
+            Trace($"Installation du serveur build {build} lancée (dossier {AppContext.BaseDirectory}).");
             await hub.BroadcastAsync(new RealtimeMessage(RealtimeTypes.Notify, Title: "Mise à jour d'ARGOS",
                 Text: "Le serveur redémarre pour se mettre à jour : reconnexion automatique dans quelques secondes."), ct);
             InstallServer(zip);
+        }
+    }
+
+    /// <summary>Journal des vérifications (data\updates\verification.log) pour diagnostiquer la mise à jour du VPS.</summary>
+    private static void Trace(string text)
+    {
+        try
+        {
+            Directory.CreateDirectory(Dir);
+            var file = Path.Combine(Dir, "verification.log");
+            if (File.Exists(file) && new FileInfo(file).Length > 300_000) File.Delete(file);
+            File.AppendAllText(file, $"{DateTime.Now:yyyy-MM-dd HH:mm:ss} {text}{Environment.NewLine}");
+        }
+        catch
+        {
+            // Journal facultatif.
         }
     }
 
@@ -220,7 +243,12 @@ public sealed class UpdateService(IConfiguration configuration, RealtimeHub hub,
         using var process = Process.Start(new ProcessStartInfo(file, args) { UseShellExecute = false, CreateNoWindow = true, RedirectStandardOutput = true, RedirectStandardError = true });
         process?.WaitForExit(30_000);
         if (process is { ExitCode: not 0 })
-            logger.LogWarning("{File} {Args} : {Error}", file, args, process.StandardError.ReadToEnd());
+        {
+            var error = process.StandardError.ReadToEnd();
+            logger.LogWarning("{File} {Args} : {Error}", file, args, error);
+            Trace($"{file} {args} a échoué (code {process.ExitCode}) : {error.Trim()}");
+        }
+        else Trace($"{file} {args.Split(' ').FirstOrDefault()} : OK");
     }
 
     public override void Dispose()
