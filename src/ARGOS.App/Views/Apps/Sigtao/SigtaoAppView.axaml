@@ -1,0 +1,449 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="Argos.Views.Apps.Sigtao.SigtaoAppView"
+             Classes="sigtao"
+             Background="#EEF1F5"
+             FontFamily="{StaticResource SigtaoFont}"
+             Foreground="#1D2733">
+    <!-- SIGTAO : application web d'administration du personnel (style intranet, bandeau marine et liseré rouge). -->
+
+    <DockPanel>
+        <!-- ===== Bandeau ===== -->
+        <StackPanel DockPanel.Dock="Top">
+            <Border Background="#13294B" Padding="16,9">
+                <Grid ColumnDefinitions="Auto,12,*,Auto">
+                    <Image Source="avares://ARGOS.App/Assets/Icons/sigtao.png" Width="34" Height="34"/>
+                    <StackPanel Grid.Column="2" VerticalAlignment="Center">
+                        <TextBlock Text="SIGTAO" Foreground="White" FontSize="19" FontWeight="Bold"/>
+                        <TextBlock Text="Brigade de sapeurs-pompiers de Paris · 2e Groupement · 17e Compagnie" Foreground="#AFC0D8" FontSize="11"/>
+                    </StackPanel>
+                    <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                        <StackPanel HorizontalAlignment="Right">
+                            <TextBlock Text="{Binding MeName}" Foreground="White" FontSize="12.5" FontWeight="SemiBold" HorizontalAlignment="Right"/>
+                            <TextBlock Text="{Binding MeGrade}" Foreground="#AFC0D8" FontSize="11" HorizontalAlignment="Right"/>
+                        </StackPanel>
+                        <Border Classes="avatar" Background="#2B4A7A">
+                            <Panel>
+                                <Image Source="{Binding MePhoto}" Stretch="UniformToFill" IsVisible="{Binding HasMePhoto}"/>
+                                <Path Data="{StaticResource SigtaoPerson}" Fill="White" Width="16" Height="16" Stretch="Uniform"
+                                      HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding !HasMePhoto}"/>
+                            </Panel>
+                        </Border>
+                    </StackPanel>
+                </Grid>
+            </Border>
+            <Border Height="3" Background="#C8102E"/>
+        </StackPanel>
+
+        <!-- ===== Menu ===== -->
+        <Border DockPanel.Dock="Left" Width="210" Background="#F8F9FB" BorderBrush="#D8DEE6" BorderThickness="0,0,1,0">
+            <DockPanel>
+                <StackPanel DockPanel.Dock="Bottom" Margin="14,10,14,14" Spacing="6">
+                    <Button Classes="sg" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Content="Nouveau compte-rendu"
+                            Command="{Binding NewReportCommand}"/>
+                    <Button Classes="sg light" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Content="Actualiser"
+                            Command="{Binding RefreshCommand}"/>
+                    <TextBlock Classes="muted" Text="{Binding Today}" FontSize="11" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                </StackPanel>
+                <StackPanel Margin="0,12,0,0">
+                    <TextBlock Text="MENU" FontSize="10.5" FontWeight="Bold" Foreground="#8A96A5" Margin="18,0,0,6"/>
+                    <Button Classes="menu" Classes.selected="{Binding IsAccueil}" Content="Tableau de bord" Command="{Binding NavigateCommand}" CommandParameter="Accueil"/>
+                    <Button Classes="menu" Classes.selected="{Binding IsComptesRendus}" Content="Comptes-rendus" Command="{Binding NavigateCommand}" CommandParameter="ComptesRendus"/>
+                    <Button Classes="menu" Classes.selected="{Binding IsCompagnie}" Content="Gestion de la compagnie" Command="{Binding NavigateCommand}" CommandParameter="Compagnie"/>
+                    <Button Classes="menu" Classes.selected="{Binding IsComptes}" Content="Comptes et habilitations" Command="{Binding NavigateCommand}" CommandParameter="Comptes"
+                            IsVisible="{Binding Rights.ManageAccounts}"/>
+                    <Button Classes="menu" Classes.selected="{Binding IsAnnuaire}" Content="Annuaire" Command="{Binding NavigateCommand}" CommandParameter="Annuaire"/>
+                    <Button Classes="menu" Classes.selected="{Binding IsHistorique}" Content="Historique administratif" Command="{Binding NavigateCommand}" CommandParameter="Historique"
+                            IsVisible="{Binding CanSeeHistory}"/>
+                </StackPanel>
+            </DockPanel>
+        </Border>
+
+        <Grid RowDefinitions="Auto,*">
+            <Border Classes="msg" Classes.error="{Binding MessageIsError}" BorderThickness="0,0,0,2" Padding="16,8" IsVisible="{Binding HasMessage}">
+                <TextBlock Text="{Binding Message}" FontSize="12.5" FontWeight="SemiBold" TextWrapping="Wrap"/>
+            </Border>
+
+            <!-- ===== Tableau de bord ===== -->
+            <ScrollViewer Grid.Row="1" IsVisible="{Binding IsAccueil}">
+                <StackPanel Margin="22,18">
+                    <TextBlock Classes="h1" Text="Tableau de bord"/>
+                    <Grid ColumnDefinitions="*,14,*">
+                        <Border Classes="card">
+                            <Grid ColumnDefinitions="96,16,*">
+                                <Border Width="96" Height="120" Background="#E3E8EF" CornerRadius="4" ClipToBounds="True" VerticalAlignment="Top">
+                                    <Panel>
+                                        <Image Source="{Binding MePhoto}" Stretch="UniformToFill" IsVisible="{Binding HasMePhoto}"/>
+                                        <TextBlock Text="Photo" Foreground="#8A96A5" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                   IsVisible="{Binding !HasMePhoto}"/>
+                                    </Panel>
+                                </Border>
+                                <StackPanel Grid.Column="2" Spacing="3">
+                                    <TextBlock Text="MON DOSSIER" FontSize="10.5" FontWeight="Bold" Foreground="#8A96A5"/>
+                                    <TextBlock Text="{Binding MeName}" FontSize="17" FontWeight="SemiBold" Foreground="#13294B"/>
+                                    <TextBlock Text="{Binding MeGrade}" FontSize="13"/>
+                                    <TextBlock Text="{Binding MeNid}" Classes="muted"/>
+                                    <TextBlock Text="{Binding MeUnit}" Classes="muted"/>
+                                    <TextBlock Text="{Binding MeFonction, StringFormat='Fonction : {0}'}" Classes="muted"/>
+                                    <TextBlock Text="{Binding MeService, StringFormat='Temps de service : {0}'}" Classes="muted" IsVisible="{Binding HasMe}"/>
+                                    <Button Classes="sg light" Content="Consulter mon dossier" Margin="0,6,0,0" Padding="10,4" FontSize="12"
+                                            Command="{Binding MyDossierCommand}" IsVisible="{Binding HasMe}"/>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+                        <Border Grid.Column="2" Classes="card">
+                            <StackPanel>
+                                <TextBlock Classes="h2" Text="Notifications administratives"/>
+                                <ItemsControl ItemsSource="{Binding Notices}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Grid ColumnDefinitions="4,10,*" Margin="0,0,0,8">
+                                                <Border Background="#1F5FAD" CornerRadius="2"/>
+                                                <Border Background="#C8102E" CornerRadius="2" IsVisible="{Binding Important}"/>
+                                                <StackPanel Grid.Column="2">
+                                                    <TextBlock Text="{Binding Title}" FontSize="12.5" FontWeight="SemiBold"/>
+                                                    <TextBlock Text="{Binding Text}" FontSize="12" Foreground="#5E6B7A" TextWrapping="Wrap"/>
+                                                </StackPanel>
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                                <TextBlock Classes="muted" Text="Aucune notification." IsVisible="{Binding !Notices.Count}"/>
+                                <TextBlock Classes="label" Text="MES HABILITATIONS" Margin="0,8,0,3"/>
+                                <TextBlock Text="{Binding MeHabilitations}" FontSize="12.5" FontWeight="SemiBold" Foreground="#1F5FAD" TextWrapping="Wrap"/>
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+
+                    <TextBlock Classes="h2" Text="Accès rapides"/>
+                    <WrapPanel Margin="0,0,0,14">
+                        <Button Classes="sg light" Content="Rédiger un compte-rendu" Margin="0,0,8,8" Command="{Binding NewReportCommand}"/>
+                        <Button Classes="sg light" Content="Annuaire" Margin="0,0,8,8" Command="{Binding NavigateCommand}" CommandParameter="Annuaire"/>
+                        <Button Classes="sg light" Content="Effectif de la compagnie" Margin="0,0,8,8" Command="{Binding NavigateCommand}" CommandParameter="Compagnie"/>
+                        <Button Classes="sg light" Content="Nouveau dossier militaire" Margin="0,0,8,8" Command="{Binding NewMilitaryCommand}"
+                                IsVisible="{Binding Rights.ManageCompany}"/>
+                    </WrapPanel>
+
+                    <Border Classes="card" Padding="0">
+                        <StackPanel>
+                            <TextBlock Classes="h2" Text="Derniers comptes-rendus" Margin="16,14,0,8"/>
+                            <Border Classes="thead">
+                                <Grid ColumnDefinitions="90,90,*,170,150">
+                                    <TextBlock Text="N°"/>
+                                    <TextBlock Grid.Column="1" Text="Date"/>
+                                    <TextBlock Grid.Column="2" Text="Objet"/>
+                                    <TextBlock Grid.Column="3" Text="Rédacteur"/>
+                                    <TextBlock Grid.Column="4" Text="Mention"/>
+                                </Grid>
+                            </Border>
+                            <ItemsControl ItemsSource="{Binding LatestReports}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Button Classes="trow" Command="{Binding OpenCommand}">
+                                            <Grid ColumnDefinitions="90,90,*,170,150">
+                                                <TextBlock Classes="cell" Text="{Binding NumDoc}" FontWeight="SemiBold"/>
+                                                <TextBlock Grid.Column="1" Classes="cell" Text="{Binding Date}"/>
+                                                <TextBlock Grid.Column="2" Classes="cell" Text="{Binding Objet}"/>
+                                                <TextBlock Grid.Column="3" Classes="cell" Text="{Binding Author}"/>
+                                                <TextBlock Grid.Column="4" Classes="cell" Text="{Binding Mention}"/>
+                                            </Grid>
+                                        </Button>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <TextBlock Classes="muted" Text="Aucun compte-rendu." Margin="16,10" IsVisible="{Binding !LatestReports.Count}"/>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
+
+            <!-- ===== Comptes-rendus ===== -->
+            <DockPanel Grid.Row="1" IsVisible="{Binding IsComptesRendus}" Margin="22,18">
+                <StackPanel DockPanel.Dock="Top">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <TextBlock Classes="h1" Text="Comptes-rendus"/>
+                        <Button Grid.Column="1" Classes="sg" Content="Nouveau compte-rendu" VerticalAlignment="Top" Command="{Binding NewReportCommand}"/>
+                    </Grid>
+                    <TextBlock Classes="muted" Text="{Binding ReportsScope}" Margin="0,-6,0,10"/>
+                    <TextBox Classes="sg" Text="{Binding ReportSearch}" Watermark="Rechercher par auteur, objet, référence ou date (jj/mm/aaaa)" Margin="0,0,0,10"/>
+                </StackPanel>
+                <Border Classes="card" Padding="0">
+                    <DockPanel>
+                        <Border DockPanel.Dock="Top" Classes="thead">
+                            <Grid ColumnDefinitions="90,90,*,170,150,150,30">
+                                <TextBlock Text="N°"/>
+                                <TextBlock Grid.Column="1" Text="Date"/>
+                                <TextBlock Grid.Column="2" Text="Objet"/>
+                                <TextBlock Grid.Column="3" Text="Rédacteur"/>
+                                <TextBlock Grid.Column="4" Text="Destinataire"/>
+                                <TextBlock Grid.Column="5" Text="Mention"/>
+                                <TextBlock Grid.Column="6" Text="PJ"/>
+                            </Grid>
+                        </Border>
+                        <ScrollViewer>
+                            <StackPanel>
+                                <ItemsControl ItemsSource="{Binding Reports}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Button Classes="trow" Command="{Binding OpenCommand}">
+                                                <Grid ColumnDefinitions="90,90,*,170,150,150,30">
+                                                    <TextBlock Classes="cell" Text="{Binding NumDoc}" FontWeight="SemiBold"/>
+                                                    <TextBlock Grid.Column="1" Classes="cell" Text="{Binding Date}"/>
+                                                    <TextBlock Grid.Column="2" Classes="cell" Text="{Binding Objet}"/>
+                                                    <TextBlock Grid.Column="3" Classes="cell" Text="{Binding Author}"/>
+                                                    <TextBlock Grid.Column="4" Classes="cell" Text="{Binding Destinataire}"/>
+                                                    <TextBlock Grid.Column="5" Classes="cell" Text="{Binding Mention}"/>
+                                                    <TextBlock Grid.Column="6" Classes="cell" Text="{Binding Attachments}" IsVisible="{Binding HasAttachments}"/>
+                                                </Grid>
+                                            </Button>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                                <TextBlock Classes="muted" Text="Aucun compte-rendu." Margin="16,10" IsVisible="{Binding !Reports.Count}"/>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </DockPanel>
+                </Border>
+            </DockPanel>
+
+            <!-- ===== Gestion de la compagnie ===== -->
+            <DockPanel Grid.Row="1" IsVisible="{Binding IsCompagnie}" Margin="22,18">
+                <StackPanel DockPanel.Dock="Top">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <TextBlock Classes="h1" Text="Gestion de la compagnie"/>
+                        <Button Grid.Column="1" Classes="sg" Content="Nouveau dossier militaire" VerticalAlignment="Top"
+                                Command="{Binding NewMilitaryCommand}" IsVisible="{Binding Rights.ManageCompany}"/>
+                    </Grid>
+                    <Grid ColumnDefinitions="*,10,180,10,Auto" Margin="0,0,0,10">
+                        <TextBox Classes="sg" Text="{Binding MilitarySearch}" Watermark="Rechercher : nom, prénom, grade, NID, unité, fonction"/>
+                        <ComboBox Grid.Column="2" Classes="sg" ItemsSource="{Binding StatusFilters}" SelectedItem="{Binding StatusFilter}"/>
+                        <TextBlock Grid.Column="4" Classes="muted" VerticalAlignment="Center" Text="{Binding MilitaryCount}"/>
+                    </Grid>
+                </StackPanel>
+                <Border Classes="card" Padding="0">
+                    <DockPanel>
+                        <Border DockPanel.Dock="Top" Classes="thead">
+                            <Grid ColumnDefinitions="44,150,*,*,90,110,*,110">
+                                <TextBlock Text=""/>
+                                <TextBlock Grid.Column="1" Text="Grade"/>
+                                <TextBlock Grid.Column="2" Text="Nom"/>
+                                <TextBlock Grid.Column="3" Text="Prénom"/>
+                                <TextBlock Grid.Column="4" Text="NID"/>
+                                <TextBlock Grid.Column="5" Text="Affectation"/>
+                                <TextBlock Grid.Column="6" Text="Fonction"/>
+                                <TextBlock Grid.Column="7" Text="Statut"/>
+                            </Grid>
+                        </Border>
+                        <ScrollViewer>
+                            <StackPanel>
+                                <ItemsControl ItemsSource="{Binding Military}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Button Classes="trow" Command="{Binding OpenCommand}" Padding="10,5">
+                                                <Grid ColumnDefinitions="44,150,*,*,90,110,*,110">
+                                                    <Border Classes="avatar" Background="#C9D4E3" HorizontalAlignment="Left">
+                                                        <Panel>
+                                                            <Image Source="{Binding Photo}" Stretch="UniformToFill" IsVisible="{Binding HasPhoto}"/>
+                                                            <TextBlock Text="{Binding Initials}" FontSize="12" FontWeight="Bold" Foreground="#13294B"
+                                                                       HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding !HasPhoto}"/>
+                                                        </Panel>
+                                                    </Border>
+                                                    <TextBlock Grid.Column="1" Classes="cell" Text="{Binding Grade}"/>
+                                                    <TextBlock Grid.Column="2" Classes="cell" Text="{Binding Nom}" FontWeight="SemiBold"/>
+                                                    <TextBlock Grid.Column="3" Classes="cell" Text="{Binding Prenom}"/>
+                                                    <TextBlock Grid.Column="4" Classes="cell" Text="{Binding Nid}"/>
+                                                    <TextBlock Grid.Column="5" Classes="cell">
+                                                        <Run Text="{Binding Unite}"/><Run Text=" · "/><Run Text="{Binding Affectation}"/>
+                                                    </TextBlock>
+                                                    <TextBlock Grid.Column="6" Classes="cell" Text="{Binding Fonction}"/>
+                                                    <TextBlock Grid.Column="7" Classes="cell" Text="{Binding Status}" FontWeight="SemiBold"/>
+                                                </Grid>
+                                            </Button>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                                <TextBlock Classes="muted" Text="Aucun militaire." Margin="16,10" IsVisible="{Binding !Military.Count}"/>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </DockPanel>
+                </Border>
+            </DockPanel>
+
+            <!-- ===== Comptes et habilitations ===== -->
+            <ScrollViewer Grid.Row="1" IsVisible="{Binding IsComptes}">
+                <StackPanel Margin="22,18">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <TextBlock Classes="h1" Text="Comptes et habilitations"/>
+                        <Button Grid.Column="1" Classes="sg" Content="Créer un compte" VerticalAlignment="Top" Command="{Binding NewAccountCommand}"/>
+                    </Grid>
+                    <Border Classes="card" IsVisible="{Binding AccountVisible}" BorderBrush="#1F5FAD">
+                        <StackPanel Spacing="10">
+                            <TextBlock Classes="h2" Text="{Binding AccountTitle}" Margin="0"/>
+                            <Grid ColumnDefinitions="*,12,*,12,*">
+                                <StackPanel>
+                                    <TextBlock Classes="label" Text="IDENTIFIANT DISCORD DU JOUEUR"/>
+                                    <TextBox Classes="sg" Text="{Binding AccountDiscord}" Watermark="ex. 312456789012345678"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Classes="label" Text="DOSSIER MILITAIRE ASSOCIÉ"/>
+                                    <ComboBox Classes="sg" ItemsSource="{Binding DossierChoices}" SelectedItem="{Binding AccountDossier}"
+                                              PlaceholderText="Grade, nom, prénom et NID repris du dossier"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="4">
+                                    <TextBlock Classes="label" Text="ADRESSE ÉLECTRONIQUE"/>
+                                    <TextBox Classes="sg" Text="{Binding AccountEmail}" Watermark="prenom.nom@pompiersparis.fr"/>
+                                </StackPanel>
+                            </Grid>
+                            <TextBlock Classes="label" Text="HABILITATIONS"/>
+                            <ItemsControl ItemsSource="{Binding AccountHabilitations}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <CheckBox Content="{Binding Label}" IsChecked="{Binding Selected}" Margin="0,0,18,4" FontSize="12.5"/>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <CheckBox Content="Compte actif" IsChecked="{Binding AccountActive}" FontSize="12.5"/>
+                            <Border Background="#FFF6D6" BorderBrush="#E0B000" BorderThickness="1" CornerRadius="4" Padding="12,8"
+                                    IsVisible="{Binding HasTemporaryPassword}">
+                                <StackPanel>
+                                    <TextBlock Text="Mot de passe provisoire (affiché une seule fois)" FontSize="12" FontWeight="SemiBold"/>
+                                    <SelectableTextBlock Text="{Binding TemporaryPassword}" FontSize="20" FontWeight="Bold"
+                                                         FontFamily="Menlo, Consolas, monospace" Foreground="#13294B"/>
+                                </StackPanel>
+                            </Border>
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <Button Classes="sg" Content="Enregistrer" Command="{Binding SaveAccountCommand}"/>
+                                <Button Classes="sg light" Content="Réinitialiser les accès" Command="{Binding ResetAccessCommand}"/>
+                                <Button Classes="sg light" Content="Fermer" Command="{Binding CancelAccountCommand}"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+                    <Border Classes="card" Padding="0">
+                        <StackPanel>
+                            <Border Classes="thead">
+                                <Grid ColumnDefinitions="*,90,170,*,*,80,100">
+                                    <TextBlock Text="Militaire"/>
+                                    <TextBlock Grid.Column="1" Text="NID"/>
+                                    <TextBlock Grid.Column="2" Text="Discord"/>
+                                    <TextBlock Grid.Column="3" Text="Adresse électronique"/>
+                                    <TextBlock Grid.Column="4" Text="Habilitations"/>
+                                    <TextBlock Grid.Column="5" Text="État"/>
+                                    <TextBlock Grid.Column="6" Text="Mot de passe"/>
+                                </Grid>
+                            </Border>
+                            <ItemsControl ItemsSource="{Binding Accounts}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Button Classes="trow" Command="{Binding EditCommand}">
+                                            <Grid ColumnDefinitions="*,90,170,*,*,80,100">
+                                                <TextBlock Classes="cell" Text="{Binding Name}" FontWeight="SemiBold"/>
+                                                <TextBlock Grid.Column="1" Classes="cell" Text="{Binding Nid}"/>
+                                                <TextBlock Grid.Column="2" Classes="cell" Text="{Binding Discord}"/>
+                                                <TextBlock Grid.Column="3" Classes="cell" Text="{Binding Email}"/>
+                                                <TextBlock Grid.Column="4" Classes="cell" Text="{Binding Habilitations}" Foreground="#1F5FAD" FontWeight="SemiBold"/>
+                                                <Panel Grid.Column="5">
+                                                    <TextBlock Classes="cell" Text="Actif" Foreground="#2E7D32" IsVisible="{Binding Active}"/>
+                                                    <TextBlock Classes="cell" Text="Désactivé" Foreground="#C62828" IsVisible="{Binding !Active}"/>
+                                                </Panel>
+                                                <TextBlock Grid.Column="6" Classes="cell" Text="{Binding Password}"/>
+                                            </Grid>
+                                        </Button>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <TextBlock Classes="muted" Text="Aucun compte. Tant qu'aucun compte n'a une habilitation, les opérateurs CTA la possèdent par défaut."
+                                       Margin="16,10" TextWrapping="Wrap" IsVisible="{Binding !Accounts.Count}"/>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
+
+            <!-- ===== Annuaire ===== -->
+            <DockPanel Grid.Row="1" IsVisible="{Binding IsAnnuaire}" Margin="22,18">
+                <StackPanel DockPanel.Dock="Top">
+                    <TextBlock Classes="h1" Text="Annuaire"/>
+                    <TextBox Classes="sg" Text="{Binding DirectorySearch}" Watermark="Rechercher par nom, prénom, grade ou NID" Margin="0,0,0,12"/>
+                </StackPanel>
+                <ScrollViewer>
+                    <ItemsControl ItemsSource="{Binding Directory}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Button Classes="trow" Command="{Binding OpenCommand}" Width="300" Margin="0,0,12,12" Padding="12"
+                                        BorderThickness="1" CornerRadius="6" BorderBrush="#D8DEE6">
+                                    <Grid ColumnDefinitions="56,12,*">
+                                        <Border Width="56" Height="56" CornerRadius="28" Background="#C9D4E3" ClipToBounds="True" VerticalAlignment="Top">
+                                            <Panel>
+                                                <Image Source="{Binding Photo}" Stretch="UniformToFill" IsVisible="{Binding HasPhoto}"/>
+                                                <TextBlock Text="{Binding Initials}" FontSize="18" FontWeight="Bold" Foreground="#13294B"
+                                                           HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding !HasPhoto}"/>
+                                            </Panel>
+                                        </Border>
+                                        <StackPanel Grid.Column="2" Spacing="1">
+                                            <TextBlock FontSize="13.5" FontWeight="SemiBold" Foreground="#13294B" TextTrimming="CharacterEllipsis">
+                                                <Run Text="{Binding Nom}"/><Run Text=" "/><Run Text="{Binding Prenom}"/>
+                                            </TextBlock>
+                                            <TextBlock Text="{Binding Grade}" FontSize="12"/>
+                                            <TextBlock Text="{Binding Fonction}" Classes="muted" TextTrimming="CharacterEllipsis"/>
+                                            <TextBlock Classes="muted">
+                                                <Run Text="{Binding Unite}"/><Run Text=" · CS "/><Run Text="{Binding Affectation}"/>
+                                            </TextBlock>
+                                            <TextBlock Text="{Binding Email}" FontSize="12" Foreground="#1F5FAD" TextTrimming="CharacterEllipsis"/>
+                                            <TextBlock Text="{Binding Telephone}" Classes="muted"/>
+                                        </StackPanel>
+                                    </Grid>
+                                </Button>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </DockPanel>
+
+            <!-- ===== Historique administratif ===== -->
+            <DockPanel Grid.Row="1" IsVisible="{Binding IsHistorique}" Margin="22,18">
+                <StackPanel DockPanel.Dock="Top">
+                    <TextBlock Classes="h1" Text="Historique administratif"/>
+                    <Grid ColumnDefinitions="*,10,200" Margin="0,0,0,10">
+                        <TextBox Classes="sg" Text="{Binding HistorySearch}" Watermark="Rechercher un militaire, un auteur, un détail"/>
+                        <ComboBox Grid.Column="2" Classes="sg" ItemsSource="{Binding HistoryFilters}" SelectedItem="{Binding HistoryFilter}"/>
+                    </Grid>
+                </StackPanel>
+                <Border Classes="card" Padding="0">
+                    <DockPanel>
+                        <Border DockPanel.Dock="Top" Classes="thead">
+                            <Grid ColumnDefinitions="140,150,160,190,*">
+                                <TextBlock Text="Date et heure"/>
+                                <TextBlock Grid.Column="1" Text="Auteur"/>
+                                <TextBlock Grid.Column="2" Text="Action"/>
+                                <TextBlock Grid.Column="3" Text="Concerne"/>
+                                <TextBlock Grid.Column="4" Text="Détails"/>
+                            </Grid>
+                        </Border>
+                        <ScrollViewer>
+                            <ItemsControl ItemsSource="{Binding History}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border BorderBrush="#E7EBF0" BorderThickness="0,0,0,1" Padding="10,7">
+                                            <Grid ColumnDefinitions="140,150,160,190,*">
+                                                <TextBlock Classes="cell" Text="{Binding LocalAt, StringFormat='{}{0:dd/MM/yyyy HH:mm:ss}'}"/>
+                                                <TextBlock Grid.Column="1" Classes="cell" Text="{Binding UserName}"/>
+                                                <TextBlock Grid.Column="2" Classes="cell" Text="{Binding Action}" FontWeight="SemiBold"/>
+                                                <TextBlock Grid.Column="3" Classes="cell" Text="{Binding Target}"/>
+                                                <TextBlock Grid.Column="4" Classes="cell" Text="{Binding Details}" TextWrapping="Wrap"/>
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </DockPanel>
+                </Border>
+            </DockPanel>
+        </Grid>
+    </DockPanel>
+</UserControl>

@@ -278,3 +278,88 @@ public class McoScreenshots
         }
     }
 }
+
+/// <summary>Captures de SIGTAO (tableau de bord, compagnie, comptes, annuaire, dossier, compte-rendu).</summary>
+public class SigtaoScreenshots
+{
+    private static readonly string Folder = Environment.GetEnvironmentVariable("ARGOS_SCREENSHOTS")
+                                            ?? Path.Combine(Path.GetTempPath(), "argos-screenshots");
+
+    private static void Capture(Control content, double width, double height, string name)
+    {
+        Directory.CreateDirectory(Folder);
+        var window = new Window { Width = width, Height = height, Content = content };
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+        var frame = window.CaptureRenderedFrame();
+        Assert.NotNull(frame);
+        frame!.Save(Path.Combine(Folder, name + ".png"));
+        window.Close();
+    }
+
+    [AvaloniaFact]
+    public void Application_SIGTAO()
+    {
+        var user = new ArgosUserDto("1", "Santos", null, [AccessLevels.Sapeur, AccessLevels.Operateur]);
+        var previous = Argos.Services.ArgosSession.Current;
+        Argos.Services.ArgosSession.Current = new Argos.Services.ArgosSession(user, "test");
+        try
+        {
+            var now = DateTimeOffset.Now;
+            var me = new MilitaryRecord
+            {
+                Id = "m1", Nom = "Santos", Prenom = "Diego", Grade = "Sergent", Nid = "1234567", Unite = "17e Cie", Affectation = "CRET",
+                Section = "2e section", Fonction = "Chef d'agrès VSAV", ArrivalDate = now.AddYears(-4).AddMonths(-3), DiscordUserId = "1",
+                Email = "diego.santos@pompiersparis.fr", Telephone = "01 45 17 00 00",
+                Entries =
+                [
+                    new DossierEntry { Kind = DossierKinds.Promotion, Title = "Sergent", Date = now.AddYears(-1), By = "Leroy" },
+                    new DossierEntry { Kind = DossierKinds.Formation, Title = "Chef d'agrès VSAV", Details = "Validée au CFIS", Date = now.AddMonths(-8), By = "Leroy" }
+                ]
+            };
+            var cr = new CompteRendu
+            {
+                Id = "c1", NumDoc = "2026-0007", Date = now, AuthorGrade = "Sergent", AuthorNom = "SANTOS", AuthorPrenom = "Diego",
+                AuthorNid = "1234567", DestGrade = "Capitaine", DestPrenom = "Marc", DestNom = "LEROY", Objet = "Lance endommagée en intervention",
+                Reference = "Intervention 210-593",
+                Body = "Le 30/10/2026, lors de l'intervention **210-593**, une *lance à débit variable* a été endommagée.\n- Lance remise au magasin\n- Demande de remplacement __urgente__",
+                AuthorUserId = "1", CreatedAt = now
+            };
+            cr.Synthese = CrText.Synthese(cr);
+            Argos.Services.ArgosSession.Current.Sigtao.Apply(new SigtaoSnapshot
+            {
+                Military = [me,
+                    new MilitaryRecord { Id = "m2", Nom = "Martin", Prenom = "Paul", Grade = "Caporal", Nid = "2345678", Fonction = "Conducteur VSAV" },
+                    new MilitaryRecord { Id = "m3", Nom = "Leroy", Prenom = "Marc", Grade = "Capitaine", Nid = "3456789", Fonction = "Commandant d'unité" }],
+                Accounts = [new UserAccount { Id = "a1", DiscordUserId = "1", DossierId = "m1", Grade = "Sergent", Nom = "Santos", Prenom = "Diego",
+                    Nid = "1234567", Habilitations = [Habilitations.Sadmin, Habilitations.Sremise], HasPassword = true }],
+                Reports = [cr],
+                Rights = new SigtaoRights { ManageAccounts = true, ManageCompany = true, ReadAllReports = true, Habilitations = ["SADMIN", "SREMISE"] },
+                MyDossierId = "m1", MyAccountId = "a1"
+            });
+            var desktop = new DesktopViewModel(user, null, () => { }, () => { });
+            var vm = new Argos.ViewModels.Sigtao.SigtaoAppViewModel(desktop);
+            Capture(new Argos.Views.Apps.Sigtao.SigtaoAppView { DataContext = vm }, 1300, 820, "sigtao-tableau-de-bord");
+            vm.CurrentPage = Argos.ViewModels.Sigtao.SigtaoAppViewModel.Page.Compagnie;
+            Capture(new Argos.Views.Apps.Sigtao.SigtaoAppView { DataContext = vm }, 1300, 700, "sigtao-compagnie");
+            vm.CurrentPage = Argos.ViewModels.Sigtao.SigtaoAppViewModel.Page.Comptes;
+            vm.Accounts[0].EditCommand.Execute(null);
+            Capture(new Argos.Views.Apps.Sigtao.SigtaoAppView { DataContext = vm }, 1300, 760, "sigtao-comptes");
+            vm.CurrentPage = Argos.ViewModels.Sigtao.SigtaoAppViewModel.Page.Annuaire;
+            Capture(new Argos.Views.Apps.Sigtao.SigtaoAppView { DataContext = vm }, 1300, 700, "sigtao-annuaire");
+            Assert.Equal(3, vm.Directory.Count);
+
+            Capture(new Argos.Views.Apps.Sigtao.DossierView { DataContext = new Argos.ViewModels.Sigtao.DossierViewModel(desktop, "m1", "d") },
+                980, 900, "sigtao-dossier");
+            Capture(new Argos.Views.Apps.Sigtao.CompteRenduView { DataContext = new Argos.ViewModels.Sigtao.CompteRenduViewModel(desktop, "c1", "r") },
+                820, 1150, "sigtao-compte-rendu");
+            var draft = new Argos.ViewModels.Sigtao.CompteRenduViewModel(desktop, null, "n") { Body = cr.Body };
+            Assert.Equal("SANTOS", draft.Report.AuthorNom.ToUpperInvariant());
+            Capture(new Argos.Views.Apps.Sigtao.CompteRenduView { DataContext = draft }, 1240, 900, "sigtao-redaction");
+        }
+        finally
+        {
+            Argos.Services.ArgosSession.Current = previous;
+        }
+    }
+}

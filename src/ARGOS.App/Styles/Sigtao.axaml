@@ -1,0 +1,148 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <!-- Charte SIGTAO (application web d'administration) : bandeau marine, liseré rouge, cartes blanches. -->
+    <Styles.Resources>
+        <FontFamily x:Key="SigtaoFont">Segoe UI, Helvetica Neue, Arial, Liberation Sans</FontFamily>
+        <StreamGeometry x:Key="SigtaoPerson">M12,12A4,4 0 1,0 12,4A4,4 0 1,0 12,12M12,14C8,14 4,16 4,18V20H20V18C20,16 16,14 12,14Z</StreamGeometry>
+    </Styles.Resources>
+    <Style Selector=".sigtao TextBlock.h1">
+        <Setter Property="FontSize" Value="20"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="Foreground" Value="#13294B"/>
+        <Setter Property="Margin" Value="0,0,0,12"/>
+    </Style>
+    <Style Selector=".sigtao TextBlock.h2">
+        <Setter Property="FontSize" Value="14"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="Foreground" Value="#13294B"/>
+        <Setter Property="Margin" Value="0,0,0,8"/>
+    </Style>
+    <Style Selector=".sigtao TextBlock.muted">
+        <Setter Property="FontSize" Value="12"/>
+        <Setter Property="Foreground" Value="#5E6B7A"/>
+    </Style>
+    <Style Selector=".sigtao TextBlock.cell">
+        <Setter Property="FontSize" Value="12.5"/>
+        <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="Margin" Value="0,0,10,0"/>
+    </Style>
+    <Style Selector=".sigtao Border.card">
+        <Setter Property="Background" Value="White"/>
+        <Setter Property="CornerRadius" Value="6"/>
+        <Setter Property="BorderBrush" Value="#D8DEE6"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="Padding" Value="16,14"/>
+        <Setter Property="Margin" Value="0,0,0,14"/>
+    </Style>
+    <Style Selector=".sigtao Border.thead">
+        <Setter Property="Background" Value="#F4F6F9"/>
+        <Setter Property="BorderBrush" Value="#D8DEE6"/>
+        <Setter Property="BorderThickness" Value="0,0,0,1"/>
+        <Setter Property="Padding" Value="10,7"/>
+    </Style>
+    <Style Selector=".sigtao Border.thead TextBlock">
+        <Setter Property="FontSize" Value="11.5"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="Foreground" Value="#5E6B7A"/>
+    </Style>
+    <Style Selector=".sigtao Button.trow">
+        <Setter Property="Background" Value="White"/>
+        <Setter Property="BorderBrush" Value="#E7EBF0"/>
+        <Setter Property="BorderThickness" Value="0,0,0,1"/>
+        <Setter Property="CornerRadius" Value="0"/>
+        <Setter Property="Padding" Value="10,8"/>
+        <Setter Property="HorizontalAlignment" Value="Stretch"/>
+        <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+        <Setter Property="Foreground" Value="#1D2733"/>
+        <Setter Property="Cursor" Value="Hand"/>
+    </Style>
+    <Style Selector=".sigtao Button.trow:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="#EAF2FC"/>
+        <Setter Property="Foreground" Value="#1D2733"/>
+    </Style>
+    <Style Selector=".sigtao Button.menu">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="BorderThickness" Value="3,0,0,0"/>
+        <Setter Property="BorderBrush" Value="Transparent"/>
+        <Setter Property="CornerRadius" Value="0"/>
+        <Setter Property="Foreground" Value="#2B3A4D"/>
+        <Setter Property="FontSize" Value="13"/>
+        <Setter Property="Padding" Value="16,10"/>
+        <Setter Property="HorizontalAlignment" Value="Stretch"/>
+        <Setter Property="HorizontalContentAlignment" Value="Left"/>
+        <Setter Property="Cursor" Value="Hand"/>
+    </Style>
+    <Style Selector=".sigtao Button.menu:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="#E9EEF5"/>
+        <Setter Property="Foreground" Value="#13294B"/>
+    </Style>
+    <Style Selector=".sigtao Button.menu.selected">
+        <Setter Property="Background" Value="#E3ECF8"/>
+        <Setter Property="BorderBrush" Value="#C8102E"/>
+        <Setter Property="Foreground" Value="#13294B"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+    </Style>
+    <Style Selector=".sigtao Button.sg">
+        <Setter Property="Background" Value="#1F5FAD"/>
+        <Setter Property="Foreground" Value="White"/>
+        <Setter Property="CornerRadius" Value="4"/>
+        <Setter Property="Padding" Value="14,6"/>
+        <Setter Property="FontSize" Value="12.5"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="Cursor" Value="Hand"/>
+    </Style>
+    <Style Selector=".sigtao Button.sg:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="#2A71C6"/>
+        <Setter Property="Foreground" Value="White"/>
+    </Style>
+    <Style Selector=".sigtao Button.sg.light">
+        <Setter Property="Background" Value="White"/>
+        <Setter Property="Foreground" Value="#1F5FAD"/>
+        <Setter Property="BorderBrush" Value="#1F5FAD"/>
+        <Setter Property="BorderThickness" Value="1"/>
+    </Style>
+    <Style Selector=".sigtao Button.sg.light:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="#EAF2FC"/>
+        <Setter Property="Foreground" Value="#1F5FAD"/>
+    </Style>
+    <Style Selector=".sigtao TextBox.sg">
+        <Setter Property="Background" Value="White"/>
+        <Setter Property="BorderBrush" Value="#C5CED9"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="CornerRadius" Value="4"/>
+        <Setter Property="FontSize" Value="13"/>
+        <Setter Property="Foreground" Value="#1D2733"/>
+        <Setter Property="MinHeight" Value="30"/>
+    </Style>
+    <Style Selector=".sigtao ComboBox.sg">
+        <Setter Property="Background" Value="White"/>
+        <Setter Property="BorderBrush" Value="#C5CED9"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="CornerRadius" Value="4"/>
+        <Setter Property="FontSize" Value="13"/>
+        <Setter Property="MinHeight" Value="30"/>
+        <Setter Property="HorizontalAlignment" Value="Stretch"/>
+    </Style>
+    <Style Selector=".sigtao TextBlock.label">
+        <Setter Property="FontSize" Value="11.5"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="Foreground" Value="#5E6B7A"/>
+        <Setter Property="Margin" Value="0,0,0,3"/>
+    </Style>
+    <Style Selector=".sigtao Border.msg">
+        <Setter Property="Background" Value="#DFF3E4"/>
+        <Setter Property="BorderBrush" Value="#2E7D32"/>
+    </Style>
+    <Style Selector=".sigtao Border.msg.error">
+        <Setter Property="Background" Value="#FBE3E3"/>
+        <Setter Property="BorderBrush" Value="#C62828"/>
+    </Style>
+    <Style Selector=".sigtao Border.avatar">
+        <Setter Property="Background" Value="#13294B"/>
+        <Setter Property="CornerRadius" Value="17"/>
+        <Setter Property="Width" Value="34"/>
+        <Setter Property="Height" Value="34"/>
+        <Setter Property="ClipToBounds" Value="True"/>
+    </Style>
+</Styles>

@@ -1,0 +1,165 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="Argos.Views.Apps.Sigtao.DossierView"
+             Classes="sigtao"
+             Background="#EEF1F5"
+             FontFamily="{StaticResource SigtaoFont}"
+             Foreground="#1D2733">
+    <DockPanel>
+        <StackPanel DockPanel.Dock="Top">
+            <Border Background="#13294B" Padding="16,10">
+                <Grid ColumnDefinitions="*,Auto">
+                    <StackPanel>
+                        <TextBlock Text="DOSSIER MILITAIRE" Foreground="#AFC0D8" FontSize="10.5" FontWeight="Bold"/>
+                        <TextBlock Text="{Binding Title}" Foreground="White" FontSize="18" FontWeight="SemiBold"/>
+                    </StackPanel>
+                    <TextBlock Grid.Column="1" Text="{Binding Record.Status}" Foreground="White" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                </Grid>
+            </Border>
+            <Border Height="3" Background="#C8102E"/>
+            <Border Classes="msg" Classes.error="{Binding MessageIsError}" BorderThickness="0,0,0,2" Padding="16,8" IsVisible="{Binding HasMessage}">
+                <TextBlock Text="{Binding Message}" FontSize="12.5" FontWeight="SemiBold" TextWrapping="Wrap"/>
+            </Border>
+        </StackPanel>
+        <Border DockPanel.Dock="Bottom" Background="White" BorderBrush="#D8DEE6" BorderThickness="0,1,0,0" Padding="16,8">
+            <Grid ColumnDefinitions="*,Auto,8,Auto">
+                <TextBlock Classes="muted" VerticalAlignment="Center" Text="Consultation seule (habilitation SRH requise pour modifier)."
+                           IsVisible="{Binding IsReadOnly}"/>
+                <Button Grid.Column="1" Classes="sg" Content="Enregistrer le dossier" Command="{Binding SaveCommand}" IsVisible="{Binding CanEdit}"/>
+                <Button Grid.Column="3" Classes="sg light" Content="Fermer" Command="{Binding CloseCommand}"/>
+            </Grid>
+        </Border>
+
+        <ScrollViewer>
+            <StackPanel Margin="18,14">
+                <!-- Identité -->
+                <Border Classes="card">
+                    <Grid ColumnDefinitions="120,18,*">
+                        <StackPanel Spacing="6">
+                            <Border Width="120" Height="150" Background="#E3E8EF" CornerRadius="4" ClipToBounds="True">
+                                <Panel>
+                                    <Image Source="{Binding Photo}" Stretch="UniformToFill" IsVisible="{Binding HasPhoto}"/>
+                                    <Path Data="{StaticResource SigtaoPerson}" Fill="#B5C1D0" Width="60" Height="60" Stretch="Uniform"
+                                          IsVisible="{Binding !HasPhoto}"/>
+                                </Panel>
+                            </Border>
+                            <Button Name="PhotoButton" Classes="sg light" Content="Photo d'identité" FontSize="11.5" Padding="8,3"
+                                    HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" IsVisible="{Binding CanEdit}"/>
+                            <Button Classes="sg light" Content="Retirer" FontSize="11.5" Padding="8,3" HorizontalAlignment="Stretch"
+                                    HorizontalContentAlignment="Center" Command="{Binding RemovePhotoCommand}" IsVisible="{Binding HasPhoto}"/>
+                        </StackPanel>
+                        <Grid Grid.Column="2" ColumnDefinitions="*,12,*,12,*" RowDefinitions="Auto,10,Auto,10,Auto,10,Auto" IsEnabled="{Binding CanEdit}">
+                            <StackPanel>
+                                <TextBlock Classes="label" Text="NOM"/>
+                                <TextBox Classes="sg" Text="{Binding Record.Nom}"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Classes="label" Text="PRÉNOM"/>
+                                <TextBox Classes="sg" Text="{Binding Record.Prenom}"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="4">
+                                <TextBlock Classes="label" Text="STATUT"/>
+                                <ComboBox Classes="sg" ItemsSource="{Binding Statuses}" SelectedItem="{Binding Record.Status}"/>
+                            </StackPanel>
+                            <StackPanel Grid.Row="2">
+                                <TextBlock Classes="label" Text="GRADE"/>
+                                <ComboBox Classes="sg" ItemsSource="{Binding Grades}" SelectedItem="{Binding Record.Grade}"/>
+                            </StackPanel>
+                            <StackPanel Grid.Row="2" Grid.Column="2">
+                                <TextBlock Classes="label" Text="DATE DE PRISE DE GRADE"/>
+                                <CalendarDatePicker SelectedDate="{Binding GradeDate}" HorizontalAlignment="Stretch" SelectedDateFormat="Custom"
+                                                    CustomDateFormatString="dd/MM/yyyy" Watermark="jj/mm/aaaa" Background="White"/>
+                            </StackPanel>
+                            <StackPanel Grid.Row="2" Grid.Column="4">
+                                <TextBlock Classes="label" Text="NID / MATRICULE"/>
+                                <Grid ColumnDefinitions="*,6,*">
+                                    <TextBox Classes="sg" Text="{Binding Record.Nid}" Watermark="NID"/>
+                                    <TextBox Grid.Column="2" Classes="sg" Text="{Binding Record.Matricule}" Watermark="Matricule"/>
+                                </Grid>
+                            </StackPanel>
+                            <StackPanel Grid.Row="4">
+                                <TextBlock Classes="label" Text="UNITÉ"/>
+                                <TextBox Classes="sg" Text="{Binding Record.Unite}"/>
+                            </StackPanel>
+                            <StackPanel Grid.Row="4" Grid.Column="2">
+                                <TextBlock Classes="label" Text="AFFECTATION (CS) / SECTION"/>
+                                <Grid ColumnDefinitions="*,6,*">
+                                    <AutoCompleteBox Text="{Binding Record.Affectation}" ItemsSource="{Binding Centres}" MinHeight="30"/>
+                                    <TextBox Grid.Column="2" Classes="sg" Text="{Binding Record.Section}" Watermark="Section"/>
+                                </Grid>
+                            </StackPanel>
+                            <StackPanel Grid.Row="4" Grid.Column="4">
+                                <TextBlock Classes="label" Text="FONCTION"/>
+                                <TextBox Classes="sg" Text="{Binding Record.Fonction}" Watermark="Chef d'agrès VSAV"/>
+                            </StackPanel>
+                            <StackPanel Grid.Row="6">
+                                <TextBlock Classes="label" Text="DATE D'ARRIVÉE"/>
+                                <CalendarDatePicker SelectedDate="{Binding ArrivalDate}" HorizontalAlignment="Stretch" SelectedDateFormat="Custom"
+                                                    CustomDateFormatString="dd/MM/yyyy" Watermark="jj/mm/aaaa" Background="White"/>
+                                <TextBlock Classes="muted" Text="{Binding ServiceTime}" Margin="0,3,0,0"/>
+                            </StackPanel>
+                            <StackPanel Grid.Row="6" Grid.Column="2">
+                                <TextBlock Classes="label" Text="ADRESSE ÉLECTRONIQUE / TÉLÉPHONE"/>
+                                <TextBox Classes="sg" Text="{Binding Record.Email}" Watermark="prenom.nom@pompiersparis.fr"/>
+                                <TextBox Classes="sg" Text="{Binding Record.Telephone}" Watermark="Téléphone professionnel" Margin="0,6,0,0"/>
+                            </StackPanel>
+                            <StackPanel Grid.Row="6" Grid.Column="4">
+                                <TextBlock Classes="label" Text="IDENTIFIANT DISCORD DU JOUEUR"/>
+                                <TextBox Classes="sg" Text="{Binding Record.DiscordUserId}" Watermark="ex. 312456789012345678"/>
+                            </StackPanel>
+                        </Grid>
+                    </Grid>
+                </Border>
+
+                <!-- Carrière -->
+                <Border Classes="card" IsVisible="{Binding !IsNew}">
+                    <StackPanel Spacing="8">
+                        <TextBlock Classes="h2" Text="Formations, carrière et entretiens" Margin="0"/>
+                        <Border Background="#F4F6F9" CornerRadius="4" Padding="12,10" IsVisible="{Binding CanEdit}">
+                            <StackPanel Spacing="8">
+                                <Grid ColumnDefinitions="220,10,150,10,*">
+                                    <StackPanel>
+                                        <TextBlock Classes="label" Text="RUBRIQUE"/>
+                                        <ComboBox Classes="sg" ItemsSource="{Binding Kinds}" SelectedItem="{Binding EntryKind}"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="2">
+                                        <TextBlock Classes="label" Text="DATE"/>
+                                        <CalendarDatePicker SelectedDate="{Binding EntryDate}" HorizontalAlignment="Stretch" SelectedDateFormat="Custom"
+                                                            CustomDateFormatString="dd/MM/yyyy" Watermark="jj/mm/aaaa" Background="White"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="4">
+                                        <TextBlock Classes="label" Text="INTITULÉ"/>
+                                        <TextBox Classes="sg" Text="{Binding EntryTitle}" Watermark="Formation, diplôme, nouveau grade, motif…"/>
+                                    </StackPanel>
+                                </Grid>
+                                <TextBox Classes="sg" Text="{Binding EntryDetails}" Watermark="Détails (compte-rendu d'entretien, organisme, observations…)"
+                                         AcceptsReturn="True" TextWrapping="Wrap" MinHeight="44"/>
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <TextBlock Classes="muted" Text="{Binding EntryHint}" TextWrapping="Wrap" FontSize="11" Margin="0,0,12,0"/>
+                                    <Button Grid.Column="1" Classes="sg" Content="Ajouter au dossier" Command="{Binding AddEntryCommand}" VerticalAlignment="Top"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+                        <ItemsControl ItemsSource="{Binding Entries}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid ColumnDefinitions="90,190,*" Margin="0,0,0,8">
+                                        <TextBlock Text="{Binding Date}" FontSize="12" Foreground="#5E6B7A"/>
+                                        <TextBlock Grid.Column="1" Text="{Binding Kind}" FontSize="12" FontWeight="SemiBold" Foreground="#1F5FAD"
+                                                   TextWrapping="Wrap" Margin="0,0,10,0"/>
+                                        <StackPanel Grid.Column="2">
+                                            <TextBlock Text="{Binding Title}" FontSize="12.5" FontWeight="SemiBold" TextWrapping="Wrap"/>
+                                            <TextBlock Text="{Binding Details}" FontSize="12" Foreground="#5E6B7A" TextWrapping="Wrap"/>
+                                            <TextBlock Text="{Binding By, StringFormat='Saisi par {0}'}" FontSize="10.5" Foreground="#8A96A5"/>
+                                        </StackPanel>
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <TextBlock Classes="muted" Text="Aucune rubrique (ou consultation réservée à la gestion de la compagnie)." IsVisible="{Binding !HasEntries}"/>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+    </DockPanel>
+</UserControl>

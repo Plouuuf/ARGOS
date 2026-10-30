@@ -1,0 +1,206 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="Argos.Views.Apps.Sigtao.CompteRenduView"
+             Classes="sigtao"
+             Background="#EEF1F5"
+             FontFamily="{StaticResource SigtaoFont}"
+             Foreground="#1D2733">
+    <UserControl.Styles>
+        <!-- Cases du modèle E-COMPTE-RENDU -->
+        <Style Selector="Border.cell">
+            <Setter Property="BorderBrush" Value="Black"/>
+            <Setter Property="BorderThickness" Value="0.8"/>
+            <Setter Property="Padding" Value="6,4"/>
+        </Style>
+        <Style Selector="Border.cell > TextBlock">
+            <Setter Property="FontFamily" Value="Arial, Helvetica, Liberation Sans"/>
+            <Setter Property="Foreground" Value="Black"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="TextAlignment" Value="Center"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+        </Style>
+        <Style Selector="Button.fmt">
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="BorderBrush" Value="#C5CED9"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="3"/>
+            <Setter Property="Padding" Value="9,2"/>
+            <Setter Property="MinWidth" Value="30"/>
+            <Setter Property="Foreground" Value="#13294B"/>
+        </Style>
+    </UserControl.Styles>
+
+    <DockPanel>
+        <StackPanel DockPanel.Dock="Top">
+            <Border Background="#13294B" Padding="16,10">
+                <StackPanel>
+                    <TextBlock Text="COMPTES-RENDUS" Foreground="#AFC0D8" FontSize="10.5" FontWeight="Bold"/>
+                    <TextBlock Text="{Binding Title}" Foreground="White" FontSize="18" FontWeight="SemiBold"/>
+                </StackPanel>
+            </Border>
+            <Border Height="3" Background="#C8102E"/>
+            <Border Classes="msg" Classes.error="{Binding MessageIsError}" BorderThickness="0,0,0,2" Padding="16,8" IsVisible="{Binding HasMessage}">
+                <TextBlock Text="{Binding Message}" FontSize="12.5" FontWeight="SemiBold" TextWrapping="Wrap"/>
+            </Border>
+        </StackPanel>
+        <Border DockPanel.Dock="Bottom" Background="White" BorderBrush="#D8DEE6" BorderThickness="0,1,0,0" Padding="16,8">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
+                <Button Classes="sg" Content="Enregistrer le compte-rendu" Command="{Binding SaveCommand}" IsVisible="{Binding IsEditable}"/>
+                <Button Classes="sg light" Content="Fermer" Command="{Binding CloseCommand}"/>
+            </StackPanel>
+        </Border>
+
+        <Grid ColumnDefinitions="Auto,*">
+            <!-- ===== Saisie ===== -->
+            <ScrollViewer Width="470" IsVisible="{Binding IsEditable}" Background="White">
+                <StackPanel Margin="16,14" Spacing="12">
+                    <StackPanel Spacing="6">
+                        <TextBlock Classes="h2" Text="Rédacteur" Margin="0"/>
+                        <Grid ColumnDefinitions="*,8,*" RowDefinitions="Auto,6,Auto,6,Auto">
+                            <ComboBox Grid.ColumnSpan="3" Classes="sg" ItemsSource="{Binding Grades}" SelectedItem="{Binding Report.AuthorGrade}"
+                                      PlaceholderText="Grade"/>
+                            <TextBox Grid.Row="2" Classes="sg" Text="{Binding Report.AuthorNom}" Watermark="Nom"/>
+                            <TextBox Grid.Row="2" Grid.Column="2" Classes="sg" Text="{Binding Report.AuthorPrenom}" Watermark="Prénom"/>
+                            <TextBox Grid.Row="4" Classes="sg" Text="{Binding Report.AuthorNid}" Watermark="NID"/>
+                            <TextBox Grid.Row="4" Grid.Column="2" Classes="sg" Text="{Binding Report.AuthorTempsService}" Watermark="Temps de service"/>
+                        </Grid>
+                    </StackPanel>
+                    <StackPanel Spacing="6">
+                        <TextBlock Classes="h2" Text="Autorité destinataire" Margin="0"/>
+                        <Grid ColumnDefinitions="*,8,*" RowDefinitions="Auto,6,Auto,6,Auto">
+                            <ComboBox Grid.ColumnSpan="3" Classes="sg" ItemsSource="{Binding Grades}" SelectedItem="{Binding Report.DestGrade}"
+                                      PlaceholderText="Grade du destinataire"/>
+                            <TextBox Grid.Row="2" Classes="sg" Text="{Binding Report.DestPrenom}" Watermark="Prénom"/>
+                            <TextBox Grid.Row="2" Grid.Column="2" Classes="sg" Text="{Binding Report.DestNom}" Watermark="Nom"/>
+                            <ComboBox Grid.Row="4" Grid.ColumnSpan="3" Classes="sg" ItemsSource="{Binding Mentions}" SelectedItem="{Binding Report.Mention}"/>
+                        </Grid>
+                    </StackPanel>
+                    <StackPanel Spacing="6">
+                        <TextBlock Classes="h2" Text="Objet et référence" Margin="0"/>
+                        <TextBox Classes="sg" Text="{Binding Report.Objet}" Watermark="Objet"/>
+                        <TextBox Classes="sg" Text="{Binding Report.Reference}" Watermark="Référence (n° d'intervention, note de service…)"/>
+                    </StackPanel>
+                    <StackPanel Spacing="6">
+                        <TextBlock Classes="h2" Text="Compte-rendu" Margin="0"/>
+                        <StackPanel Orientation="Horizontal" Spacing="4">
+                            <Button Name="BoldButton" Classes="fmt" FontWeight="Bold" Content="G" ToolTip.Tip="Gras"/>
+                            <Button Name="ItalicButton" Classes="fmt" FontStyle="Italic" Content="I" ToolTip.Tip="Italique"/>
+                            <Button Name="UnderlineButton" Classes="fmt" Content="S" ToolTip.Tip="Souligné"/>
+                            <Button Name="ListButton" Classes="fmt" Content="• Liste" ToolTip.Tip="Liste à puces"/>
+                        </StackPanel>
+                        <TextBox Name="BodyBox" Classes="sg" Text="{Binding Body}" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="200"
+                                 VerticalContentAlignment="Top" Watermark="Faits, dans l'ordre chronologique…"/>
+                    </StackPanel>
+                    <StackPanel Spacing="6">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <TextBlock Classes="h2" Text="Pièces jointes" Margin="0"/>
+                            <Button Name="AttachButton" Grid.Column="1" Classes="sg light" Content="Ajouter" Padding="10,3" FontSize="12"/>
+                        </Grid>
+                        <ItemsControl ItemsSource="{Binding Attachments}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,4">
+                                        <TextBlock Text="{Binding Name}" FontSize="12.5" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                        <Button Grid.Column="1" Classes="sg light" Content="Retirer" Padding="8,1" FontSize="11"
+                                                Command="{Binding $parent[UserControl].DataContext.RemoveAttachmentCommand}" CommandParameter="{Binding}"/>
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                    <StackPanel Spacing="6">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <TextBlock Classes="h2" Text="Synthèse" Margin="0"/>
+                            <Button Grid.Column="1" Classes="sg light" Content="Générer" Padding="10,3" FontSize="12" Command="{Binding GenerateCommand}"/>
+                        </Grid>
+                        <TextBox Classes="sg" Text="{Binding Synthese}" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="70"
+                                 VerticalContentAlignment="Top" Watermark="Générée automatiquement, modifiable avant enregistrement"/>
+                    </StackPanel>
+                </StackPanel>
+            </ScrollViewer>
+
+            <!-- ===== Document (modèle E-COMPTE-RENDU) ===== -->
+            <ScrollViewer Grid.Column="1" HorizontalScrollBarVisibility="Auto">
+                <StackPanel Margin="20,16" HorizontalAlignment="Center" Spacing="12">
+                    <Border Background="White" Width="680" Padding="28,24" BoxShadow="0 3 14 0 #44000000">
+                        <StackPanel>
+                            <Grid ColumnDefinitions="*,*">
+                                <Border Classes="cell"><TextBlock Text="{Binding DateLine}" FontSize="11" HorizontalAlignment="Left" TextAlignment="Left"/></Border>
+                                <Border Grid.Column="1" Classes="cell"><TextBlock Text="{Binding NumLine}" FontSize="11" HorizontalAlignment="Right" TextAlignment="Right"/></Border>
+                            </Grid>
+                            <Image Source="avares://ARGOS.App/Assets/Sigtao/bspp-logo.png" Height="78" HorizontalAlignment="Left" Margin="80,4,0,0"/>
+                            <Grid ColumnDefinitions="200,*,*" RowDefinitions="64,64,62">
+                                <Border Grid.RowSpan="2" Classes="cell">
+                                    <TextBlock Text="BRIGADE DE SAPEURS-POMPIERS DE PARIS" FontSize="12" FontWeight="Bold"/>
+                                </Border>
+                                <Border Grid.Column="1" Grid.ColumnSpan="2" Classes="cell">
+                                    <TextBlock Text="E-COMPTE-RENDU" FontSize="20" FontWeight="Bold"/>
+                                </Border>
+                                <Border Grid.Row="1" Grid.Column="1" Classes="cell">
+                                    <TextBlock Text="{Binding Report.Unite}" FontSize="13"/>
+                                </Border>
+                                <Border Grid.Row="1" Grid.Column="2" Classes="cell">
+                                    <TextBlock FontSize="12">
+                                        <Run Text="N° "/><Run Text="{Binding Report.AuthorNid}"/><LineBreak/>
+                                        <Run Text="{Binding Report.AuthorGrade}"/><LineBreak/>
+                                        <Run Text="{Binding Report.AuthorNom}"/><Run Text="  "/><Run Text="{Binding Report.AuthorPrenom}"/>
+                                    </TextBlock>
+                                </Border>
+                                <Border Grid.Row="2" Classes="cell"><TextBlock Text="AUTORITÉ DESTINATAIRE :" FontSize="12"/></Border>
+                                <Border Grid.Row="2" Grid.Column="1" Classes="cell">
+                                    <TextBlock FontSize="13">
+                                        <Run Text="Monsieur le "/><Run Text="{Binding Report.DestGrade}"/><LineBreak/>
+                                        <Run Text="{Binding Report.DestPrenom}"/><Run Text=" "/><Run Text="{Binding Report.DestNom}"/>
+                                    </TextBlock>
+                                </Border>
+                                <Border Grid.Row="2" Grid.Column="2" Classes="cell"><TextBlock Text="{Binding Report.Mention}" FontSize="12"/></Border>
+                            </Grid>
+                            <Border Classes="cell" Background="#BDD7EE" BorderThickness="0.8,0,0.8,0.8">
+                                <TextBlock HorizontalAlignment="Left" TextAlignment="Left" FontSize="12">
+                                    <Run Text="OBJET" FontWeight="Bold"/><Run Text=" : "/><Run Text="{Binding Report.Objet}"/>
+                                </TextBlock>
+                            </Border>
+                            <Border Classes="cell" BorderThickness="0.8,0,0.8,0.8" MinHeight="560" Padding="12,10">
+                                <StackPanel Spacing="10" HorizontalAlignment="Stretch">
+                                    <TextBlock FontSize="11.5" HorizontalAlignment="Left" TextAlignment="Left"
+                                               IsVisible="{Binding Report.Reference, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                                        <Run Text="Référence : " FontWeight="Bold"/><Run Text="{Binding Report.Reference}"/>
+                                    </TextBlock>
+                                    <TextBlock Text="J'ai l'honneur de vous rendre compte des faits suivants," FontSize="12" Margin="200,4,0,4"
+                                               HorizontalAlignment="Left"/>
+                                    <TextBlock Name="BodyPreview" FontSize="12" LineHeight="18" TextWrapping="Wrap" Foreground="Black"
+                                               FontFamily="Arial, Helvetica, Liberation Sans" HorizontalAlignment="Stretch" TextAlignment="Justify"/>
+                                    <TextBlock FontSize="12" HorizontalAlignment="Right" TextAlignment="Right" Margin="0,24,20,0">
+                                        <Run Text="{Binding Report.AuthorGrade}"/><Run Text=" "/><Run Text="{Binding Report.AuthorNom}"/>
+                                        <Run Text=" "/><Run Text="{Binding Report.AuthorPrenom}"/>
+                                    </TextBlock>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Pièces jointes et synthèse (consultation) -->
+                    <Border Classes="card" Width="680" IsVisible="{Binding IsReadOnly}">
+                        <StackPanel Spacing="8">
+                            <TextBlock Classes="h2" Text="Synthèse" Margin="0"/>
+                            <TextBlock Text="{Binding Synthese}" FontSize="12.5" TextWrapping="Wrap"/>
+                            <TextBlock Classes="h2" Text="Pièces jointes" Margin="0,6,0,0" IsVisible="{Binding HasAttachments}"/>
+                            <ItemsControl ItemsSource="{Binding Attachments}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,4">
+                                            <TextBlock Text="{Binding Name}" FontSize="12.5" VerticalAlignment="Center"/>
+                                            <Button Grid.Column="1" Classes="sg light" Content="Enregistrer sous…" Padding="8,2" FontSize="11.5"
+                                                    Click="OnSaveAttachment"/>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
+        </Grid>
+    </DockPanel>
+</UserControl>

@@ -308,6 +308,10 @@ public sealed class DesktopViewModel : ViewModelBase
                 _ = ArgosSession.Current?.Mco.RefreshAsync();
                 break;
 
+            case RealtimeTypes.SigtaoChanged:
+                _ = ArgosSession.Current?.Sigtao.RefreshAsync();
+                break;
+
             case RealtimeTypes.OpenCall when !string.IsNullOrWhiteSpace(message.Text):
                 // Décroché d'un 18 sur SIMCALL : la prise d'appel s'ouvre d'elle-même.
                 _ = ArgosSession.Current?.Ode.RefreshAsync();
