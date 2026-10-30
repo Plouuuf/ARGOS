@@ -43,6 +43,10 @@ public static class ImageLoader
         return key is null ? null : Asset($"Engins/{key}.jpg");
     }
 
+    /// <summary>Insigne de grade BSPP (Assets/Grades), ou null.</summary>
+    public static Bitmap? Grade(string? grade)
+        => Argos.Shared.Contracts.BsppGrades.Code(grade) is { } code ? Asset($"Grades/{code}.png") : null;
+
     /// <summary>Avatar Discord ; null si l'adresse est vide ou l'image injoignable.</summary>
     public static async Task<Bitmap?> AvatarAsync(string? url, CancellationToken ct = default)
     {

@@ -81,7 +81,10 @@
                                 <StackPanel Grid.Column="2" Spacing="3">
                                     <TextBlock Text="MON DOSSIER" FontSize="10.5" FontWeight="Bold" Foreground="#8A96A5"/>
                                     <TextBlock Text="{Binding MeName}" FontSize="17" FontWeight="SemiBold" Foreground="#13294B"/>
-                                    <TextBlock Text="{Binding MeGrade}" FontSize="13"/>
+                                    <StackPanel Orientation="Horizontal" Spacing="6">
+                                        <Image Source="{Binding MeGradeIcon}" Width="22" Height="22"/>
+                                        <TextBlock Text="{Binding MeGrade}" FontSize="13" VerticalAlignment="Center"/>
+                                    </StackPanel>
                                     <TextBlock Text="{Binding MeNid}" Classes="muted"/>
                                     <TextBlock Text="{Binding MeUnit}" Classes="muted"/>
                                     <TextBlock Text="{Binding MeFonction, StringFormat='Fonction : {0}'}" Classes="muted"/>
@@ -240,7 +243,7 @@
                 <Border Classes="card" Padding="0">
                     <DockPanel>
                         <Border DockPanel.Dock="Top" Classes="thead">
-                            <Grid ColumnDefinitions="44,150,*,*,90,110,*,110">
+                            <Grid ColumnDefinitions="44,200,*,*,90,110,*,110">
                                 <TextBlock Text=""/>
                                 <TextBlock Grid.Column="1" Text="Grade"/>
                                 <TextBlock Grid.Column="2" Text="Nom"/>
@@ -257,7 +260,7 @@
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>
                                             <Button Classes="trow" Command="{Binding OpenCommand}" Padding="10,5">
-                                                <Grid ColumnDefinitions="44,150,*,*,90,110,*,110">
+                                                <Grid ColumnDefinitions="44,200,*,*,90,110,*,110">
                                                     <Border Classes="avatar" Background="#C9D4E3" HorizontalAlignment="Left">
                                                         <Panel>
                                                             <Image Source="{Binding Photo}" Stretch="UniformToFill" IsVisible="{Binding HasPhoto}"/>
@@ -265,7 +268,10 @@
                                                                        HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding !HasPhoto}"/>
                                                         </Panel>
                                                     </Border>
-                                                    <TextBlock Grid.Column="1" Classes="cell" Text="{Binding Grade}"/>
+                                                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6">
+                                                        <Image Source="{Binding GradeIcon}" Width="22" Height="22"/>
+                                                        <TextBlock Classes="cell" Text="{Binding Grade}"/>
+                                                    </StackPanel>
                                                     <TextBlock Grid.Column="2" Classes="cell" Text="{Binding Nom}" FontWeight="SemiBold"/>
                                                     <TextBlock Grid.Column="3" Classes="cell" Text="{Binding Prenom}"/>
                                                     <TextBlock Grid.Column="4" Classes="cell" Text="{Binding Nid}"/>
@@ -405,7 +411,10 @@
                                             <TextBlock FontSize="13.5" FontWeight="SemiBold" Foreground="#13294B" TextTrimming="CharacterEllipsis">
                                                 <Run Text="{Binding Nom}"/><Run Text=" "/><Run Text="{Binding Prenom}"/>
                                             </TextBlock>
-                                            <TextBlock Text="{Binding Grade}" FontSize="12"/>
+                                            <StackPanel Orientation="Horizontal" Spacing="5">
+                                                <Image Source="{Binding GradeIcon}" Width="18" Height="18"/>
+                                                <TextBlock Text="{Binding Grade}" FontSize="12" VerticalAlignment="Center"/>
+                                            </StackPanel>
                                             <TextBlock Text="{Binding Fonction}" Classes="muted" TextTrimming="CharacterEllipsis"/>
                                             <TextBlock Classes="muted">
                                                 <Run Text="{Binding Unite}"/><Run Text=" · CS "/><Run Text="{Binding Affectation}"/>

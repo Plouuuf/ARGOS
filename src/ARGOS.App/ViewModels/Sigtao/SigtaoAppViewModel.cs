@@ -10,6 +10,7 @@ namespace Argos.ViewModels.Sigtao;
 public sealed record MilitaryRow(string Id, string Grade, string Nom, string Prenom, string Nid, string Unite, string Affectation,
     string Fonction, string Status, string Email, string Telephone, Bitmap? Photo, RelayCommand OpenCommand)
 {
+    public Bitmap? GradeIcon => ImageLoader.Grade(Grade);
     public bool HasPhoto => Photo is not null;
     public string Initials => $"{(Nom.Length > 0 ? Nom[0] : ' ')}{(Prenom.Length > 0 ? Prenom[0] : ' ')}".Trim().ToUpperInvariant();
 }
@@ -155,6 +156,7 @@ public sealed class SigtaoAppViewModel : ViewModelBase, IDisposable
     public string MeService => Store?.Me is { } m ? CrText.ServiceTime(m.ArrivalDate, DateTimeOffset.Now) : string.Empty;
     public Bitmap? MePhoto => Store?.Me is { } m ? SigtaoImages.Photo(m.PhotoData, m.AvatarUrl) : null;
     public bool HasMePhoto => MePhoto is not null;
+    public Bitmap? MeGradeIcon => ImageLoader.Grade(Store?.Me?.Grade);
     public string MeHabilitations => Rights.Habilitations.Count == 0 ? "—" : string.Join("  ·  ", Rights.Habilitations);
     public ObservableCollection<ReportRow> LatestReports { get; } = [];
     public ObservableCollection<NoticeRow> Notices { get; } = [];
@@ -244,7 +246,7 @@ public sealed class SigtaoAppViewModel : ViewModelBase, IDisposable
         }
         var s = Snapshot;
         foreach (var n in new[] { nameof(Rights), nameof(HasMe), nameof(MeName), nameof(MeGrade), nameof(MeNid), nameof(MeUnit),
-                                  nameof(MeFonction), nameof(MeService), nameof(MePhoto), nameof(HasMePhoto), nameof(MeHabilitations),
+                                  nameof(MeFonction), nameof(MeService), nameof(MePhoto), nameof(HasMePhoto), nameof(MeGradeIcon), nameof(MeHabilitations),
                                   nameof(ReportsScope), nameof(CanSeeHistory) })
             OnPropertyChanged(n);
         foreach (var c in new[] { NewMilitaryCommand, NewAccountCommand, SaveAccountCommand, ResetAccessCommand, ToggleImportCommand, ImportCommand })
@@ -307,7 +309,7 @@ public sealed class SigtaoAppViewModel : ViewModelBase, IDisposable
     private MilitaryRow MilitaryRowOf(MilitaryRecord m)
     {
         var id = m.Id;
-        return new MilitaryRow(m.Id, m.GradeLabel, m.Nom.Length == 0 ? "(nom à la 1re connexion)" : m.Nom.ToUpperInvariant(), m.Prenom, OdeFormat.OrDash(m.Nid), m.Unite, m.Affectation,
+        return new MilitaryRow(m.Id, m.Grade, m.Nom.Length == 0 ? "(nom à la 1re connexion)" : m.Nom.ToUpperInvariant(), m.Prenom, OdeFormat.OrDash(m.Nid), m.Unite, m.Affectation,
             OdeFormat.OrDash(m.Fonction), m.Status, OdeFormat.OrDash(m.Email), OdeFormat.OrDash(m.Telephone),
             SigtaoImages.Photo(m.PhotoData, m.AvatarUrl),
             new RelayCommand(() => _desktop.OpenWindow(SigtaoWindows.Dossier(_desktop, id))));

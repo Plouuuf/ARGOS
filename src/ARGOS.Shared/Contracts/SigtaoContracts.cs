@@ -55,38 +55,63 @@ public static class DossierKinds
 
 public static class BsppGrades
 {
-    public static readonly IReadOnlyList<string> All =
+    /// <summary>Grades BSPP (affiche officielle), du plus bas au plus haut : (libellé, abréviation, code d'insigne).</summary>
+    private static readonly (string Label, string Short, string Code)[] Table =
     [
-        "Sapeur de 2e classe", "Sapeur de 1re classe", "Sapeur de 1re classe +15", "Caporal", "Caporal-chef",
-        "Caporal-chef +15", "Sergent", "Sergent-chef",
-        "Adjudant", "Adjudant-chef", "Major", "Aspirant", "Sous-lieutenant", "Lieutenant", "Capitaine",
-        "Commandant", "Lieutenant-colonel", "Colonel", "Général"
+        ("Sapeur de 2e classe", "SAP 2CL", "SAP"),
+        ("Sapeur de 1re classe", "SAP 1CL", "1CL"),
+        ("Sapeur de 1re classe +15", "1CL+15", "1CL15"),
+        ("Caporal", "CPL", "CPL"),
+        ("Caporal +15", "CPL+15", "CPL15"),
+        ("Caporal-chef", "CCH", "CCH"),
+        ("Caporal-chef +15", "CCH+15", "CCH15"),
+        ("Caporal-chef CT1", "CCH CT1", "CCHCT1"),
+        ("Caporal-chef CT1 +15", "CCH CT1+15", "CCHCT115"),
+        ("Sergent", "SGT", "SGT"),
+        ("Sergent UV2 / FS2", "SGT UV2", "SGTUV2"),
+        ("Sergent-chef", "SCH", "SCH"),
+        ("Adjudant", "ADJ", "ADJ"),
+        ("Adjudant-chef", "ADC", "ADC"),
+        ("Major", "MAJ", "MAJ"),
+        ("Aspirant", "ASP", "ASP"),
+        ("Sous-lieutenant", "SLT", "SLT"),
+        ("Lieutenant", "LTN", "LTN"),
+        ("Capitaine", "CNE", "CNE"),
+        ("Commandant", "CDT", "CDT"),
+        ("Lieutenant-colonel", "LCL", "LCL"),
+        ("Colonel", "COL", "COL"),
+        ("Général de brigade", "GBR", "GBR")
     ];
 
-    /// <summary>Abréviation usuelle : « SGT », « CCH »…</summary>
-    public static string Short(string grade) => grade switch
+    public static readonly IReadOnlyList<string> All = Table.Select(t => t.Label).ToList();
+
+    /// <summary>Abréviation usuelle : « SGT », « CCH+15 »…</summary>
+    public static string Short(string grade)
+        => Table.FirstOrDefault(t => t.Label == grade).Short ?? grade;
+
+    /// <summary>Code de l'insigne (Assets/Grades/{code}.png, émojis Discord VDMS) ; null si grade inconnu.</summary>
+    public static string? Code(string? grade)
+        => Table.FirstOrDefault(t => t.Label == grade).Code;
+
+    /// <summary>Grade d'après le code d'insigne Discord (« 1CL15 », « CCHCT1 », « SGTFS2 »…).</summary>
+    public static string? FromCode(string code)
     {
-        "Sapeur de 2e classe" => "SAP 2CL",
-        "Sapeur de 1re classe" => "SAP 1CL",
-        "Sapeur de 1re classe +15" => "1CL+15",
-        "Caporal-chef +15" => "CCH+15",
-        "Caporal" => "CPL",
-        "Caporal-chef" => "CCH",
-        "Sergent" => "SGT",
-        "Sergent-chef" => "SCH",
-        "Adjudant" => "ADJ",
-        "Adjudant-chef" => "ADC",
-        "Major" => "MAJ",
-        "Aspirant" => "ASP",
-        "Sous-lieutenant" => "SLT",
-        "Lieutenant" => "LTN",
-        "Capitaine" => "CNE",
-        "Commandant" => "CDT",
-        "Lieutenant-colonel" => "LCL",
-        "Colonel" => "COL",
-        "Général" => "GAL",
-        _ => grade
-    };
+        var c = code.ToUpperInvariant().Replace("_", string.Empty).Replace("+", string.Empty);
+        c = c switch
+        {
+            "2CL" or "SAP2CL" => "SAP",
+            "SAP1CL" => "1CL",
+            "SGTFS2" => "SGTUV2",
+            "CT1" => "CCHCT1",
+            "CT115" => "CCHCT115",
+            "GAL" or "GEN" => "GBR",
+            _ => c
+        };
+        return Table.FirstOrDefault(t => t.Code == c).Label;
+    }
+
+    /// <summary>Rang (0 = sapeur de 2e classe) pour trier du plus haut au plus bas.</summary>
+    public static int Rank(string grade) => All.ToList().IndexOf(grade);
 }
 
 public sealed class DossierEntry
@@ -294,35 +319,7 @@ public static class RosterImport
 
     /// <summary>Code d'insigne Discord → grade : « 1CL15 » → « Sapeur de 1re classe +15 ».</summary>
     public static (string Grade, string Echelon)? Grade(string code)
-    {
-        var m = System.Text.RegularExpressions.Regex.Match(code.ToUpperInvariant(), @"^([A-Z]*\d?[A-Z]+?)(\d{2})?$");
-        var key = m.Success ? m.Groups[1].Value : code.ToUpperInvariant();
-        var echelon = m.Success && m.Groups[2].Success ? "+" + m.Groups[2].Value : string.Empty;
-        var grade = key switch
-        {
-            "SAP" or "SAP2CL" or "2CL" => "Sapeur de 2e classe",
-            "1CL" or "SAP1CL" => "Sapeur de 1re classe",
-            "CPL" => "Caporal",
-            "CCH" => "Caporal-chef",
-            "SGT" => "Sergent",
-            "SCH" => "Sergent-chef",
-            "ADJ" => "Adjudant",
-            "ADC" => "Adjudant-chef",
-            "MAJ" => "Major",
-            "ASP" => "Aspirant",
-            "SLT" => "Sous-lieutenant",
-            "LTN" => "Lieutenant",
-            "CNE" => "Capitaine",
-            "CDT" => "Commandant",
-            "LCL" => "Lieutenant-colonel",
-            "COL" => "Colonel",
-            _ => null
-        };
-        if (grade is null) return null;
-        // « +15 » : grades BSPP à part entière (1CL+15, CCH+15).
-        var withEchelon = $"{grade} {echelon}".Trim();
-        return BsppGrades.All.Contains(withEchelon) ? (withEchelon, string.Empty) : (grade, echelon);
-    }
+        => BsppGrades.FromCode(code) is { } grade ? (grade, string.Empty) : null;
 
     public static List<MilitaryRecord> Parse(string text)
     {

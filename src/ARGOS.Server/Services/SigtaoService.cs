@@ -453,7 +453,7 @@ public sealed class SigtaoService(OdeDatabase db, RealtimeHub hub)
 
     private static int GradeRank(string grade)
     {
-        var index = BsppGrades.All.ToList().IndexOf(grade);
+        var index = BsppGrades.Rank(grade);
         return index < 0 ? 0 : -index;                       // du plus haut grade au plus bas
     }
 

@@ -49,6 +49,7 @@ public sealed class DossierViewModel : ViewModelBase, IDisposable
     public bool IsNew => _id is null;
     public string Title => IsNew ? "Nouveau dossier militaire" : _record.FullName;
     public MilitaryRecord Record { get => _record; private set => SetProperty(ref _record, value); }
+    public Avalonia.Media.Imaging.Bitmap? GradeIcon => ImageLoader.Grade(_record.Grade);
 
     public IReadOnlyList<string> Grades => BsppGrades.All;
     public IReadOnlyList<string> Statuses => MilitaryStatuses.All;
@@ -114,7 +115,7 @@ public sealed class DossierViewModel : ViewModelBase, IDisposable
     {
         Record = record;
         Photo = SigtaoImages.Photo(record.PhotoData, record.AvatarUrl);
-        foreach (var n in new[] { nameof(GradeDate), nameof(ArrivalDate), nameof(ServiceTime), nameof(Title), nameof(IsNew) })
+        foreach (var n in new[] { nameof(GradeDate), nameof(ArrivalDate), nameof(ServiceTime), nameof(Title), nameof(IsNew), nameof(GradeIcon) })
             OnPropertyChanged(n);
         BuildEntries();
     }
