@@ -59,8 +59,9 @@
                 <Button Classes="cmd" Content="Actualiser" Command="{Binding RefreshCommand}"/>
             </StackPanel>
         </Border>
-        <Border DockPanel.Dock="Top" Padding="16,7" IsVisible="{Binding HasMessage}" Background="#DFF6DD" Classes.err="{Binding MessageIsError}">
-            <Border.Styles><Style Selector="Border.err"><Setter Property="Background" Value="#FDE7E9"/></Style></Border.Styles>
+        <Border DockPanel.Dock="Top" Padding="16,7" IsVisible="{Binding HasMessage}" Classes.err="{Binding MessageIsError}">
+            <Border.Styles><Style Selector="Border"><Setter Property="Background" Value="#DFF6DD"/></Style>
+                    <Style Selector="Border.err"><Setter Property="Background" Value="#FDE7E9"/></Style></Border.Styles>
             <TextBlock Text="{Binding Message}" FontSize="12.5" TextWrapping="Wrap"/>
         </Border>
 

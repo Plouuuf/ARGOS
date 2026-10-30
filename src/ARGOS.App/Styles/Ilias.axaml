@@ -23,7 +23,7 @@
     <Style Selector=".ilias Button.il.light:pointerover /template/ ContentPresenter#PART_ContentPresenter"><Setter Property="Background" Value="#EEF2F7"/><Setter Property="Foreground" Value="#4C6586"/></Style>
     <Style Selector=".ilias Button.link">
             <Setter Property="Background" Value="Transparent"/><Setter Property="Foreground" Value="#2E6CA4"/><Setter Property="Padding" Value="0"/>
-            <Setter Property="BorderThickness" Value="0"/><Setter Property="Cursor" Value="Hand"/><Setter Property="FontSize" Value="13.5"/><Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="BorderThickness" Value="0"/><Setter Property="Cursor" Value="Hand"/><Setter Property="FontSize" Value="13.5"/><Setter Property="HorizontalAlignment" Value="Left"/><Setter Property="HorizontalContentAlignment" Value="Left"/><Setter Property="FontWeight" Value="SemiBold"/>
         </Style>
     <Style Selector=".ilias Button.link:pointerover /template/ ContentPresenter#PART_ContentPresenter"><Setter Property="Background" Value="Transparent"/><Setter Property="Foreground" Value="#1B4E7E"/></Style>
     <Style Selector=".ilias TextBox.il"><Setter Property="Background" Value="White"/><Setter Property="BorderBrush" Value="#C4C4C4"/><Setter Property="CornerRadius" Value="2"/><Setter Property="FontSize" Value="13"/><Setter Property="MinHeight" Value="30"/></Style>
