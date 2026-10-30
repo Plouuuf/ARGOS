@@ -29,6 +29,7 @@ public class Screenshots
         var frame = window.CaptureRenderedFrame();
         Assert.NotNull(frame);
         frame!.Save(Path.Combine(Folder, name + ".png"));
+        window.Content = null;
         window.Close();
     }
 
@@ -147,6 +148,7 @@ public class RemiseScreenshots
         var frame = window.CaptureRenderedFrame();
         Assert.NotNull(frame);
         frame!.Save(Path.Combine(Folder, name + ".png"));
+        window.Content = null;
         window.Close();
     }
 
@@ -256,6 +258,7 @@ public class McoScreenshots
         var frame = window.CaptureRenderedFrame();
         Assert.NotNull(frame);
         frame!.Save(Path.Combine(Folder, name + ".png"));
+        window.Content = null;
         window.Close();
     }
 
@@ -326,6 +329,7 @@ public class SigtaoScreenshots
         var frame = window.CaptureRenderedFrame();
         Assert.NotNull(frame);
         frame!.Save(Path.Combine(Folder, name + ".png"));
+        window.Content = null;
         window.Close();
     }
 
@@ -424,6 +428,7 @@ public class EfibiScreenshots
         window.Show();
         Dispatcher.UIThread.RunJobs();
         window.CaptureRenderedFrame()!.Save(Path.Combine(folder, "efibi-fiche.png"));
+        window.Content = null;
         window.Close();
         Assert.Equal(3, vm.Sections.Count);
     }
@@ -442,6 +447,7 @@ public class IliasScreenshots
         window.Show();
         Dispatcher.UIThread.RunJobs();
         window.CaptureRenderedFrame()!.Save(Path.Combine(Folder, name + ".png"));
+        window.Content = null;
         window.Close();
     }
 
@@ -527,6 +533,7 @@ public class MailScreenshots
         window.Show();
         Dispatcher.UIThread.RunJobs();
         window.CaptureRenderedFrame()!.Save(Path.Combine(Folder, name + ".png"));
+        window.Content = null;
         window.Close();
     }
 
@@ -606,6 +613,7 @@ public class AccessoiresTests
         window.Show();
         Dispatcher.UIThread.RunJobs();
         window.CaptureRenderedFrame()!.Save(Path.Combine(Folder, name + ".png"));
+        window.Content = null;
         window.Close();
     }
 
