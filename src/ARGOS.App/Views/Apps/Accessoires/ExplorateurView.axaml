@@ -41,7 +41,7 @@
             <Grid ColumnDefinitions="*,Auto,8,120">
                 <TextBlock Classes="status" Text="{Binding StatusText}"/>
                 <TextBlock Grid.Column="1" Classes="status" Text="{Binding QuotaText}" Foreground="#6D6D6D"/>
-                <ProgressBar Grid.Column="3" Minimum="0" Maximum="1" Value="{Binding QuotaRatio}" Height="8" Foreground="#26A0DA" Background="#E6E6E6" VerticalAlignment="Center"/>
+                <ProgressBar Grid.Column="3" MinWidth="0" Minimum="0" Maximum="1" Value="{Binding QuotaRatio}" Height="8" Foreground="#26A0DA" Background="#E6E6E6" VerticalAlignment="Center"/>
             </Grid>
         </Border>
         <Border DockPanel.Dock="Bottom" Padding="10,6" IsVisible="{Binding HasMessage}" Classes.err="{Binding MessageIsError}">

@@ -4,6 +4,14 @@
 #   ARGOS-windows  ARGOS.exe autonome (Windows 64 bits)
 #   ARGOS-server   serveur ARGOS pour Windows (à compléter avec appsettings.Local.json, voir README)
 #
+#   ARGOS-ios      (compilation iPhone vérifiée à chaque fois ; envoi TestFlight si les secrets Apple sont présents)
+#
+# Secrets iPhone → TestFlight (Settings › Secrets and variables › Actions › Secrets), tous requis :
+#   ARGOS_IOS_CERTIFICATE_P12       certificat « Apple Distribution » (.p12 en base64, le même que SIMCALL)
+#   ARGOS_IOS_CERTIFICATE_PASSWORD  mot de passe du .p12
+#   ARGOS_IOS_PROFILE               profil « App Store » de fr.vdms.argos (.mobileprovision en base64)
+#   ARGOS_ASC_KEY_ID / ARGOS_ASC_ISSUER_ID / ARGOS_ASC_KEY_P8  clé API App Store Connect (la même que SIMCALL)
+#
 # Variables facultatives (Settings › Secrets and variables › Actions › Variables) :
 #   ARGOS_SERVER_URL  adresse du serveur intégrée aux postes (défaut http://46.105.78.32:8092)
 
@@ -182,3 +190,137 @@ jobs:
           gh release list --repo "${{ github.repository }}" --limit 100 --json tagName -q '.[].tagName' \
             | grep '^build-' | sort -t- -k2 -n -r | tail -n +9 \
             | xargs -r -I{} gh release delete {} --repo "${{ github.repository }}" --yes --cleanup-tag
+
+  ios:
+    name: iPhone (vérification + TestFlight)
+    if: github.event_name != 'pull_request'
+    # Apple exige le SDK iOS 26 (Xcode 26) pour tout envoi sur App Store Connect.
+    runs-on: macos-26
+    timeout-minutes: 60
+    env:
+      P12_B64: ${{ secrets.ARGOS_IOS_CERTIFICATE_P12 }}
+      P12_PASSWORD: ${{ secrets.ARGOS_IOS_CERTIFICATE_PASSWORD }}
+      PROFILE_B64: ${{ secrets.ARGOS_IOS_PROFILE }}
+      ASC_KEY_ID: ${{ secrets.ARGOS_ASC_KEY_ID }}
+      ASC_ISSUER_ID: ${{ secrets.ARGOS_ASC_ISSUER_ID }}
+      ASC_KEY_P8: ${{ secrets.ARGOS_ASC_KEY_P8 }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "9.0.x"
+
+      - name: Secrets Apple présents ?
+        id: gate
+        run: |
+          missing=""
+          for v in P12_B64 P12_PASSWORD PROFILE_B64 ASC_KEY_ID ASC_ISSUER_ID ASC_KEY_P8; do
+            [ -n "${!v}" ] || missing="$missing $v"
+          done
+          if [ -n "$missing" ]; then
+            echo "::notice::iPhone : compilation de vérification seulement (secrets manquants pour TestFlight :$missing)."
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Xcode 26 + workload iOS
+        run: |
+          set -o pipefail
+          dotnet workload install ios 2>&1 | tee workload.log || {
+            grep -v "Rolling back\|Uninstalling\|^\s*$" workload.log | tail -15 | while read -r line; do echo "::error::$line"; done
+            exit 1
+          }
+          XCODE=""
+          for x in $(ls -d /Applications/Xcode_26*.app 2>/dev/null | grep -v -i beta | sort -Vr); do
+            if [ -d "$x/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk" ] && \
+               [ -d "$x/Contents/Developer/Platforms/iPhoneOS.platform" ]; then XCODE="$x"; break; fi
+          done
+          [ -n "$XCODE" ] || { echo "::error::Xcode 26 introuvable sur le runner : $(ls -d /Applications/Xcode*.app | xargs)"; exit 1; }
+          XCODE=$(cd "$XCODE" && pwd -P)
+          sudo xcode-select -s "$XCODE/Contents/Developer"
+          echo "DEVELOPER_DIR=$XCODE/Contents/Developer" >> "$GITHUB_ENV"
+          sudo xcodebuild -license accept || true
+          sudo xcodebuild -runFirstLaunch || true
+          xcrun --kill-cache || true
+          echo "::notice::$(xcodebuild -version | head -1) ($XCODE)"
+
+      - name: Adresse du serveur
+        run: |
+          printf '{\n  "ServerUrl": "%s"\n}\n' "$SERVER_URL" > src/ARGOS.App/client.defaults.json
+
+      - name: Compilation (simulateur, sans signature)
+        run: |
+          set -o pipefail
+          dotnet build src/ARGOS.iOS/ARGOS.iOS.csproj -c Release -f net9.0-ios -r iossimulator-arm64 \
+            -p:ValidateXcodeVersion=false 2>&1 | tee build-ios.log || {
+            grep -E "error [A-Z]+[0-9]+|error:" build-ios.log | sort -u | head -30 | while read -r line; do echo "::error::$line"; done
+            exit 1
+          }
+
+      - name: Certificat et profil de distribution
+        if: steps.gate.outputs.enabled == 'true'
+        run: |
+          set -e
+          KEYCHAIN="$RUNNER_TEMP/argos.keychain-db"
+          KC_PASS=$(uuidgen)
+          printf '%s' "$P12_B64" | base64 -d > "$RUNNER_TEMP/cert.p12"
+          security create-keychain -p "$KC_PASS" "$KEYCHAIN"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN"
+          security unlock-keychain -p "$KC_PASS" "$KEYCHAIN"
+          security import "$RUNNER_TEMP/cert.p12" -P "$P12_PASSWORD" -A -t cert -f pkcs12 -k "$KEYCHAIN" \
+            || { echo "::error::Import du certificat .p12 impossible (mot de passe ou fichier incorrect)."; exit 1; }
+          security set-key-partition-list -S apple-tool:,apple: -k "$KC_PASS" "$KEYCHAIN" >/dev/null
+          security list-keychains -d user -s "$KEYCHAIN" $(security list-keychains -d user | tr -d '"')
+          rm -f "$RUNNER_TEMP/cert.p12"
+          IDENTITY=$(security find-identity -v -p codesigning "$KEYCHAIN" | grep -o '"Apple Distribution[^"]*"' | head -1 | tr -d '"')
+          [ -n "$IDENTITY" ] || { echo "::error::Aucun certificat « Apple Distribution » dans le .p12."; exit 1; }
+          printf '%s' "$PROFILE_B64" | base64 -d > "$RUNNER_TEMP/profile.mobileprovision"
+          security cms -D -i "$RUNNER_TEMP/profile.mobileprovision" > "$RUNNER_TEMP/profile.plist"
+          UUID=$(/usr/libexec/PlistBuddy -c "Print UUID" "$RUNNER_TEMP/profile.plist")
+          NAME=$(/usr/libexec/PlistBuddy -c "Print Name" "$RUNNER_TEMP/profile.plist")
+          APPID=$(/usr/libexec/PlistBuddy -c "Print Entitlements:application-identifier" "$RUNNER_TEMP/profile.plist")
+          case "$APPID" in
+            *.fr.vdms.argos) ;;
+            *) echo "::error::Le profil « $NAME » est pour $APPID, pas pour fr.vdms.argos."; exit 1 ;;
+          esac
+          mkdir -p "$HOME/Library/MobileDevice/Provisioning Profiles"
+          cp "$RUNNER_TEMP/profile.mobileprovision" "$HOME/Library/MobileDevice/Provisioning Profiles/$UUID.mobileprovision"
+          echo "CODESIGN_KEY=$IDENTITY" >> "$GITHUB_ENV"
+          echo "CODESIGN_PROFILE=$NAME" >> "$GITHUB_ENV"
+          echo "::notice::Signature : $IDENTITY — profil « $NAME »"
+
+      - name: Compilation .ipa signée
+        if: steps.gate.outputs.enabled == 'true'
+        run: |
+          set -o pipefail
+          dotnet publish src/ARGOS.iOS/ARGOS.iOS.csproj -c Release -f net9.0-ios -r ios-arm64 \
+            -p:ArchiveOnBuild=false -p:BuildIpa=true \
+            -p:CodesignKey="$CODESIGN_KEY" -p:CodesignProvision="$CODESIGN_PROFILE" \
+            -p:ApplicationVersion=${{ github.run_number }} -p:ValidateXcodeVersion=false \
+            -o artifacts/ios 2>&1 | tee build-ipa.log || {
+            grep -iE "error" build-ipa.log | sort -u | head -30 | while read -r line; do echo "::error::$line"; done
+            exit 1
+          }
+          ipa=$(find artifacts/ios src/ARGOS.iOS/bin -name "*.ipa" | head -1)
+          [ -n "$ipa" ] || { echo "::error::Fichier .ipa introuvable."; exit 1; }
+          echo "IPA=$ipa" >> "$GITHUB_ENV"
+
+      - name: Envoi vers TestFlight
+        if: steps.gate.outputs.enabled == 'true' && github.ref == 'refs/heads/main'
+        run: |
+          set -o pipefail
+          mkdir -p "$HOME/.appstoreconnect/private_keys"
+          printf '%s\n' "$ASC_KEY_P8" > "$HOME/.appstoreconnect/private_keys/AuthKey_$ASC_KEY_ID.p8"
+          xcrun altool --upload-app -f "$IPA" -t ios --apiKey "$ASC_KEY_ID" --apiIssuer "$ASC_ISSUER_ID" --output-format normal 2>&1 | tee upload.log || {
+            grep -iE "error|fail" upload.log | head -20 | while read -r line; do echo "::error::$line"; done
+            exit 1
+          }
+          echo "::notice::Build ${{ github.run_number }} envoyé : il apparaît dans TestFlight après le traitement Apple (10 à 30 min)."
+
+      - name: Nettoyage
+        if: always()
+        run: |
+          security delete-keychain "$RUNNER_TEMP/argos.keychain-db" 2>/dev/null || true
+          rm -rf "$HOME/.appstoreconnect" "$RUNNER_TEMP/profile.mobileprovision" "$RUNNER_TEMP/profile.plist"

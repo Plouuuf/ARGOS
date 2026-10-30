@@ -10,11 +10,10 @@
 	<true/>
 	<key>MinimumOSVersion</key>
 	<string>15.0</string>
-	<!-- 1 = iPhone, 2 = iPad -->
+	<!-- iPhone uniquement (sur iPad, l'app iPhone s'ouvre aussi ; pas de captures iPad exigées par l'App Store). -->
 	<key>UIDeviceFamily</key>
 	<array>
 		<integer>1</integer>
-		<integer>2</integer>
 	</array>
 	<key>UIRequiredDeviceCapabilities</key>
 	<array>
