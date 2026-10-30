@@ -658,7 +658,8 @@ public static class Program
             return printer.ImagePath(id) is { } path ? Results.File(path, "image/png") : Results.NotFound();
         });
 
-        print.MapPost("/submit", async (PrintDocumentRequest request, HttpContext context, DiscordOAuthService oauth, PrinterService printer) =>
+        print.MapPost("/submit", async (PrintDocumentRequest request, HttpContext context, DiscordOAuthService oauth, PrinterService printer,
+            SigtaoService sigtaoService, DiscordWebhookService webhooks) =>
         {
             var user = await AuthenticateAsync(context, oauth);
             if (user is null) return Results.Unauthorized();
@@ -670,6 +671,13 @@ public static class Program
                 Kind = string.IsNullOrWhiteSpace(request.Kind) ? "Document" : request.Kind.Trim(),
                 Title = string.IsNullOrWhiteSpace(request.Title) ? "Document" : request.Title.Trim()
             }, png);
+            // Feuille de garde : publication sur le salon Discord des gardes.
+            if (!string.IsNullOrWhiteSpace(request.GardeId) && sigtaoService.Garde(request.GardeId) is { } garde)
+            {
+                if (!webhooks.GardeEnabled) return Results.Ok(new OdeResult(true, null, PrintDiscord.Disabled));
+                var sent = await webhooks.SendGardeAsync(garde, user.DisplayName, png);
+                return Results.Ok(new OdeResult(true, null, sent ? PrintDiscord.Sent : PrintDiscord.Failed));
+            }
             return Results.Ok(new OdeResult(true, null, job.Id));
         }).WithMetadata(new Microsoft.AspNetCore.Mvc.RequestSizeLimitAttribute(20L * 1024 * 1024));
 

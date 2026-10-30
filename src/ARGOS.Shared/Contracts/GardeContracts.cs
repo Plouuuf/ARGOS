@@ -127,4 +127,6 @@ public sealed class PrintDocumentRequest
     public string Kind { get; set; } = "Document";
     public string Title { get; set; } = string.Empty;
     public string? ImagePng { get; set; }
+    /// <summary>Feuille de garde imprimée : publiée aussi sur le salon Discord des gardes (si configuré).</summary>
+    public string? GardeId { get; set; }
 }

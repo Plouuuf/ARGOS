@@ -86,15 +86,22 @@ public sealed class GardePrintViewModel : ViewModelBase
             {
                 Kind = "Feuille de garde",
                 Title = $"Feuille de garde {Centre} du {DateShort}",
-                ImagePng = image
+                ImagePng = image,
+                GardeId = _feuille.Id
             });
             if (!result.Ok)
             {
                 Status = result.Error ?? "Impression impossible.";
                 return;
             }
-            Status = $"Envoyé à l'imprimante du CS à {DateTime.Now:HH:mm:ss} (copie dans Mes documents › Impressions).";
-            _desktop.ShowNotification("Imprimante", $"Feuille de garde {Centre} du {DateShort} imprimée.");
+            var discord = result.Id switch
+            {
+                PrintDiscord.Sent => " Publiée sur le salon Discord des gardes.",
+                PrintDiscord.Failed => " Échec de la publication sur Discord.",
+                _ => string.Empty
+            };
+            Status = $"Envoyé à l'imprimante du CS à {DateTime.Now:HH:mm:ss} (copie dans Mes documents › Impressions).{discord}";
+            _desktop.ShowNotification("Imprimante", $"Feuille de garde {Centre} du {DateShort} imprimée.{discord}");
             _ = session.Printer.RefreshAsync();
         }
         finally
