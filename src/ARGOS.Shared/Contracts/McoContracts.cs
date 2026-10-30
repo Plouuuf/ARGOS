@@ -202,6 +202,8 @@ public static class McoPrefill
         }.Where(t => !string.IsNullOrWhiteSpace(t.Item2)).Select(t => $"{t.Item1} {t.Item2}");
         var timeLine = string.Join(" · ", times);
         if (timeLine.Length > 0) lines.Add("Horaires : " + timeLine);
+        foreach (var e in r.Events.Where(e => !string.IsNullOrWhiteSpace(e.Text)).OrderBy(e => e.Time, StringComparer.Ordinal))
+            lines.Add($"  {e.Time} {e.Text.Trim()}");
 
         lines.Add(string.Empty);
         Add("Situation à l'arrivée", r.SituationArrivee);
