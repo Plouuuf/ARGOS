@@ -396,3 +396,88 @@ public class EfibiScreenshots
         Assert.Equal(3, vm.Sections.Count);
     }
 }
+
+/// <summary>Captures ILIAS (contenu fictif).</summary>
+public class IliasScreenshots
+{
+    private static readonly string Folder = Environment.GetEnvironmentVariable("ARGOS_SCREENSHOTS")
+                                            ?? Path.Combine(Path.GetTempPath(), "argos-screenshots");
+
+    private static void Capture(Control content, double width, double height, string name)
+    {
+        Directory.CreateDirectory(Folder);
+        var window = new Window { Width = width, Height = height, Content = content };
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+        window.CaptureRenderedFrame()!.Save(Path.Combine(Folder, name + ".png"));
+        window.Close();
+    }
+
+    [AvaloniaFact]
+    public void Application_ILIAS()
+    {
+        var user = new ArgosUserDto("1", "Santos", null, [AccessLevels.Sapeur, AccessLevels.RhAdmin]);
+        var previous = Argos.Services.ArgosSession.Current;
+        Argos.Services.ArgosSession.Current = new Argos.Services.ArgosSession(user, "test");
+        try
+        {
+            var now = DateTimeOffset.Now;
+            var quiz = new IliasQuiz
+            {
+                Id = "q1", Title = "Prise d'appel 18 - procédures ADAGIO", Description = "Évaluation finale.", TimeLimitMinutes = 10, PassPercent = 75,
+                Questions =
+                [
+                    new() { Text = "Quelle touche classe un appel pour « INU » ?", Options = ["F1", "F5", "F9"], Correct = 1 },
+                    new() { Text = "Quelle procédure correspond à F3 ?", Options = ["Blanche", "Orange", "Rouge"], Correct = 2 }
+                ]
+            };
+            Argos.Services.ArgosSession.Current.Ilias.Apply(new IliasSnapshot
+            {
+                CanAdmin = true,
+                ServerTime = now,
+                Categories =
+                [
+                    new() { Id = "reg", Name = "Documents réglementaires", Description = "Notes de service et règlements." },
+                    new() { Id = "ope", Name = "Opérationnel", Description = "Doctrines et fiches réflexes.", Order = 1 },
+                    new() { Id = "suap", ParentId = "ope", Name = "Secours à victimes", Description = "Référentiels SUAP.", Order = 2 }
+                ],
+                Documents =
+                [
+                    new() { Id = "d1", CategoryId = "suap", Title = "Référentiel bilan SUAP", Description = "Conduite du bilan d'une victime.",
+                        FileName = "bilan.pdf", Size = 812_000, Version = 3, PublishedAt = now.AddMonths(-3), UpdatedAt = now.AddDays(-2) },
+                    new() { Id = "d2", CategoryId = "reg", Title = "Règlement intérieur de la compagnie", FileName = "ri.pdf", Size = 240_000,
+                        PublishedAt = now.AddMonths(-6), UpdatedAt = now.AddMonths(-1) }
+                ],
+                Formations =
+                [
+                    new() { Id = "f1", Title = "Prise d'appel au CTA", Description = "Traiter un appel 18 avec ADAGIO.", Objectives = "Traiter un appel de bout en bout.",
+                        Prerequisites = "Accès ADAGIO ODE.", QuizId = "q1",
+                        Modules = [new() { Id = "m1", Title = "La prise d'appel", Content = "Décrocher, se présenter, recueillir le numéro." },
+                                   new() { Id = "m2", Title = "Localiser l'événement", Content = "Saisir la voie, le numéro, confirmer.", DocumentId = "d1" }] }
+                ],
+                Quizzes = [quiz],
+                MyProgress = [new() { Id = "1:f1", UserId = "1", FormationId = "f1", CompletedModules = ["m1"], StartedAt = now.AddDays(-1), UpdatedAt = now }],
+                MyResults = [new() { Id = "r1", UserId = "1", QuizId = "q1", QuizTitle = quiz.Title, Score = 2, Total = 2, Passed = true, At = now.AddDays(-1) }],
+                RecentDocuments = ["d1"]
+            });
+            var desktop = new DesktopViewModel(user, null, () => { }, () => { });
+            var vm = new Argos.ViewModels.Ilias.IliasAppViewModel(desktop);
+            Capture(new Argos.Views.Apps.Ilias.IliasAppView { DataContext = vm }, 1280, 800, "ilias-accueil");
+            vm.CurrentPage = Argos.ViewModels.Ilias.IliasAppViewModel.Page.Bibliotheque;
+            Assert.Equal(2, vm.Documents.Count);
+            Capture(new Argos.Views.Apps.Ilias.IliasAppView { DataContext = vm }, 1280, 700, "ilias-bibliotheque");
+            vm.CurrentPage = Argos.ViewModels.Ilias.IliasAppViewModel.Page.Suivi;
+            Capture(new Argos.Views.Apps.Ilias.IliasAppView { DataContext = vm }, 1280, 700, "ilias-suivi");
+            vm.CurrentPage = Argos.ViewModels.Ilias.IliasAppViewModel.Page.Administration;
+            Capture(new Argos.Views.Apps.Ilias.IliasAppView { DataContext = vm }, 1280, 1500, "ilias-administration");
+            Capture(new Argos.Views.Apps.Ilias.FormationView { DataContext = new Argos.ViewModels.Ilias.FormationViewModel(desktop, "f1", null) },
+                900, 760, "ilias-formation");
+            Capture(new Argos.Views.Apps.Ilias.QuizView { DataContext = new Argos.ViewModels.Ilias.QuizRunViewModel(desktop, "q1", "k") },
+                860, 640, "ilias-questionnaire");
+        }
+        finally
+        {
+            Argos.Services.ArgosSession.Current = previous;
+        }
+    }
+}

@@ -1,0 +1,34 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <!-- Charte ILIAS (thème « Delos ») : barre ardoise, tuiles blanches, liens bleus. -->
+    <Style Selector=".ilias TextBlock.h1"><Setter Property="FontSize" Value="21"/><Setter Property="FontWeight" Value="Light"/><Setter Property="Margin" Value="0,0,0,12"/></Style>
+    <Style Selector=".ilias TextBlock.h2"><Setter Property="FontSize" Value="14.5"/><Setter Property="FontWeight" Value="SemiBold"/><Setter Property="Foreground" Value="#4C6586"/><Setter Property="Margin" Value="0,6,0,8"/></Style>
+    <Style Selector=".ilias TextBlock.muted"><Setter Property="FontSize" Value="12"/><Setter Property="Foreground" Value="#6F6F6F"/><Setter Property="TextWrapping" Value="Wrap"/></Style>
+    <Style Selector=".ilias TextBlock.lbl"><Setter Property="FontSize" Value="11.5"/><Setter Property="FontWeight" Value="SemiBold"/><Setter Property="Foreground" Value="#4C6586"/><Setter Property="Margin" Value="0,6,0,3"/></Style>
+    <Style Selector=".ilias Border.card"><Setter Property="Background" Value="White"/><Setter Property="BorderBrush" Value="#DDDDDD"/><Setter Property="BorderThickness" Value="1"/><Setter Property="Padding" Value="14,12"/><Setter Property="Margin" Value="0,0,12,12"/></Style>
+    <Style Selector=".ilias Button.nav">
+            <Setter Property="Background" Value="Transparent"/><Setter Property="Foreground" Value="#D8E0E8"/><Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="CornerRadius" Value="0"/><Setter Property="Padding" Value="16,11"/><Setter Property="HorizontalAlignment" Value="Stretch"/>
+            <Setter Property="HorizontalContentAlignment" Value="Left"/><Setter Property="FontSize" Value="13"/><Setter Property="Cursor" Value="Hand"/>
+        </Style>
+    <Style Selector=".ilias Button.nav:pointerover /template/ ContentPresenter#PART_ContentPresenter"><Setter Property="Background" Value="#3B536B"/><Setter Property="Foreground" Value="White"/></Style>
+    <Style Selector=".ilias Button.nav.selected"><Setter Property="Background" Value="#F0F2F5"/><Setter Property="Foreground" Value="#161616"/><Setter Property="FontWeight" Value="SemiBold"/></Style>
+    <Style Selector=".ilias Button.nav.selected:pointerover /template/ ContentPresenter#PART_ContentPresenter"><Setter Property="Background" Value="#F0F2F5"/><Setter Property="Foreground" Value="#161616"/></Style>
+    <Style Selector=".ilias Button.il">
+            <Setter Property="Background" Value="#4C6586"/><Setter Property="Foreground" Value="White"/><Setter Property="CornerRadius" Value="2"/>
+            <Setter Property="Padding" Value="12,5"/><Setter Property="FontSize" Value="12.5"/><Setter Property="Cursor" Value="Hand"/>
+        </Style>
+    <Style Selector=".ilias Button.il:pointerover /template/ ContentPresenter#PART_ContentPresenter"><Setter Property="Background" Value="#3A5068"/><Setter Property="Foreground" Value="White"/></Style>
+    <Style Selector=".ilias Button.il.light"><Setter Property="Background" Value="White"/><Setter Property="Foreground" Value="#4C6586"/><Setter Property="BorderBrush" Value="#4C6586"/><Setter Property="BorderThickness" Value="1"/></Style>
+    <Style Selector=".ilias Button.il.light:pointerover /template/ ContentPresenter#PART_ContentPresenter"><Setter Property="Background" Value="#EEF2F7"/><Setter Property="Foreground" Value="#4C6586"/></Style>
+    <Style Selector=".ilias Button.link">
+            <Setter Property="Background" Value="Transparent"/><Setter Property="Foreground" Value="#2E6CA4"/><Setter Property="Padding" Value="0"/>
+            <Setter Property="BorderThickness" Value="0"/><Setter Property="Cursor" Value="Hand"/><Setter Property="FontSize" Value="13.5"/><Setter Property="FontWeight" Value="SemiBold"/>
+        </Style>
+    <Style Selector=".ilias Button.link:pointerover /template/ ContentPresenter#PART_ContentPresenter"><Setter Property="Background" Value="Transparent"/><Setter Property="Foreground" Value="#1B4E7E"/></Style>
+    <Style Selector=".ilias TextBox.il"><Setter Property="Background" Value="White"/><Setter Property="BorderBrush" Value="#C4C4C4"/><Setter Property="CornerRadius" Value="2"/><Setter Property="FontSize" Value="13"/><Setter Property="MinHeight" Value="30"/></Style>
+    <Style Selector=".ilias ComboBox.il"><Setter Property="Background" Value="White"/><Setter Property="BorderBrush" Value="#C4C4C4"/><Setter Property="CornerRadius" Value="2"/><Setter Property="FontSize" Value="13"/><Setter Property="MinHeight" Value="30"/><Setter Property="HorizontalAlignment" Value="Stretch"/></Style>
+    <Style Selector=".ilias RadioButton.ans"><Setter Property="FontSize" Value="13"/><Setter Property="Margin" Value="0,2"/></Style>
+    <Style Selector=".ilias Border.ok"><Setter Property="Background" Value="#E3F1E3"/><Setter Property="BorderBrush" Value="#2E7D32"/></Style>
+    <Style Selector=".ilias Border.ko"><Setter Property="Background" Value="#F8E1E1"/><Setter Property="BorderBrush" Value="#C62828"/></Style>
+</Styles>

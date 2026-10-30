@@ -2,11 +2,13 @@ using Argos.Shared.Contracts;
 using Argos.ViewModels;
 using Argos.ViewModels.Ode;
 using Argos.ViewModels.Efibi;
+using Argos.ViewModels.Ilias;
 using Argos.ViewModels.Mco;
 using Argos.ViewModels.Remise;
 using Argos.ViewModels.Sigtao;
 using Argos.Views.Apps.Ode;
 using Argos.Views.Apps.Efibi;
+using Argos.Views.Apps.Ilias;
 using Argos.Views.Apps.Mco;
 using Argos.Views.Apps.Remise;
 using Argos.Views.Apps.Sigtao;
@@ -24,6 +26,7 @@ public static class AppContentFactory
     {
         ArgosApps.AdagioOde => new OdeAppView { DataContext = new OdeAppViewModel(desktop) },
         ArgosApps.Efibi => new EfibiAppView { DataContext = new EfibiAppViewModel(desktop) },
+        ArgosApps.Ilias => new IliasAppView { DataContext = new IliasAppViewModel(desktop) },
         ArgosApps.Sigtao => new SigtaoAppView { DataContext = new SigtaoAppViewModel(desktop) },
         ArgosApps.Mco => new McoAppView { DataContext = new McoAppViewModel(desktop) },
         ArgosApps.AdagioRemise => new RemiseAppView { DataContext = new RemiseAppViewModel(desktop) },

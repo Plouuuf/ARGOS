@@ -14,6 +14,7 @@ public sealed class ArgosSession
         Remise = new RemiseStore(Api);
         Mco = new McoStore(Api);
         Sigtao = new SigtaoStore(Api);
+        Ilias = new IliasStore(Api);
     }
 
     /// <summary>Session courante (null sur l'écran de verrouillage et de connexion).</summary>
@@ -26,6 +27,7 @@ public sealed class ArgosSession
     public RemiseStore Remise { get; }
     public McoStore Mco { get; }
     public SigtaoStore Sigtao { get; }
+    public IliasStore Ilias { get; }
 
     /// <summary>Nom d'opérateur affiché dans ADAGIO (en majuscules).</summary>
     public string OperatorName => User.DisplayName.Trim().ToUpperInvariant();

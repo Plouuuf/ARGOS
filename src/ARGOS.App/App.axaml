@@ -8,6 +8,7 @@
         <StyleInclude Source="avares://ARGOS.App/Styles/Windows10.axaml" />
         <StyleInclude Source="avares://ARGOS.App/Styles/Adagio.axaml" />
         <StyleInclude Source="avares://ARGOS.App/Styles/Sigtao.axaml" />
+        <StyleInclude Source="avares://ARGOS.App/Styles/Ilias.axaml" />
     </Application.Styles>
 
     <Application.Resources>

@@ -10,7 +10,7 @@ namespace Argos.Services;
 public sealed class ApiClient(string token)
 {
     public static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web) { PropertyNameCaseInsensitive = true };
-    private readonly HttpClient _http = new() { Timeout = TimeSpan.FromSeconds(20) };
+    private readonly HttpClient _http = new() { Timeout = TimeSpan.FromSeconds(120) };
 
     private HttpRequestMessage Request(HttpMethod method, string path, object? body = null)
     {
@@ -27,6 +27,14 @@ public sealed class ApiClient(string token)
         await EnsureSuccessAsync(response, ct);
         return await response.Content.ReadFromJsonAsync<T>(JsonOptions, ct)
                ?? throw new InvalidDataException("Réponse vide du serveur ARGOS.");
+    }
+
+    /// <summary>Contenu binaire (document ILIAS, pièce jointe).</summary>
+    public async Task<byte[]> GetBytesAsync(string path, CancellationToken ct = default)
+    {
+        using var response = await _http.SendAsync(Request(HttpMethod.Get, path), ct);
+        await EnsureSuccessAsync(response, ct);
+        return await response.Content.ReadAsByteArrayAsync(ct);
     }
 
     public async Task<T> PostAsync<T>(string path, object? body = null, CancellationToken ct = default)

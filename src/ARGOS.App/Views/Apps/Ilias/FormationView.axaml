@@ -1,0 +1,66 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="Argos.Views.Apps.Ilias.FormationView"
+             Classes="ilias" Background="#F0F2F5"
+             FontFamily="Segoe UI, Helvetica Neue, Arial, Liberation Sans" Foreground="#161616">
+    <DockPanel>
+        <Border DockPanel.Dock="Top" Background="#2D4053" Padding="20,14">
+            <StackPanel Spacing="6">
+                <TextBlock Text="FORMATION" Foreground="#AFC0D0" FontSize="10.5" FontWeight="Bold"/>
+                <TextBlock Text="{Binding Title}" Foreground="White" FontSize="19" FontWeight="SemiBold" TextWrapping="Wrap"/>
+                <Grid ColumnDefinitions="*,Auto" Margin="0,4,0,0">
+                    <ProgressBar Minimum="0" Maximum="1" Value="{Binding Progress}" Height="8" Foreground="#8FB3D9" Background="#3B536B"/>
+                    <TextBlock Grid.Column="1" Foreground="White" FontSize="12" Margin="12,0,0,0">
+                        <Run Text="{Binding State}" FontWeight="SemiBold"/><Run Text=" · "/><Run Text="{Binding ProgressLabel}"/>
+                    </TextBlock>
+                </Grid>
+            </StackPanel>
+        </Border>
+        <ScrollViewer>
+            <StackPanel Margin="20,16">
+                <TextBlock Classes="muted" Text="{Binding Description}" FontSize="13" Margin="0,0,0,12"/>
+                <Grid ColumnDefinitions="*,*">
+                    <Border Classes="card">
+                        <StackPanel>
+                            <TextBlock Classes="h2" Text="Objectifs" Margin="0,0,0,6"/>
+                            <TextBlock Text="{Binding Objectives}" FontSize="13" TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Grid.Column="1" Classes="card" Margin="0,0,0,12">
+                        <StackPanel>
+                            <TextBlock Classes="h2" Text="Prérequis" Margin="0,0,0,6"/>
+                            <TextBlock Text="{Binding Prerequisites}" FontSize="13" TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+                <TextBlock Classes="h2" Text="Modules"/>
+                <ItemsControl ItemsSource="{Binding Modules}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border Classes="card" Margin="0,0,0,10">
+                                <StackPanel Spacing="8">
+                                    <Grid ColumnDefinitions="*,Auto">
+                                        <TextBlock Text="{Binding Title}" FontSize="14" FontWeight="SemiBold" TextWrapping="Wrap"/>
+                                        <CheckBox Grid.Column="1" Content="Module terminé" IsChecked="{Binding Done}"/>
+                                    </Grid>
+                                    <TextBlock Text="{Binding Content}" FontSize="13" TextWrapping="Wrap"/>
+                                    <Button Classes="il light" Content="Ouvrir le document du module" Command="{Binding OpenDocumentCommand}"
+                                            IsVisible="{Binding HasDocument}" HorizontalAlignment="Left"/>
+                                </StackPanel>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+                <Border Classes="card" Margin="0,4,0,0" IsVisible="{Binding HasQuiz}">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <StackPanel>
+                            <TextBlock Classes="h2" Text="Évaluation finale" Margin="0,0,0,4"/>
+                            <TextBlock Text="{Binding QuizTitle}" FontSize="13"/>
+                        </StackPanel>
+                        <Button Grid.Column="1" Classes="il" Content="Passer l'évaluation" Command="{Binding StartQuizCommand}" VerticalAlignment="Center"/>
+                    </Grid>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+    </DockPanel>
+</UserControl>
