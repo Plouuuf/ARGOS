@@ -170,7 +170,7 @@
                                     <TextBlock Text="J'ai l'honneur de vous rendre compte des faits suivants," FontSize="12" Margin="200,4,0,4"
                                                HorizontalAlignment="Left"/>
                                     <TextBlock Name="BodyPreview" FontSize="12" LineHeight="18" TextWrapping="Wrap" Foreground="Black"
-                                               FontFamily="Arial, Helvetica, Liberation Sans" HorizontalAlignment="Stretch" TextAlignment="Justify"/>
+                                               FontFamily="Arial, Helvetica, Liberation Sans" HorizontalAlignment="Stretch" TextAlignment="Left"/>
                                     <TextBlock FontSize="12" HorizontalAlignment="Right" TextAlignment="Right" Margin="0,24,20,0">
                                         <Run Text="{Binding Report.AuthorGrade}"/><Run Text=" "/><Run Text="{Binding Report.AuthorNom}"/>
                                         <Run Text=" "/><Run Text="{Binding Report.AuthorPrenom}"/>
