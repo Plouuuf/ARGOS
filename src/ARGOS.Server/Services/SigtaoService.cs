@@ -484,10 +484,12 @@ public sealed class SigtaoService(OdeDatabase db, RealtimeHub hub)
             foreach (var a in feuille.Reserve) { if (a.Poste.Length == 0) a.Poste = "Réserve"; Fix(a); }
             if (error is not null) return new(false, error);
 
-            var doubles = feuille.Affectations().GroupBy(a => a.Affectation.MilitaryId).Where(g => g.Count() > 1)
-                .Select(g => g.First().Affectation.Nom).ToList();
+            // RP : un même militaire peut armer plusieurs engins, mais pas deux postes sur le même engin.
+            var doubles = feuille.Engins.SelectMany(e => e.Postes.Where(p => p.Pourvu).GroupBy(p => p.MilitaryId).Where(g => g.Count() > 1)
+                .Select(g => $"{g.First().Nom} ({e.Engin})")).ToList();
             if (doubles.Count > 0)
-                return new(false, $"Affecté(s) à plusieurs postes : {string.Join(", ", doubles)}.");
+                return new(false, $"Deux postes sur le même engin : {string.Join(", ", doubles)}.");
+            feuille.Reserve = feuille.Reserve.GroupBy(r => r.MilitaryId).Select(g => g.First()).ToList();
 
             feuille.Id = FeuilleGarde.BuildId(feuille.Date, feuille.Centre);
             var ids = feuille.Affectations().Select(a => a.Affectation.MilitaryId).ToHashSet();
@@ -531,7 +533,7 @@ public sealed class SigtaoService(OdeDatabase db, RealtimeHub hub)
 
     /// <summary>
     /// Inscription personnelle sur une garde, dans son centre ou en renfort dans un autre : poste libre uniquement,
-    /// jamais dans deux centres le même jour. La feuille déjà validée le reste ; l'encadrement revalide pour réarmer.
+    /// jamais dans deux centres le même jour. On peut tenir des postes sur plusieurs engins (RP), un seul par engin. La feuille déjà validée le reste ; l'encadrement revalide pour réarmer.
     /// </summary>
     public async Task<OdeResult> SelfAssignAsync(ArgosUserDto user, SelfGardeRequest request)
     {
@@ -609,7 +611,18 @@ public sealed class SigtaoService(OdeDatabase db, RealtimeHub hub)
                     if (slot is null) return new(false, $"Poste « {poste} » inconnu.");
                 }
                 if (slot.Pourvu && slot.MilitaryId != me.Id) return new(false, $"Poste déjà tenu par {slot.Nom}.");
-                Clear();
+                if (!string.IsNullOrWhiteSpace(request.Engin))
+                {
+                    // Un seul poste par engin : on quitte l'éventuel autre poste du même engin.
+                    var engin = feuille.Engins.First(e => e.Postes.Contains(slot));
+                    foreach (var other in engin.Postes.Where(p => p.MilitaryId == me.Id && !ReferenceEquals(p, slot)))
+                    {
+                        other.MilitaryId = string.Empty;
+                        other.Nom = string.Empty;
+                    }
+                }
+                else if (poste == "Renfort" && feuille.Reserve.Any(r => r.MilitaryId == me.Id))
+                    return new(false, "Tu es déjà inscrit en renfort sur cette garde.");
                 slot.MilitaryId = me.Id;
                 slot.Nom = name;
                 if (slot.Poste == "Renfort" && !feuille.Reserve.Contains(slot)) feuille.Reserve.Add(slot);

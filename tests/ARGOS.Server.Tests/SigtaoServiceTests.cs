@@ -126,7 +126,9 @@ public sealed class SigtaoServiceTests : IDisposable
         };
 
         Assert.False((await _sigtao.SaveGardeAsync(Autre, Feuille(ids[0], ids[1]), true)).Ok);         // simple sapeur
-        Assert.False((await _sigtao.SaveGardeAsync(Chef, Feuille(ids[0], ids[0]), true)).Ok);          // deux postes
+        var deuxPostes = Feuille(ids[0], ids[1]);
+        deuxPostes.Engins[0].Postes.Add(new GardeAffectation { Poste = "Conducteur", MilitaryId = ids[0] });
+        Assert.False((await _sigtao.SaveGardeAsync(Chef, deuxPostes, true)).Ok);                       // deux postes sur le même engin
         var ok = await _sigtao.SaveGardeAsync(Chef, Feuille(ids[0], ids[1]), true);
         Assert.True(ok.Ok, ok.Error);
         var saved = _sigtao.Garde(ok.Id!)!;
@@ -162,8 +164,11 @@ public sealed class SigtaoServiceTests : IDisposable
         // Pas deux centres le même jour ; changement de poste dans le même centre autorisé.
         Assert.False((await _sigtao.SelfAssignAsync(Autre, new SelfGardeRequest { Date = date, Centre = "CRET" })).Ok);
         Assert.True((await _sigtao.SelfAssignAsync(Autre, new SelfGardeRequest { Date = date, Centre = "MALF", Poste = "Renfort" })).Ok);
+        // RP : le même militaire arme un second engin.
+        Assert.True((await _sigtao.SelfAssignAsync(Autre, new SelfGardeRequest { Date = date, Centre = "MALF", Engin = "EPA 84 MALF", Type = "EPA", Poste = "Conducteur" })).Ok);
         malf = _sigtao.Garde(ok.Id!)!;
         Assert.Single(malf.Reserve);
+        Assert.Equal(2, malf.Engins.Count(e => e.Postes.Any(p => p.Pourvu)));
         Assert.Equal(1, malf.Effectif);
 
         Assert.True((await _sigtao.SelfAssignAsync(Autre, new SelfGardeRequest { Date = date, Centre = "MALF", Retirer = true })).Ok);

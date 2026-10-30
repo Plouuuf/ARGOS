@@ -642,11 +642,17 @@ public sealed partial class SigtaoAppViewModel
                 new RelayCommand(() => OpenGardeDay(day)));
         }));
 
-        // Où est chaque militaire chaque jour : (jour, militaire) → affectation.
-        var map = new Dictionary<(string, string), (GardeAffectation A, string? Engin, FeuilleGarde F)>();
+        // Où est chaque militaire chaque jour : (jour, militaire) → affectations (RP : plusieurs engins possibles).
+        var map = new Dictionary<(string, string), List<(GardeAffectation A, string? Engin, FeuilleGarde F)>>();
         foreach (var g in gardes)
             foreach (var (a, engin) in g.Affectations())
-                map.TryAdd((g.Date, a.MilitaryId), (a, engin, g));
+            {
+                if (!map.TryGetValue((g.Date, a.MilitaryId), out var list)) map[(g.Date, a.MilitaryId)] = list = [];
+                list.Add((a, engin, g));
+            }
+
+        string Indicatif(string? engin, string centre) => engin is null ? string.Empty
+            : Fleet.FirstOrDefault(f => string.Equals(f.Nom, engin, StringComparison.OrdinalIgnoreCase))?.Indicatif ?? engin.Replace(" " + centre, string.Empty);
 
         var rows = new List<PlanningRow>();
         foreach (var m in Snapshot.Military.Where(m => m.Status == MilitaryStatuses.Actif))
@@ -654,15 +660,18 @@ public sealed partial class SigtaoAppViewModel
             var total = 0;
             var cells = keys.Select(k =>
             {
-                if (!map.TryGetValue((k, m.Id), out var hit)) return new PlanningCell(string.Empty, string.Empty, CellEmpty, TextMuted, width);
+                if (!map.TryGetValue((k, m.Id), out var hits)) return new PlanningCell(string.Empty, string.Empty, CellEmpty, TextMuted, width);
                 total++;
-                var shortPoste = GardePostes.Short(hit.A.Poste);
-                var indicatif = hit.Engin is null ? string.Empty : Fleet.FirstOrDefault(f => string.Equals(f.Nom, hit.Engin, StringComparison.OrdinalIgnoreCase))?.Indicatif
-                                                                    ?? hit.Engin.Replace(" " + hit.F.Centre, string.Empty);
-                var text = _planningMonth ? shortPoste : indicatif.Length == 0 ? hit.A.Poste : $"{shortPoste} · {indicatif}";
-                var tip = $"{hit.F.Centre} - {hit.A.Poste}{(indicatif.Length > 0 ? " " + indicatif : string.Empty)}" +
-                          (hit.F.IsValidated ? " (garde validée)" : " (en préparation)");
-                var bg = !hit.F.IsValidated ? CellDraft : hit.Engin is null ? CellService : CellValidated;
+                var parts = hits.Select(h =>
+                {
+                    var indicatif = Indicatif(h.Engin, h.F.Centre);
+                    return (Short: GardePostes.Short(h.A.Poste), Long: indicatif.Length == 0 ? h.A.Poste : $"{GardePostes.Short(h.A.Poste)} · {indicatif}",
+                        Tip: $"{h.F.Centre} - {h.A.Poste}{(indicatif.Length > 0 ? " " + indicatif : string.Empty)}");
+                }).ToList();
+                var text = _planningMonth ? string.Join("+", parts.Select(p => p.Short)) : string.Join(" / ", parts.Select(p => p.Long));
+                var first = hits[0];
+                var tip = string.Join("\n", parts.Select(p => p.Tip)) + (first.F.IsValidated ? "\n(garde validée)" : "\n(en préparation)");
+                var bg = !first.F.IsValidated ? CellDraft : hits.All(h => h.Engin is null) ? CellService : CellValidated;
                 return new PlanningCell(text, tip, bg, TextDark, width);
             }).ToList();
             rows.Add(new PlanningRow($"{m.Nom.ToUpperInvariant()} {m.Prenom}".Trim(), BsppGrades.Short(m.Grade), cells, total));
