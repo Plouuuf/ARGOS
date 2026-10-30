@@ -43,7 +43,7 @@ public sealed class McoServiceTests : IDisposable
         var report = new McoReport();
         McoPrefill.FromIntervention(report, intervention, "VSAV 947 CRET");
         Assert.Equal("VSAV 947 CRET", report.Engin);
-        Assert.Equal(["PSE 212 CRET"], report.OtherEngins);
+        Assert.Equal(new[] { "PSE 212 CRET" }, report.OtherEngins);
         Assert.NotEmpty(report.TimeDepart);
         Assert.NotEmpty(report.TimeArrivee);
 
