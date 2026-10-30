@@ -269,7 +269,7 @@ public class McoScreenshots
             editor = new Argos.ViewModels.Mco.McoEditorViewModel(desktop, "r1", null, null, "test3") { Tab = 5 };
             Capture(new Argos.Views.Apps.Mco.McoEditorView { DataContext = editor }, 1100, 800, "mco-synthese");
             editor = new Argos.ViewModels.Mco.McoEditorViewModel(desktop, "r1", null, null, "test4") { Tab = 6 };
-            Assert.Contains(editor.Checks, c => c.Contains("intervention") is false);
+            Assert.Empty(editor.Checks);
             Capture(new Argos.Views.Apps.Mco.McoEditorView { DataContext = editor }, 1100, 800, "mco-validation");
         }
         finally
