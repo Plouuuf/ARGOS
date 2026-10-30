@@ -244,7 +244,10 @@
             </DockPanel>
 
             <!-- ===== Parc des engins (feuille GDM, statuts en direct) ===== -->
-            <remise:GdmParcView Grid.Row="1" IsVisible="{Binding IsEngins}" DataContext="{Binding Parc}"/>
+            <!-- La visibilité se lit sur le Panel (contexte ODE), la feuille reçoit son propre modèle. -->
+            <Panel Grid.Row="1" IsVisible="{Binding IsEngins}">
+                <remise:GdmParcView DataContext="{Binding Parc}"/>
+            </Panel>
 
             <!-- ===== Statistiques ===== -->
             <ScrollViewer Grid.Row="1" IsVisible="{Binding IsStats}">

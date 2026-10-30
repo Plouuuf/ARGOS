@@ -52,6 +52,13 @@ public sealed class GdmParcViewModel : ViewModelBase, IDisposable
         var remise = ArgosSession.Current?.Remise.Snapshot ?? new RemiseSnapshot();
         var ode = ArgosSession.Current?.Ode.Snapshot ?? new OdeSnapshot();
         var engins = remise.Engins.Where(e => e.Active).ToList();
+        if (engins.Count == 0)
+        {
+            // Serveur sans ADAGIO REMISE (ou pas encore chargé) : parc de départ, complété par l'état ODE.
+            engins = RemiseSeed.Engins(DateTimeOffset.Now)
+                .Where(e => ode.Engins.Count == 0 || ode.Engins.Any(s => string.Equals(s.Nom, e.Nom, StringComparison.OrdinalIgnoreCase)))
+                .ToList();
+        }
 
         var centres = new[] { Tous }.Concat(engins.Select(e => e.Centre).Distinct().OrderBy(RemiseText.CentreRank)).ToList();
         if (!centres.SequenceEqual(Centres))
