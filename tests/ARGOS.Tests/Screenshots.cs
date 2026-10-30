@@ -377,13 +377,15 @@ public class SigtaoScreenshots
                         Id = FeuilleGarde.BuildId(DateTime.Today.ToString("yyyy-MM-dd"), FeuilleGarde.TousCentres), Date = DateTime.Today.ToString("yyyy-MM-dd"), Centre = FeuilleGarde.TousCentres,
                         Statut = GardeStatuts.Validee, ValidatedBy = "Leroy", ValidatedAt = now, UpdatedBy = "Leroy", UpdatedAt = now,
                         Service = [new GardeAffectation { Poste = GardePostes.ChefDeGarde, MilitaryId = "m3", Nom = "CNE LEROY Marc" }],
+                        Consignes = [new GardeConsigne { Titre = "Sport", Texte = "Footing 10h00" }, new GardeConsigne { Titre = "Manœuvre", Texte = "ARI 14h00" }],
                         Engins =
                         [
                             new GardeEngin { Engin = "VSAV 947 CRET", Type = "VSAV", Postes =
                             [
-                                new GardeAffectation { Poste = "Chef d'agrès", MilitaryId = "m1", Nom = "SGT SANTOS Diego" },
-                                new GardeAffectation { Poste = "Conducteur", MilitaryId = "m2", Nom = "CPL MARTIN Paul" },
-                                new GardeAffectation { Poste = "Équipier" }
+                                new GardeAffectation { Poste = "C/A", MilitaryId = "m1", Nom = "SGT SANTOS Diego" },
+                                new GardeAffectation { Poste = "COND", MilitaryId = "m2", Nom = "CPL MARTIN Paul" },
+                                new GardeAffectation { Poste = "EQP" },
+                                new GardeAffectation { Poste = "EQP2" }
                             ] },
                             new GardeEngin { Engin = "PSE 212 CRET", Type = "PSE", Arme = false }
                         ],

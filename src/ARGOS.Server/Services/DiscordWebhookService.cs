@@ -118,15 +118,17 @@ public sealed class DiscordWebhookService(IOptionsMonitor<WebhookOptions> option
             var nonArmes = feuille.Engins.Where(e => !e.Arme).Select(e => e.Engin).ToList();
             var fields = new List<object>
             {
-                new { name = "Chef de garde", value = Or(chef), inline = true },
+                new { name = "Chef de garde incendie", value = Or(chef), inline = true },
                 new { name = "Effectif", value = feuille.Effectif.ToString(), inline = true },
                 new { name = "Horaires", value = Or(feuille.Horaires), inline = true },
                 new { name = "Engins armés", value = Limit(Or(string.Join("\n", armes)), 1024), inline = false }
             };
             if (nonArmes.Count > 0)
                 fields.Add(new { name = "Non armés (indisponibles)", value = Limit(string.Join("\n", nonArmes), 1024), inline = false });
-            if (!string.IsNullOrWhiteSpace(feuille.Observations))
-                fields.Add(new { name = "Observations", value = Limit(feuille.Observations, 1024), inline = false });
+            var consignes = feuille.Consignes.Where(c => !string.IsNullOrWhiteSpace(c.Texte)).Select(c => $"**{c.Titre}** : {c.Texte.Trim()}")
+                .Concat(string.IsNullOrWhiteSpace(feuille.Observations) ? [] : new[] { $"**Autres** : {feuille.Observations.Trim()}" }).ToList();
+            if (consignes.Count > 0)
+                fields.Add(new { name = "Consignes", value = Limit(string.Join("\n", consignes), 1024), inline = false });
 
             var embed = new Dictionary<string, object>
             {

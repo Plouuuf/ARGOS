@@ -112,6 +112,23 @@ public sealed class GardeEnginVm : ViewModelBase
     public GardeEngin ToGardeEngin() => new() { Engin = Engin, Type = Type, Arme = Arme, Postes = Slots.Select(s => s.ToAffectation()).ToList() };
 }
 
+/// <summary>Groupe d'engins de la feuille : SANITAIRE, INCENDIE, DIVERS, COMMANDEMENT.</summary>
+public sealed record GardeGroupVm(string Title, List<GardeEnginVm> Engins);
+
+/// <summary>Consigne du jour (rubrique + texte).</summary>
+public sealed class GardeConsigneVm(string titre, string texte, bool editable, Action changed) : ViewModelBase
+{
+    private string _texte = texte;
+    public string Titre { get; } = titre;
+    public string Label => Titre.ToUpperInvariant() + " :";
+    public bool IsReadOnly { get; } = !editable;
+    public string Texte
+    {
+        get => _texte;
+        set { if (SetProperty(ref _texte, value ?? string.Empty)) changed(); }
+    }
+}
+
 /// <summary>Case du planning de garde.</summary>
 public sealed record PlanningCell(string Text, string Tip, IBrush Background, IBrush Foreground, double Width);
 
@@ -139,6 +156,8 @@ public sealed partial class SigtaoAppViewModel
     public ObservableCollection<PersonnelOption> GardePersonnel { get; } = [];
     public ObservableCollection<GardeSlot> GardeService { get; } = [];
     public ObservableCollection<GardeEnginVm> GardeEngins { get; } = [];
+    public ObservableCollection<GardeGroupVm> GardeGroups { get; } = [];
+    public ObservableCollection<GardeConsigneVm> GardeConsignes { get; } = [];
     public ObservableCollection<GardeSlot> GardeReserve { get; } = [];
 
     public ObservableCollection<string> PlanningCentres { get; } = [];
@@ -417,10 +436,19 @@ public sealed partial class SigtaoAppViewModel
             var slots = e.Postes.Select(a => Slot(a.Poste, a.MilitaryId, editable, e.Engin, e.Type)).ToList();
             return new GardeEnginVm(e.Engin, e.Type, fleet?.Libelle ?? string.Empty, availability, e.Arme, slots, editable, GardeChanged);
         }));
+        Fill(GardeGroups, GardeCategories.All
+            .Select(c => new GardeGroupVm(c, GardeEngins.Where(e => GardeCategories.Of(e.Type) == c).ToList()))
+            .Where(g => g.Engins.Count > 0));
+
+        Fill(GardeConsignes, GardeConsignes_(f, editable));
 
         Fill(GardeReserve, f.Reserve.Select(a => NewReserveSlot(Option(a.MilitaryId))));
         OnPropertyChanged(nameof(HasGardeReserve));
     }
+
+    private IEnumerable<GardeConsigneVm> GardeConsignes_(FeuilleGarde f, bool editable)
+        => Argos.Shared.Contracts.GardeConsignes.All
+            .Select(t => new GardeConsigneVm(t, f.Consignes.FirstOrDefault(c => c.Titre == t)?.Texte ?? string.Empty, editable, GardeChanged));
 
     private GardeSlot Slot(string poste, string? militaryId, bool editable, string? engin, string? type)
     {
@@ -486,6 +514,7 @@ public sealed partial class SigtaoAppViewModel
         Centre = _gardeCentre,
         Horaires = _gardeHoraires,
         Observations = _gardeObservations,
+        Consignes = GardeConsignes.Where(c => c.Texte.Trim().Length > 0).Select(c => new GardeConsigne { Titre = c.Titre, Texte = c.Texte.Trim() }).ToList(),
         Service = GardeService.Select(s => s.ToAffectation()).ToList(),
         Engins = GardeEngins.Select(e => e.ToGardeEngin()).ToList(),
         Reserve = GardeReserve.Where(r => r.Selected.Id.Length > 0).Select(r => r.ToAffectation()).ToList(),

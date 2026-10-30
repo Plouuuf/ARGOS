@@ -12,48 +12,94 @@ public static class GardeStatuts
     public const string Validee = "Validée";
 }
 
-/// <summary>Postes de garde : personnels de service et postes de chaque engin selon son type.</summary>
+/// <summary>
+/// Postes de garde, d'après la feuille du chef de garde VDMS (Google Sheets « FEUILLE DE GARDE DU … ») :
+/// piquets complémentaires et postes de chaque engin selon son type.
+/// </summary>
 public static class GardePostes
 {
-    public const string ChefDeGarde = "Chef de garde";
+    public const string ChefDeGarde = "Chef de garde incendie";
 
+    /// <summary>Piquets complémentaires (personnels de service de la journée).</summary>
     public static readonly IReadOnlyList<string> Service =
-        [ChefDeGarde, "Adjoint au chef de garde", "Stationnaire (standard)", "Planton"];
+    [
+        "Caporal de jour", "Sergent de jour", ChefDeGarde, "Garde remise", "Garde cuisine", "Sous-officier remise",
+        "Stationnaire", "CSO"
+    ];
 
     public static IReadOnlyList<string> For(string? type)
     {
         var t = (type ?? string.Empty).Replace(" ", string.Empty).ToUpperInvariant();
         return t switch
         {
-            "VSAV" or "VSAV2" or "VPS" => ["Chef d'agrès", "Conducteur", "Équipier"],
-            "PSE" or "FPT" or "FPTL" or "PS" or "FPTSR" => ["Chef d'agrès", "Conducteur", "Chef BAT", "Équipier BAT", "Chef BAL", "Équipier BAL"],
-            "AR" => ["Médecin", "Infirmier", "Conducteur"],
-            "VLI" => ["Infirmier", "Conducteur"],
-            "CD" or "CA" or "FA" or "CRAC" => ["Chef d'agrès", "Conducteur", "Équipier"],
-            _ when t.StartsWith("VL", StringComparison.Ordinal) => ["Officier", "Conducteur"],
-            _ => ["Chef d'agrès", "Conducteur"]
+            "VSAV" or "VSAV2" or "VPS" => ["C/A", "COND", "EQP", "EQP2"],
+            "PSE" or "FPT" or "FPTL" or "PS" or "FPTSR" => ["C/A", "COND", "1CE", "1SE", "2CE", "2SE"],
+            "FA" => ["C/A / CGI", "COND", "1CE", "1SE", "2CE", "2SE"],
+            "AR" => ["MED", "INF", "AMB"],
+            "VLI" => ["INF", "AMB"],
+            "CMO" => ["DSM", "COND", "EQP"],
+            "VLROGC" or "VLROGCSPVL" or "SPVL" => ["OGC", "COND"],
+            "VLRDSM" => ["DSM", "COND"],
+            _ => ["C/A", "COND"]
         };
     }
 
-    /// <summary>Abréviation pour le planning : « Chef d'agrès » → « CA ».</summary>
+    /// <summary>Abréviation pour le planning.</summary>
     public static string Short(string poste) => poste switch
     {
-        ChefDeGarde => "CDG",
-        "Adjoint au chef de garde" => "ADJ",
-        "Stationnaire (standard)" => "STA",
-        "Planton" => "PLT",
+        "Caporal de jour" => "CPLJ",
+        "Sergent de jour" => "SGTJ",
+        ChefDeGarde => "CGI",
+        "Garde remise" => "REM",
+        "Garde cuisine" => "CUIS",
+        "Sous-officier remise" => "SOREM",
+        "Stationnaire" => "STA",
+        "C/A / CGI" => "CA/CGI",
+        "C/A" => "CA",
+        "Renfort" => "RENF",
+        // Anciennes feuilles
         "Chef d'agrès" => "CA",
         "Conducteur" => "COND",
-        "Équipier" => "EQ",
-        "Chef BAT" => "CBAT",
-        "Équipier BAT" => "EBAT",
-        "Chef BAL" => "CBAL",
-        "Équipier BAL" => "EBAL",
-        "Officier" => "OFF",
-        "Médecin" => "MED",
-        "Infirmier" => "INF",
-        _ => poste.Length <= 5 ? poste : poste[..5]
+        "Équipier" => "EQP",
+        _ => poste.Length <= 6 ? poste : poste[..6]
     };
+}
+
+/// <summary>Regroupement des engins sur la feuille : SANITAIRE, INCENDIE, DIVERS, COMMANDEMENT.</summary>
+public static class GardeCategories
+{
+    public const string Sanitaire = "SANITAIRE";
+    public const string Incendie = "INCENDIE";
+    public const string Divers = "DIVERS";
+    public const string Commandement = "COMMANDEMENT";
+
+    public static readonly IReadOnlyList<string> All = [Sanitaire, Incendie, Divers, Commandement];
+
+    public static string Of(string? type)
+    {
+        var t = (type ?? string.Empty).Replace(" ", string.Empty).ToUpperInvariant();
+        return t switch
+        {
+            "VSAV" or "VSAV2" or "VPS" => Sanitaire,
+            "PSE" or "FPT" or "FPTL" or "PS" or "FPTSR" or "FA" or "CA" or "CD" or "EPA" or "EPAN" or "EPSA" or "BEA" => Incendie,
+            "VLROGC" or "VLROGCSPVL" or "SPVL" => Commandement,
+            _ when t.StartsWith("VLR", StringComparison.Ordinal) && !t.Contains("DSM") => Commandement,
+            _ => Divers
+        };
+    }
+}
+
+/// <summary>Rubriques des consignes du jour (la rubrique « Autres » correspond aux observations).</summary>
+public static class GardeConsignes
+{
+    public static readonly IReadOnlyList<string> All = ["Sport", "TIG", "Sergent de jour", "Chef de garde", "Manœuvre"];
+}
+
+/// <summary>Consigne du jour : rubrique + texte libre.</summary>
+public sealed class GardeConsigne
+{
+    public string Titre { get; set; } = string.Empty;
+    public string Texte { get; set; } = string.Empty;
 }
 
 /// <summary>Un poste tenu par un militaire (vide = poste non pourvu).</summary>
@@ -91,7 +137,10 @@ public sealed class FeuilleGarde
     public List<GardeEngin> Engins { get; set; } = [];
     /// <summary>Personnels de garde sans poste attribué (renfort, piquet).</summary>
     public List<GardeAffectation> Reserve { get; set; } = [];
+    /// <summary>Consignes : rubrique « Autres ».</summary>
     public string Observations { get; set; } = string.Empty;
+    /// <summary>Consignes du jour : sport, TIG, sergent de jour, chef de garde, manœuvre.</summary>
+    public List<GardeConsigne> Consignes { get; set; } = [];
     public string Statut { get; set; } = GardeStatuts.Brouillon;
     public string UpdatedBy { get; set; } = string.Empty;
     public DateTimeOffset UpdatedAt { get; set; }

@@ -46,10 +46,60 @@
 
         <ScrollViewer Margin="0,10,0,0">
             <StackPanel Spacing="14">
-                <!-- Personnels de service -->
+                <!-- Engins, par groupe (SANITAIRE, INCENDIE, DIVERS, COMMANDEMENT) -->
+                <ItemsControl ItemsSource="{Binding GardeGroups}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel Spacing="8" Margin="0,0,0,6">
+                                <Border Background="#13294B" CornerRadius="3" Padding="12,5" HorizontalAlignment="Left">
+                                    <TextBlock Text="{Binding Title}" Foreground="White" FontWeight="Bold" FontSize="13"/>
+                                </Border>
+                                <ItemsControl ItemsSource="{Binding Engins}">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Width="330" Margin="0,0,14,14" Background="White" BorderBrush="#D8DEE6" BorderThickness="1" CornerRadius="6" ClipToBounds="True">
+                                            <StackPanel>
+                                                <Border Background="{Binding HeaderBrush}" Padding="12,8">
+                                                    <Grid ColumnDefinitions="*,Auto">
+                                                        <StackPanel>
+                                                            <TextBlock Text="{Binding Engin}" Foreground="White" FontWeight="Bold" FontSize="14"/>
+                                                            <TextBlock Text="{Binding ArmeText}" Foreground="#DDE6F2" FontSize="11.5"/>
+                                                        </StackPanel>
+                                                        <CheckBox Grid.Column="1" IsChecked="{Binding Arme}" IsEnabled="{Binding IsEditable}" Foreground="White"
+                                                                  Content="Armé" VerticalAlignment="Center"/>
+                                                    </Grid>
+                                                </Border>
+                                                <StackPanel Margin="12,8,12,12" Spacing="6">
+                                                    <TextBlock Text="{Binding Libelle}" Classes="muted"/>
+                                                    <Border Background="#FDE7E9" CornerRadius="3" Padding="8,4" IsVisible="{Binding HasAvailabilityWarning}">
+                                                        <TextBlock Text="{Binding Availability, StringFormat='REMISE : {0}'}" FontSize="11.5" Foreground="#A4262C" TextWrapping="Wrap"/>
+                                                    </Border>
+                                                    <ItemsControl ItemsSource="{Binding Slots}" IsVisible="{Binding Arme}">
+                                                        <ItemsControl.ItemTemplate>
+                                                            <DataTemplate>
+                                                                <Grid ColumnDefinitions="96,*,Auto" Margin="0,0,0,5">
+                                                                    <TextBlock Text="{Binding Poste}" FontSize="12" FontWeight="SemiBold" Foreground="#4A5868" VerticalAlignment="Center"
+                                                                               TextTrimming="CharacterEllipsis"/>
+                                                                    <ComboBox Grid.Column="1" Classes="sg" ItemsSource="{Binding Options}" SelectedItem="{Binding Selected}"
+                                                                              HorizontalAlignment="Stretch" IsEnabled="{Binding IsEditable}"/>
+                                                                    <Button Grid.Column="2" Classes="sg light" Content="Moi" Padding="8,3" Margin="4,0,0,0" FontSize="12"
+                                                                            Command="{Binding SelfCommand}" IsVisible="{Binding CanSelf}" ToolTip.Tip="M'inscrire sur ce poste"/>
+                                                                </Grid>
+                                                            </DataTemplate>
+                                                        </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <!-- Piquets complémentaires -->
                 <Border Classes="card">
                     <StackPanel Spacing="8">
-                        <TextBlock Classes="h2" Text="Personnels de service" Margin="0"/>
+                        <TextBlock Classes="h2" Text="Piquets complémentaires" Margin="0"/>
                         <ItemsControl ItemsSource="{Binding GardeService}">
                             <ItemsControl.ItemsPanel>
                                 <ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate>
@@ -70,54 +120,6 @@
                         </ItemsControl>
                     </StackPanel>
                 </Border>
-
-                <!-- Engins -->
-                <TextBlock Classes="h2" Text="Armement des engins" Margin="0"/>
-                <ItemsControl ItemsSource="{Binding GardeEngins}">
-                    <ItemsControl.ItemsPanel>
-                        <ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate>
-                    </ItemsControl.ItemsPanel>
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate>
-                            <Border Width="330" Margin="0,0,14,14" Background="White" BorderBrush="#D8DEE6" BorderThickness="1" CornerRadius="6" ClipToBounds="True">
-                                <StackPanel>
-                                    <Border Background="{Binding HeaderBrush}" Padding="12,8">
-                                        <Grid ColumnDefinitions="*,Auto">
-                                            <StackPanel>
-                                                <TextBlock Text="{Binding Engin}" Foreground="White" FontWeight="Bold" FontSize="14"/>
-                                                <TextBlock Text="{Binding ArmeText}" Foreground="#DDE6F2" FontSize="11.5"/>
-                                            </StackPanel>
-                                            <CheckBox Grid.Column="1" IsChecked="{Binding Arme}" IsEnabled="{Binding IsEditable}" Foreground="White"
-                                                      Content="Armé" VerticalAlignment="Center"/>
-                                        </Grid>
-                                    </Border>
-                                    <StackPanel Margin="12,8,12,12" Spacing="6">
-                                        <TextBlock Text="{Binding Libelle}" Classes="muted"/>
-                                        <Border Background="#FDE7E9" CornerRadius="3" Padding="8,4" IsVisible="{Binding HasAvailabilityWarning}">
-                                            <TextBlock Text="{Binding Availability, StringFormat='REMISE : {0}'}" FontSize="11.5" Foreground="#A4262C" TextWrapping="Wrap"/>
-                                        </Border>
-                                        <ItemsControl ItemsSource="{Binding Slots}" IsVisible="{Binding Arme}">
-                                            <ItemsControl.ItemTemplate>
-                                                <DataTemplate>
-                                                    <Grid ColumnDefinitions="96,*,Auto" Margin="0,0,0,5">
-                                                        <TextBlock Text="{Binding Poste}" FontSize="12" FontWeight="SemiBold" Foreground="#4A5868" VerticalAlignment="Center"
-                                                                   TextTrimming="CharacterEllipsis"/>
-                                                        <ComboBox Grid.Column="1" Classes="sg" ItemsSource="{Binding Options}" SelectedItem="{Binding Selected}"
-                                                                  HorizontalAlignment="Stretch" IsEnabled="{Binding IsEditable}"/>
-                                                        <Button Grid.Column="2" Classes="sg light" Content="Moi" Padding="8,3" Margin="4,0,0,0" FontSize="12"
-                                                                Command="{Binding SelfCommand}" IsVisible="{Binding CanSelf}" ToolTip.Tip="M'inscrire sur ce poste"/>
-                                                    </Grid>
-                                                </DataTemplate>
-                                            </ItemsControl.ItemTemplate>
-                                        </ItemsControl>
-                                        <TextBlock Text="Engin non armé : il passera indisponible dans ADAGIO REMISE à la validation."
-                                                   IsVisible="{Binding !Arme}" FontSize="12" Foreground="#A4262C" TextWrapping="Wrap"/>
-                                    </StackPanel>
-                                </StackPanel>
-                            </Border>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
 
                 <!-- Renforts -->
                 <Border Classes="card">
@@ -147,10 +149,25 @@
                 </Border>
 
                 <Border Classes="card">
-                    <StackPanel Spacing="6">
-                        <TextBlock Classes="h2" Text="Observations" Margin="0"/>
-                        <TextBox Classes="sg" Text="{Binding GardeObservations}" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="70"
-                                 IsReadOnly="{Binding IsGardeReadOnly}" Watermark="Consignes, matériel, absents, permissions…"/>
+                    <StackPanel Spacing="8">
+                        <TextBlock Classes="h2" Text="Consignes" Margin="0"/>
+                        <ItemsControl ItemsSource="{Binding GardeConsignes}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <StackPanel Width="330" Margin="0,0,14,8">
+                                        <TextBlock Classes="label" Text="{Binding Label}"/>
+                                        <TextBox Classes="sg" Text="{Binding Texte}" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="44"
+                                                 IsReadOnly="{Binding IsReadOnly}"/>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <TextBlock Classes="label" Text="AUTRES :"/>
+                        <TextBox Classes="sg" Text="{Binding GardeObservations}" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="60"
+                                 IsReadOnly="{Binding IsGardeReadOnly}" Watermark="Matériel, absents, permissions…"/>
                     </StackPanel>
                 </Border>
             </StackPanel>

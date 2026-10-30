@@ -8,6 +8,8 @@ public sealed record GardePrintLine(string Poste, string Nom);
 
 public sealed record GardePrintEngin(string Titre, string Etat, bool Arme, List<GardePrintLine> Lignes);
 
+public sealed record GardePrintGroup(string Title, List<GardePrintEngin> Engins);
+
 /// <summary>Aperçu avant impression de la feuille de garde, envoyée à l'imprimante virtuelle du centre.</summary>
 public sealed class GardePrintViewModel : ViewModelBase
 {
@@ -33,8 +35,15 @@ public sealed class GardePrintViewModel : ViewModelBase
         Engins = feuille.Engins.Select(e => new GardePrintEngin(
             e.Engin, e.Arme ? $"Armé {e.Postes.Count(p => p.Pourvu)}/{e.Postes.Count}" : "NON ARMÉ", e.Arme,
             e.Postes.Select(p => new GardePrintLine(p.Poste, e.Arme && p.Pourvu ? p.Nom : "—")).ToList())).ToList();
+        var types = feuille.Engins.ToDictionary(e => e.Engin, e => e.Type, StringComparer.OrdinalIgnoreCase);
+        Groups = GardeCategories.All
+            .Select(c => new GardePrintGroup(c, Engins.Where(e => GardeCategories.Of(types.GetValueOrDefault(e.Titre)) == c).ToList()))
+            .Where(g => g.Engins.Count > 0).ToList();
+        Consignes = GardeConsignes.All
+            .Select(t => new GardePrintLine(t.ToUpperInvariant() + " :", feuille.Consignes.FirstOrDefault(c => c.Titre == t)?.Texte is { Length: > 0 } x ? x : "—"))
+            .ToList();
         Reserve = feuille.Reserve.Where(r => r.Pourvu).Select(r => new GardePrintLine(r.Poste, r.Nom)).ToList();
-        Observations = string.IsNullOrWhiteSpace(feuille.Observations) ? "Néant." : feuille.Observations.Trim();
+        Observations = string.IsNullOrWhiteSpace(feuille.Observations) ? "—" : feuille.Observations.Trim();
         Effectif = $"Effectif de garde : {feuille.Effectif}";
         Visa = feuille.IsValidated
             ? $"Validée par {feuille.ValidatedBy} le {feuille.ValidatedAt?.ToLocalTime():dd/MM/yyyy à HH:mm}"
@@ -50,6 +59,8 @@ public sealed class GardePrintViewModel : ViewModelBase
     public string Horaires { get; }
     public List<GardePrintLine> Service { get; }
     public List<GardePrintEngin> Engins { get; }
+    public List<GardePrintGroup> Groups { get; }
+    public List<GardePrintLine> Consignes { get; }
     public List<GardePrintLine> Reserve { get; }
     public bool HasReserve => Reserve.Count > 0;
     public string Observations { get; }
