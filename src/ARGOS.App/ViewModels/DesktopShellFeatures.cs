@@ -50,7 +50,7 @@ public sealed partial class DesktopViewModel
     /// <summary>Fermeture des applications à l'arrêt, au redémarrage et au changement d'utilisateur.</summary>
     public void CloseAllWindows()
     {
-        foreach (var w in Windows.ToList()) Close(w);
+        foreach (var w in Windows.ToList()) Close(w, force: true);
     }
 
     public void OpenSettings(string? page = null)

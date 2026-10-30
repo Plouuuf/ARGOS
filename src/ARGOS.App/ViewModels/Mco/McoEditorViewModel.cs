@@ -45,7 +45,7 @@ public sealed record InterventionChoice(string Id, string Label)
 /// Rédaction d'une MCO : identification, horodatage, engin et personnel, déroulement, bilan, synthèse,
 /// validation. Pré-remplie depuis l'intervention ADAGIO ODE ; figée une fois validée.
 /// </summary>
-public sealed class McoEditorViewModel : ViewModelBase, IDisposable
+public sealed class McoEditorViewModel : ViewModelBase, IDisposable, ICloseGuard
 {
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
 
@@ -69,7 +69,15 @@ public sealed class McoEditorViewModel : ViewModelBase, IDisposable
         SaveCommand = new RelayCommand(() => _ = SaveAsync(), () => IsEditable);
         ValidateCommand = new RelayCommand(() => _ = ValidateAsync(), () => IsEditable && !IsNew);
         ArchiveCommand = new RelayCommand(() => _ = ArchiveAsync(), () => _report.Status == McoStatuses.Validee);
-        CloseCommand = new RelayCommand(() => _desktop.CloseWindow(_key));
+        CloseCommand = new RelayCommand(RequestClose);
+        SaveAndCloseCommand = new RelayCommand(() => _ = SaveAndCloseAsync());
+        DiscardCloseCommand = new RelayCommand(() => { ConfirmClose = false; _desktop.CloseWindow(_key); });
+        CancelCloseCommand = new RelayCommand(() => ConfirmClose = false);
+        SetChefFromSigtaoCommand = new RelayCommand(SetChefFromSigtao, () => IsEditable);
+        AddCrewFromSigtaoCommand = new RelayCommand(AddCrewFromSigtao, () => IsEditable);
+        _autosave = new Avalonia.Threading.DispatcherTimer { Interval = TimeSpan.FromSeconds(60) };
+        _autosave.Tick += (_, _) => _ = AutoSaveAsync();
+        _autosave.Start();
         PrefillCommand = new RelayCommand(Prefill, () => IsEditable);
         GenerateCommand = new RelayCommand(GenerateSynthese, () => IsEditable);
         AddCrewCommand = new RelayCommand(() => AddCrew(new McoPerson { Fonction = "Équipier" }), () => IsEditable);
@@ -82,8 +90,11 @@ public sealed class McoEditorViewModel : ViewModelBase, IDisposable
         {
             session.Ode.Changed += LoadChoices;
             if (!session.Ode.IsLoaded) _ = session.Ode.RefreshAsync();
+            session.Sigtao.Changed += LoadPersonnel;
+            if (!session.Sigtao.IsLoaded) _ = session.Sigtao.RefreshAsync();
         }
         LoadChoices();
+        LoadPersonnel();
 
         var existing = reportId is null ? null : session?.Mco.Find(reportId);
         if (existing is not null)
@@ -290,6 +301,7 @@ public sealed class McoEditorViewModel : ViewModelBase, IDisposable
     private void Load(McoReport report)
     {
         Report = report;
+        _savedJson = JsonSerializer.Serialize(report, Json);
         _natureText = Natures.Find(report.NatureCode)?.Display ?? report.NatureCode;
         _efibiText = string.Join(", ", report.EfibiIds);
         _otherEnginsText = string.Join("\n", report.OtherEngins);
@@ -465,11 +477,109 @@ public sealed class McoEditorViewModel : ViewModelBase, IDisposable
     private static McoReport Clone(McoReport r)
         => JsonSerializer.Deserialize<McoReport>(JsonSerializer.Serialize(r, Json), Json) ?? new McoReport();
 
-    public bool HasUnsavedChanges => _dirty && IsEditable;
+    public bool HasUnsavedChanges => IsEditable && (_dirty || IsModified());
+
+    // ===== Fermeture : ne pas perdre une MCO non enregistrée =====
+
+    private string _savedJson = string.Empty;
+    private bool _confirmClose;
+    private readonly Avalonia.Threading.DispatcherTimer _autosave;
+    public bool ConfirmClose { get => _confirmClose; set => SetProperty(ref _confirmClose, value); }
+    public RelayCommand SaveAndCloseCommand { get; }
+    public RelayCommand DiscardCloseCommand { get; }
+    public RelayCommand CancelCloseCommand { get; }
+
+    private bool IsModified()
+    {
+        Sync();
+        return JsonSerializer.Serialize(_report, Json) != _savedJson;
+    }
+
+    /// <summary>Croix de la fenêtre : propose d'enregistrer le brouillon modifié.</summary>
+    public bool TryClose()
+    {
+        if (!HasUnsavedChanges) return true;
+        ConfirmClose = true;
+        return false;
+    }
+
+    private void RequestClose()
+    {
+        if (HasUnsavedChanges) ConfirmClose = true;
+        else _desktop.CloseWindow(_key);
+    }
+
+    private async Task SaveAndCloseAsync()
+    {
+        ConfirmClose = false;
+        if (await SaveAsync(quiet: true)) _desktop.CloseWindow(_key);
+    }
+
+    /// <summary>Brouillon enregistré automatiquement chaque minute s'il a été modifié.</summary>
+    private async Task AutoSaveAsync()
+    {
+        if (_busy || !HasUnsavedChanges || ConfirmClose) return;
+        if (string.IsNullOrWhiteSpace(_report.InterventionNumber) && string.IsNullOrWhiteSpace(_report.Address)) return;
+        if (await SaveAsync(quiet: true))
+            ShowMessage($"Brouillon enregistré automatiquement à {DateTime.Now:HH:mm}.", false);
+    }
+
+    // ===== Personnel repris de SIGTAO =====
+
+    public sealed record PersonnelChoice(string Grade, string Nom, string Prenom, string Fonction, string Label)
+    {
+        public override string ToString() => Label;
+    }
+
+    public ObservableCollection<PersonnelChoice> PersonnelChoices { get; } = [];
+    private PersonnelChoice? _personnel;
+    public PersonnelChoice? SelectedPersonnel { get => _personnel; set => SetProperty(ref _personnel, value); }
+    public RelayCommand SetChefFromSigtaoCommand { get; }
+    public RelayCommand AddCrewFromSigtaoCommand { get; }
+
+    private void LoadPersonnel()
+    {
+        var records = ArgosSession.Current?.Sigtao.Snapshot.Military ?? [];
+        PersonnelChoices.Clear();
+        foreach (var r in records.Where(r => r.Status == MilitaryStatuses.Actif && !string.IsNullOrWhiteSpace(r.Nom))
+                     .OrderBy(r => BsppGrades.Rank(r.Grade)).ThenBy(r => r.Nom))
+        {
+            var grade = BsppGrades.Short(r.Grade) + r.Echelon;
+            PersonnelChoices.Add(new PersonnelChoice(grade, r.Nom.ToUpperInvariant(), r.Prenom, r.Fonction,
+                $"{grade} {r.Nom.ToUpperInvariant()} {r.Prenom}" + (string.IsNullOrWhiteSpace(r.Fonction) ? "" : $" - {r.Fonction}")));
+        }
+    }
+
+    private void SetChefFromSigtao()
+    {
+        if (SelectedPersonnel is not { } p) return;
+        _report.ChefAgres.Grade = p.Grade;
+        _report.ChefAgres.Nom = p.Nom;
+        _report.ChefAgres.Prenom = p.Prenom;
+        OnPropertyChanged(nameof(Report));
+        var current = Report;
+        Report = new McoReport();
+        Report = current;
+        Touch();
+        OnPropertyChanged(nameof(Effectif));
+        SelectedPersonnel = null;
+    }
+
+    private void AddCrewFromSigtao()
+    {
+        if (SelectedPersonnel is not { } p) return;
+        AddCrew(new McoPerson { Grade = p.Grade, Nom = p.Nom, Prenom = p.Prenom, Fonction = "Équipier" });
+        OnPropertyChanged(nameof(Effectif));
+        SelectedPersonnel = null;
+    }
 
     public void Dispose()
     {
+        _autosave.Stop();
         if (ArgosSession.Current is { } session)
+        {
             session.Ode.Changed -= LoadChoices;
+            session.Sigtao.Changed -= LoadPersonnel;
+        }
     }
 }

@@ -97,7 +97,7 @@ public sealed class SigtaoService(OdeDatabase db, RealtimeHub hub)
                 m.Entries = [];
 
         var reports = db.Docs<CompteRendu>(RemiseTables.CrReports, 2000)
-            .Where(r => rights.ReadAllReports || r.AuthorUserId == user.UserId)
+            .Where(r => r.AuthorUserId == user.UserId || (rights.ReadAllReports && !r.IsDraft))
             .ToList();
 
         return new SigtaoSnapshot
@@ -350,12 +350,24 @@ public sealed class SigtaoService(OdeDatabase db, RealtimeHub hub)
 
     // ===== Comptes-rendus =====
 
+    /// <summary>
+    /// Enregistre un compte-rendu. Brouillon (<see cref="CompteRendu.IsDraft"/>) : enregistrement libre, sans numéro,
+    /// modifiable ensuite par son rédacteur. Sinon : contrôles complets, numéro attribué et compte-rendu figé.
+    /// </summary>
     public async Task<OdeResult> SaveReportAsync(ArgosUserDto user, CompteRendu cr)
     {
-        if (string.IsNullOrWhiteSpace(cr.Objet) || string.IsNullOrWhiteSpace(cr.Body))
-            return new(false, "Objet et texte du compte-rendu obligatoires.");
-        if (string.IsNullOrWhiteSpace(cr.AuthorNom) || string.IsNullOrWhiteSpace(cr.DestNom))
-            return new(false, "Rédacteur et destinataire obligatoires.");
+        if (cr.IsDraft)
+        {
+            if (string.IsNullOrWhiteSpace(cr.Objet) && string.IsNullOrWhiteSpace(cr.Body))
+                return new(false, "Brouillon vide : saisis au moins l'objet ou le texte.");
+        }
+        else
+        {
+            if (string.IsNullOrWhiteSpace(cr.Objet) || string.IsNullOrWhiteSpace(cr.Body))
+                return new(false, "Objet et texte du compte-rendu obligatoires.");
+            if (string.IsNullOrWhiteSpace(cr.AuthorNom) || string.IsNullOrWhiteSpace(cr.DestNom))
+                return new(false, "Rédacteur et destinataire obligatoires.");
+        }
         cr.Attachments = cr.Attachments.Where(a => a.Data.Length > 0).ToList();
         if (cr.Attachments.Sum(a => a.Data.Length) > 8_000_000)
             return new(false, "Pièces jointes trop lourdes (6 Mo au total).");
@@ -364,16 +376,58 @@ public sealed class SigtaoService(OdeDatabase db, RealtimeHub hub)
         try
         {
             var now = DateTimeOffset.UtcNow;
-            cr.Id = Guid.NewGuid().ToString("N");
-            cr.NumDoc = $"{now:yyyy}-{db.NextCounter("cr-" + now.ToString("yyyy")):0000}";
+            if (!string.IsNullOrWhiteSpace(cr.Id))
+            {
+                var existing = db.GetDoc<CompteRendu>(RemiseTables.CrReports, cr.Id);
+                if (existing is null || existing.AuthorUserId != user.UserId)
+                    return new(false, "Brouillon introuvable.");
+                if (!existing.IsDraft)
+                    return new(false, "Ce compte-rendu a déjà été transmis : il n'est plus modifiable.");
+                cr.CreatedAt = existing.CreatedAt;
+            }
+            else
+            {
+                cr.Id = Guid.NewGuid().ToString("N");
+                cr.CreatedAt = now;
+            }
             cr.AuthorUserId = user.UserId;
-            cr.CreatedAt = now;
+            cr.UpdatedAt = now;
             if (cr.Date == default) cr.Date = now;
+
+            if (cr.IsDraft)
+            {
+                cr.NumDoc = string.Empty;
+                db.SaveDoc(RemiseTables.CrReports, cr.Id, now, cr);
+                await NotifyAsync();
+                return new(true, null, cr.Id);
+            }
+
+            cr.NumDoc = $"{now:yyyy}-{db.NextCounter("cr-" + now.ToString("yyyy")):0000}";
+            cr.Date = now;
             if (string.IsNullOrWhiteSpace(cr.Synthese)) cr.Synthese = CrText.Synthese(cr);
             db.SaveDoc(RemiseTables.CrReports, cr.Id, now, cr);
             Journal(user, SigtaoJournal.CompteRendu, "N° " + cr.NumDoc, $"{cr.Objet} - destinataire {cr.DestGrade} {cr.DestNom}");
             await NotifyAsync();
             return new(true, null, cr.Id);
+        }
+        finally
+        {
+            _gate.Release();
+        }
+    }
+
+    /// <summary>Supprime un brouillon (rédacteur seulement ; un compte-rendu transmis ne se supprime pas).</summary>
+    public async Task<OdeResult> DeleteDraftAsync(ArgosUserDto user, string id)
+    {
+        await _gate.WaitAsync();
+        try
+        {
+            var existing = db.GetDoc<CompteRendu>(RemiseTables.CrReports, id);
+            if (existing is null || existing.AuthorUserId != user.UserId || !existing.IsDraft)
+                return new(false, "Brouillon introuvable.");
+            db.DeleteDoc(RemiseTables.CrReports, id);
+            await NotifyAsync();
+            return new(true, null, id);
         }
         finally
         {

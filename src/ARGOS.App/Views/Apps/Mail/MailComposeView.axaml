@@ -82,6 +82,7 @@
                     <Button Classes="cmd" Name="ItalicButton" Content="I" FontStyle="Italic" ToolTip.Tip="Italique"/>
                     <Button Classes="cmd" Name="UnderlineButton" ToolTip.Tip="Souligné"><TextBlock Text="S" TextDecorations="Underline"/></Button>
                     <Button Classes="cmd" Name="ListButton" Content="• Liste" ToolTip.Tip="Liste à puces"/>
+                    <Button Classes="cmd" Name="LinkButton" Content="🔗 Lien" ToolTip.Tip="Insérer un lien : [texte](https://adresse)"/>
                     <ToggleButton Name="PreviewToggle" IsChecked="False" Content="Aperçu" Margin="10,0,0,0" FontSize="12.5" Background="Transparent"/>
                 </StackPanel>
             </StackPanel>

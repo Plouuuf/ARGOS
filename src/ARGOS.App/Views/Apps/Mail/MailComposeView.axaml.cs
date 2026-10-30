@@ -15,6 +15,7 @@ public partial class MailComposeView : UserControl
         ItalicButton.Click += (_, _) => Wrap("*");
         UnderlineButton.Click += (_, _) => Wrap("__");
         ListButton.Click += (_, _) => InsertBullet();
+        LinkButton.Click += (_, _) => InsertLink();
         AttachButton.Click += async (_, _) => await AttachAsync();
         PreviewToggle.IsCheckedChanged += (_, _) => MailText.Render(Preview, BodyBox.Text);
     }
@@ -28,6 +29,21 @@ public partial class MailComposeView : UserControl
         BodyBox.Focus();
         BodyBox.SelectionStart = start + marker.Length;
         BodyBox.SelectionEnd = end + marker.Length;
+    }
+
+    /// <summary>Insère [texte sélectionné](https://) et place le curseur sur l'adresse à compléter.</summary>
+    private void InsertLink()
+    {
+        var text = BodyBox.Text ?? string.Empty;
+        var start = Math.Clamp(Math.Min(BodyBox.SelectionStart, BodyBox.SelectionEnd), 0, text.Length);
+        var end = Math.Clamp(Math.Max(BodyBox.SelectionStart, BodyBox.SelectionEnd), 0, text.Length);
+        var label = end > start ? text[start..end] : "texte du lien";
+        var inserted = $"[{label}](https://)";
+        BodyBox.Text = text[..start] + inserted + text[end..];
+        BodyBox.Focus();
+        var urlStart = start + label.Length + 3;
+        BodyBox.SelectionStart = urlStart;
+        BodyBox.SelectionEnd = urlStart + "https://".Length;
     }
 
     private void InsertBullet()

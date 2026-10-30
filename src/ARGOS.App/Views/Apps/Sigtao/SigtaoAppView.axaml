@@ -419,6 +419,9 @@
                                             <TextBlock Classes="muted">
                                                 <Run Text="{Binding Unite}"/><Run Text=" · CS "/><Run Text="{Binding Affectation}"/>
                                             </TextBlock>
+                                            <Button Classes="sg light" Content="✉ Écrire" Padding="10,2" FontSize="12" Margin="0,4,0,0"
+                                                    HorizontalAlignment="Left" Command="{Binding WriteCommand}" IsVisible="{Binding CanWrite}"
+                                                    ToolTip.Tip="Nouveau message dans la messagerie"/>
                                             <TextBlock Text="{Binding Email}" FontSize="12" Foreground="#1F5FAD" TextTrimming="CharacterEllipsis"/>
                                             <TextBlock Text="{Binding Telephone}" Classes="muted"/>
                                         </StackPanel>

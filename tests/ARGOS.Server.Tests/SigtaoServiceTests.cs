@@ -77,6 +77,31 @@ public sealed class SigtaoServiceTests : IDisposable
         Assert.Empty(_sigtao.History(Autre));
     }
 
+    [Fact]
+    public async Task Brouillon_ModifiableParSonRedacteurPuisTransmis()
+    {
+        var draft = await _sigtao.SaveReportAsync(Autre, new CompteRendu { Objet = "Brouillon", IsDraft = true });
+        Assert.True(draft.Ok, draft.Error);
+        var saved = _sigtao.Snapshot(Autre).Reports.Single();
+        Assert.True(saved.IsDraft);
+        Assert.Equal(string.Empty, saved.NumDoc);
+        Assert.Empty(_sigtao.Snapshot(Chef).Reports);             // brouillon invisible des autres, même RH/ADMIN
+        Assert.False((await _sigtao.SaveReportAsync(Chef, new CompteRendu { Id = saved.Id, Objet = "X", IsDraft = true })).Ok);
+
+        saved.Body = "Texte final.";
+        saved.AuthorNom = "Martin";
+        saved.DestNom = "Faubourg";
+        saved.IsDraft = false;
+        var final = await _sigtao.SaveReportAsync(Autre, saved);
+        Assert.True(final.Ok, final.Error);
+        Assert.Equal(saved.Id, final.Id);
+        var sent = _sigtao.Snapshot(Chef).Reports.Single();
+        Assert.False(sent.IsDraft);
+        Assert.Matches(@"^\d{4}-\d{4}$", sent.NumDoc);
+        Assert.False((await _sigtao.SaveReportAsync(Autre, new CompteRendu { Id = sent.Id, Objet = "Modif", IsDraft = true })).Ok);
+        Assert.False((await _sigtao.DeleteDraftAsync(Autre, sent.Id)).Ok);
+    }
+
     public void Dispose()
     {
         Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();

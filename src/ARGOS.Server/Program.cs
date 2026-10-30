@@ -407,6 +407,12 @@ public static class Program
             return user is null ? Results.Unauthorized() : ToResult(await service.SaveReportAsync(user, report));
         });
 
+        sigtao.MapPost("/reports/{id}/delete", async (string id, HttpContext context, DiscordOAuthService oauth, SigtaoService service) =>
+        {
+            var user = await AuthenticateAsync(context, oauth);
+            return user is null ? Results.Unauthorized() : ToResult(await service.DeleteDraftAsync(user, id));
+        });
+
         // ===== eFiBi (lecture seule, rôle eFIBI obligatoire : données de santé) =====
 
         app.MapPost("/api/efibi/search", async (EfibiQuery query, HttpContext context, DiscordOAuthService oauth, EfibiService service) =>

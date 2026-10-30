@@ -46,9 +46,19 @@ public sealed record WindowSpec(
     double Width = 980,
     double Height = 640);
 
+/// <summary>Contenu qui peut refuser une fermeture (saisie non enregistrée) et afficher sa propre confirmation.</summary>
+public interface ICloseGuard
+{
+    /// <summary>Vrai si la fenêtre peut se fermer tout de suite ; sinon la confirmation s'affiche.</summary>
+    bool TryClose();
+}
+
 /// <summary>Fenêtre ouverte sur le bureau.</summary>
 public sealed class AppWindowViewModel : ViewModelBase
 {
+    /// <summary>Fourni par le contenu (voir <see cref="ICloseGuard"/>).</summary>
+    public Func<bool>? CanClose { get; set; }
+
     private double _x;
     private double _y;
     private double _width;

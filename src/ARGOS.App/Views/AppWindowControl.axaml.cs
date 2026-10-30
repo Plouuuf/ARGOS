@@ -48,7 +48,11 @@ public partial class AppWindowControl : UserControl
     protected override void OnDataContextChanged(EventArgs e)
     {
         base.OnDataContextChanged(e);
-        Body.Content = WindowModel is { } window ? window.Spec.CreateContent() : null;
+        var content = WindowModel is { } window ? window.Spec.CreateContent() : null;
+        Body.Content = content;
+        // Fenêtre dont la saisie n'est pas enregistrée : la croix demande confirmation (MCO, Bloc-notes).
+        if (WindowModel is { } model && content?.DataContext is Argos.ViewModels.ICloseGuard guard)
+            model.CanClose = guard.TryClose;
     }
 
     private void BeginDrag(PointerPressedEventArgs e, DragMode mode)

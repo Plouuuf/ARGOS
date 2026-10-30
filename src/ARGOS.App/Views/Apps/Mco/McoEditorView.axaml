@@ -30,6 +30,7 @@
         </Style>
     </UserControl.Styles>
 
+    <Panel>
     <DockPanel>
         <!-- En-tête -->
         <Border DockPanel.Dock="Top" Background="#4A1C1C" Padding="12,8">
@@ -166,6 +167,14 @@
             <TabItem Header="3. Engin et personnel">
                 <ScrollViewer>
                     <StackPanel Margin="4,6" IsEnabled="{Binding IsEditable}">
+                        <HeaderedContentControl Classes="group" Header="Personnel de la compagnie (SIGTAO)">
+                            <Grid ColumnDefinitions="*,8,Auto,8,Auto">
+                                <AutoCompleteBox Classes="adg" ItemsSource="{Binding PersonnelChoices}" SelectedItem="{Binding SelectedPersonnel}"
+                                                 FilterMode="Contains" Watermark="Rechercher un militaire (nom, grade, fonction)…"/>
+                                <Button Grid.Column="2" Classes="adg" Content="Chef d'agrès" Command="{Binding SetChefFromSigtaoCommand}"/>
+                                <Button Grid.Column="4" Classes="adg" Content="Ajouter à l'équipage" Command="{Binding AddCrewFromSigtaoCommand}"/>
+                            </Grid>
+                        </HeaderedContentControl>
                         <HeaderedContentControl Classes="group" Header="Engin engagé et chef d'agrès">
                             <Grid ColumnDefinitions="220,8,130,8,*,8,*" RowDefinitions="Auto,Auto">
                                 <TextBlock Classes="cap" Text="ENGIN"/>
@@ -365,4 +374,21 @@
             </TabItem>
         </TabControl>
     </DockPanel>
+    <!-- Fermeture avec des modifications non enregistrées -->
+    <Border Background="#66000000" IsVisible="{Binding ConfirmClose}">
+        <Border Background="{StaticResource AdagioBack}" BorderBrush="White" BorderThickness="2.5" CornerRadius="6"
+                Width="480" Padding="18" HorizontalAlignment="Center" VerticalAlignment="Center">
+            <StackPanel Spacing="10">
+                <TextBlock Text="Enregistrer la MCO avant de fermer ?" FontWeight="Bold" FontSize="15"/>
+                <TextBlock Text="Des modifications n'ont pas été enregistrées. Sans enregistrement, elles seront perdues."
+                           TextWrapping="Wrap" FontSize="12"/>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
+                    <Button Classes="adg" Content="Annuler" Command="{Binding CancelCloseCommand}"/>
+                    <Button Classes="adg" Content="Fermer sans enregistrer" Command="{Binding DiscardCloseCommand}"/>
+                    <Button Classes="adg primary" Content="Enregistrer le brouillon" Command="{Binding SaveAndCloseCommand}"/>
+                </StackPanel>
+            </StackPanel>
+        </Border>
+    </Border>
+    </Panel>
 </UserControl>

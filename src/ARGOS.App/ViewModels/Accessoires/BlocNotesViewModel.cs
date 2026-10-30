@@ -14,7 +14,7 @@ public sealed record FileChoice(string Id, string Label)
 /// Bloc-notes : fichiers texte de « Mes documents ». Nouveau, Ouvrir, Enregistrer, Enregistrer sous,
 /// retour automatique à la ligne, zoom, heure/date (F5), position du curseur.
 /// </summary>
-public sealed class BlocNotesViewModel : ViewModelBase
+public sealed class BlocNotesViewModel : ViewModelBase, ICloseGuard
 {
     private readonly DesktopViewModel _desktop;
     private readonly string _key;
@@ -258,6 +258,14 @@ public sealed class BlocNotesViewModel : ViewModelBase
         Caret = 0;
         Status = null;
         foreach (var n in new[] { nameof(Text), nameof(Title), nameof(Count), nameof(Position), nameof(FileId) }) OnPropertyChanged(n);
+    }
+
+    /// <summary>Croix de la fenêtre : même question que « Fichier › Quitter ».</summary>
+    public bool TryClose()
+    {
+        if (!_dirty || (_fileId is null && _text.Length == 0)) return true;
+        Guard(() => _desktop.CloseWindow(_key));
+        return false;
     }
 
     /// <summary>Si le texte est modifié : « Voulez-vous enregistrer les modifications ? » avant de continuer.</summary>

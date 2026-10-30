@@ -46,7 +46,10 @@
         </StackPanel>
         <Border DockPanel.Dock="Bottom" Background="White" BorderBrush="#D8DEE6" BorderThickness="0,1,0,0" Padding="16,8">
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
-                <Button Classes="sg" Content="Enregistrer le compte-rendu" Command="{Binding SaveCommand}" IsVisible="{Binding IsEditable}"/>
+                <Button Classes="sg light" Content="Supprimer le brouillon" Command="{Binding DeleteDraftCommand}" IsVisible="{Binding IsDraft}"/>
+                <Button Classes="sg light" Content="Enregistrer le brouillon" Command="{Binding SaveDraftCommand}" IsVisible="{Binding IsEditable}"
+                        ToolTip.Tip="Enregistre sans transmettre : le compte-rendu reste modifiable."/>
+                <Button Classes="sg" Content="Valider et transmettre" Command="{Binding SaveCommand}" IsVisible="{Binding IsEditable}"/>
                 <Button Classes="sg light" Content="Fermer" Command="{Binding CloseCommand}"/>
             </StackPanel>
         </Border>

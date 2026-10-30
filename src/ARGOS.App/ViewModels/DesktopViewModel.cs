@@ -203,7 +203,9 @@ public sealed partial class DesktopViewModel : ViewModelBase
     }
 
     /// <summary>Ferme la fenêtre de cette clé, si elle est ouverte.</summary>
-    public void CloseWindow(string key)
+    public void CloseWindow(string key) => CloseWindow(key, force: true);
+
+    public void CloseWindow(string key, bool force)
     {
         if (IsCompactLayout)
         {
@@ -233,8 +235,16 @@ public sealed partial class DesktopViewModel : ViewModelBase
         ActivateTopmost();
     }
 
-    public void Close(AppWindowViewModel window)
+    public void Close(AppWindowViewModel window) => Close(window, force: false);
+
+    /// <summary>Ferme une fenêtre ; sans <paramref name="force"/>, une saisie non enregistrée est d'abord proposée à l'enregistrement.</summary>
+    public void Close(AppWindowViewModel window, bool force)
     {
+        if (!force && window.CanClose is { } canClose && !canClose())
+        {
+            Activate(window);
+            return;
+        }
         Windows.Remove(window);
         if (window.IsActive)
             ActivateTopmost();

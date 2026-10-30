@@ -128,38 +128,66 @@ public sealed class DossierViewModel : ViewModelBase, IDisposable
         OnPropertyChanged(nameof(HasEntries));
     }
 
-    private async Task SaveAsync()
+    /// <param name="draft">Vrai : brouillon (sans numéro, modifiable plus tard) ; faux : validation et transmission.</param>
+    private async Task SaveAsync(bool draft)
     {
         var session = ArgosSession.Current;
-        if (session is null) return;
-        var result = await session.Api.SendAsync(HttpMethod.Post, "api/sigtao/military", _record);
-        ShowMessage(result.Ok ? "Dossier enregistré." : result.Error ?? "Enregistrement refusé.", !result.Ok);
-        if (result.Ok && result.Id is { } id)
+        if (session is null || _busy) return;
+        _busy = true;
+        try
         {
-            _id = id;
-            _record.Id = id;
-            foreach (var n in new[] { nameof(IsNew), nameof(Title) }) OnPropertyChanged(n);
-            AddEntryCommand.RaiseCanExecuteChanged();
+            if (!draft && string.IsNullOrWhiteSpace(_cr.Synthese)) _cr.Synthese = CrText.Synthese(_cr);
+            _cr.IsDraft = draft;
+            var result = await session.Api.SendAsync(HttpMethod.Post, "api/sigtao/reports", _cr);
+            if (!result.Ok)
+            {
+                if (!draft && !string.IsNullOrEmpty(_cr.Id)) _cr.IsDraft = true;
+                ShowMessage(result.Error ?? "Enregistrement refusé.", true);
+                return;
+            }
+            await session.Sigtao.RefreshAsync();
+            if (result.Id is { } id && session.Sigtao.FindReport(id) is { } saved)
+            {
+                _cr = saved;
+                IsReadOnly = !saved.IsDraft;
+                foreach (var n in new[] { nameof(Report), nameof(IsReadOnly), nameof(IsEditable), nameof(IsDraft), nameof(Title), nameof(NumLine),
+                                          nameof(Body), nameof(Synthese) })
+                    OnPropertyChanged(n);
+                SaveCommand.RaiseCanExecuteChanged();
+                SaveDraftCommand.RaiseCanExecuteChanged();
+                DeleteDraftCommand.RaiseCanExecuteChanged();
+                GenerateCommand.RaiseCanExecuteChanged();
+            }
+            ShowMessage(draft
+                ? $"Brouillon enregistré à {DateTime.Now:HH:mm} : il reste modifiable depuis la liste des comptes-rendus."
+                : $"Compte-rendu N° {_cr.NumDoc} enregistré.", false);
         }
-        await session.Sigtao.RefreshAsync();
+        finally
+        {
+            _busy = false;
+        }
     }
 
-    private async Task AddEntryAsync()
+    private async Task DeleteDraftAsync()
     {
         var session = ArgosSession.Current;
-        if (session is null || _id is null) return;
-        var result = await session.Api.SendAsync(HttpMethod.Post, $"api/sigtao/military/{_id}/entries", new DossierEntry
+        if (session is null || _busy || string.IsNullOrEmpty(_cr.Id)) return;
+        _busy = true;
+        try
         {
-            Kind = EntryKind, Title = EntryTitle, Details = EntryDetails, Date = Offset(EntryDate) ?? DateTimeOffset.Now
-        });
-        ShowMessage(result.Ok ? $"{EntryKind} ajouté(e) au dossier." : result.Error ?? "Ajout refusé.", !result.Ok);
-        if (!result.Ok) return;
-        EntryTitle = string.Empty;
-        EntryDetails = string.Empty;
-        await session.Sigtao.RefreshAsync();
-        // Promotion / affectation / mutation modifient la fiche : on la recharge.
-        if (session.Sigtao.FindMilitary(_id) is { } fresh)
-            Load(Clone(fresh));
+            var result = await session.Api.SendAsync(HttpMethod.Post, $"api/sigtao/reports/{_cr.Id}/delete");
+            if (!result.Ok)
+            {
+                ShowMessage(result.Error ?? "Suppression refusée.", true);
+                return;
+            }
+            await session.Sigtao.RefreshAsync();
+            _desktop.CloseWindow(_key);
+        }
+        finally
+        {
+            _busy = false;
+        }
     }
 
     private void ShowMessage(string text, bool error)
@@ -204,7 +232,8 @@ public sealed class CompteRenduViewModel : ViewModelBase
         if (existing is not null)
         {
             _cr = existing;
-            IsReadOnly = true;
+            // Un brouillon (visible de son seul rédacteur) reste modifiable jusqu'à sa transmission.
+            IsReadOnly = !existing.IsDraft;
         }
         else
         {
@@ -221,7 +250,9 @@ public sealed class CompteRenduViewModel : ViewModelBase
                 Unite = me?.Unite ?? "17e Cie"
             };
         }
-        SaveCommand = new RelayCommand(() => _ = SaveAsync(), () => !IsReadOnly);
+        SaveCommand = new RelayCommand(() => _ = SaveAsync(draft: false), () => !IsReadOnly);
+        SaveDraftCommand = new RelayCommand(() => _ = SaveAsync(draft: true), () => !IsReadOnly);
+        DeleteDraftCommand = new RelayCommand(() => _ = DeleteDraftAsync(), () => !IsReadOnly && IsDraft);
         GenerateCommand = new RelayCommand(() => { _cr.Synthese = CrText.Synthese(_cr); OnPropertyChanged(nameof(Synthese)); }, () => !IsReadOnly);
         CloseCommand = new RelayCommand(() => _desktop.CloseWindow(_key));
         RemoveAttachmentCommand = new RelayCommand(p =>
@@ -234,7 +265,8 @@ public sealed class CompteRenduViewModel : ViewModelBase
     public CompteRendu Report => _cr;
     public bool IsReadOnly { get; private set; }
     public bool IsEditable => !IsReadOnly;
-    public string Title => IsReadOnly ? $"E-COMPTE-RENDU N° {_cr.NumDoc}" : "Nouveau compte-rendu";
+    public bool IsDraft => _cr.IsDraft && !string.IsNullOrEmpty(_cr.Id);
+    public string Title => IsReadOnly ? $"E-COMPTE-RENDU N° {_cr.NumDoc}" : IsDraft ? "Brouillon de compte-rendu" : "Nouveau compte-rendu";
     public IReadOnlyList<string> Grades => BsppGrades.All;
     public IReadOnlyList<string> Mentions => CrMentions.All;
     public string DateLine => $"A {_cr.Lieu}, le {_cr.Date.ToLocalTime().ToString("d MMMM yyyy", OdeFormat.French)}";
@@ -279,6 +311,8 @@ public sealed class CompteRenduViewModel : ViewModelBase
     public bool MessageIsError { get => _messageIsError; private set => SetProperty(ref _messageIsError, value); }
 
     public RelayCommand SaveCommand { get; }
+    public RelayCommand SaveDraftCommand { get; }
+    public RelayCommand DeleteDraftCommand { get; }
     public RelayCommand GenerateCommand { get; }
     public RelayCommand CloseCommand { get; }
     public RelayCommand RemoveAttachmentCommand { get; }

@@ -13,6 +13,10 @@ public sealed record MilitaryRow(string Id, string Grade, string Nom, string Pre
     public Bitmap? GradeIcon => ImageLoader.Grade(Grade);
     public bool HasPhoto => Photo is not null;
     public string Initials => $"{(Nom.Length > 0 ? Nom[0] : ' ')}{(Prenom.Length > 0 ? Prenom[0] : ' ')}".Trim().ToUpperInvariant();
+
+    /// <summary>Annuaire : « Écrire » ouvre un nouveau message de la messagerie adressé à ce militaire.</summary>
+    public RelayCommand? WriteCommand { get; init; }
+    public bool CanWrite => WriteCommand is not null;
 }
 
 public sealed record ReportRow(string NumDoc, string Date, string Author, string Destinataire, string Objet, string Mention,
@@ -290,7 +294,7 @@ public sealed class SigtaoAppViewModel : ViewModelBase, IDisposable
     private ReportRow RowOf(CompteRendu r)
     {
         var id = r.Id;
-        return new ReportRow(r.NumDoc, r.Date.ToLocalTime().ToString("dd/MM/yyyy"),
+        return new ReportRow(r.IsDraft ? "Brouillon" : r.NumDoc, r.Date.ToLocalTime().ToString("dd/MM/yyyy"),
             $"{BsppGrades.Short(r.AuthorGrade)} {r.AuthorNom.ToUpperInvariant()} {r.AuthorPrenom}".Trim(),
             $"{BsppGrades.Short(r.DestGrade)} {r.DestNom.ToUpperInvariant()}".Trim(), r.Objet, r.Mention, r.Attachments.Count,
             new RelayCommand(() => _desktop.OpenWindow(SigtaoWindows.Report(_desktop, id))));
@@ -332,7 +336,16 @@ public sealed class SigtaoAppViewModel : ViewModelBase, IDisposable
         Fill(Directory, Snapshot.Military
             .Where(m => m.Status == MilitaryStatuses.Actif)
             .Where(m => q.Length == 0 || VdmsMap.Normalize(string.Join(" ", m.Nom, m.Prenom, m.Grade, BsppGrades.Short(m.Grade), m.Nid)).Contains(q))
-            .Select(MilitaryRowOf));
+            .Select(m => MilitaryRowOf(m) with { WriteCommand = WriteTo(m) }));
+    }
+
+    private RelayCommand? WriteTo(MilitaryRecord m)
+    {
+        var address = !string.IsNullOrWhiteSpace(m.Email) ? m.Email.Trim()
+            : m.Nom.Length > 0 && m.Prenom.Length > 0 ? MailAddresses.Build(m.Prenom, m.Nom) : null;
+        if (address is null) return null;
+        return new RelayCommand(() => _desktop.OpenWindow(Argos.Views.Apps.Mail.MailWindows.Compose(_desktop,
+            new Argos.ViewModels.Mail.MailComposeInit { To = address })));
     }
 
     private void BuildAccounts()

@@ -222,6 +222,10 @@ public sealed class CompteRendu
     public string Synthese { get; set; } = string.Empty;
     public List<CrAttachment> Attachments { get; set; } = [];
     public DateTimeOffset CreatedAt { get; set; }
+
+    /// <summary>Brouillon : visible du seul rédacteur, modifiable, sans numéro tant qu'il n'est pas transmis.</summary>
+    public bool IsDraft { get; set; }
+    public DateTimeOffset? UpdatedAt { get; set; }
 }
 
 /// <summary>Droits SIGTAO de l'utilisateur connecté (calculés par le serveur).</summary>
