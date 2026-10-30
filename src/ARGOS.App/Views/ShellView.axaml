@@ -7,7 +7,12 @@
              Focusable="True">
     <UserControl.Styles>
         <!-- Fond flouté et légèrement agrandi (évite les bords transparents du flou), comme l'écran de connexion de Windows 10. -->
-        <Style Selector="Image#Wallpaper.blurred">
+        <Style Selector="Image.wallpaper">
+            <Setter Property="Transitions">
+                <Transitions><DoubleTransition Property="Opacity" Duration="0:0:2" Easing="SineEaseInOut"/></Transitions>
+            </Setter>
+        </Style>
+        <Style Selector="Image.wallpaper.blurred">
             <Setter Property="Effect">
                 <BlurEffect Radius="48"/>
             </Setter>
@@ -16,9 +21,12 @@
     </UserControl.Styles>
 
     <Grid ClipToBounds="True">
-        <Image Name="Wallpaper"
-               Source="{Binding Wallpaper}"
-               Stretch="UniformToFill"
+        <!-- Diaporama : deux calques, la nouvelle photo apparaît en fondu (2 s). -->
+        <Image Classes="wallpaper" Source="{Binding WallpaperB}" Stretch="UniformToFill"
+               Opacity="{Binding ShowWallpaperB, Converter={x:Static views:ShellConverters.Opacity}}"
+               Classes.blurred="{Binding IsWallpaperBlurred}"/>
+        <Image Classes="wallpaper" Source="{Binding WallpaperA}" Stretch="UniformToFill"
+               Opacity="{Binding ShowWallpaperA, Converter={x:Static views:ShellConverters.Opacity}}"
                Classes.blurred="{Binding IsWallpaperBlurred}"/>
 
         <!-- Contenu, à l'intérieur des zones sûres (encoche, barre d'accueil) sur téléphone et tablette. -->

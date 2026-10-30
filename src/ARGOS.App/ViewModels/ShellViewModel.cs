@@ -46,6 +46,7 @@ public sealed class ShellViewModel : ViewModelBase
     private string? _updateText;
     private bool _updating;
     private readonly DispatcherTimer _updates;
+    private readonly DispatcherTimer _wallpaperTimer;
 
     public ShellViewModel()
     {
@@ -70,6 +71,12 @@ public sealed class ShellViewModel : ViewModelBase
 
         _revalidation = new DispatcherTimer { Interval = RevalidationInterval };
         _revalidation.Tick += (_, _) => _ = RevalidateAsync();
+
+        // Fond d'écran : une photo au hasard au démarrage, puis la suivante toutes les 10 minutes.
+        ShowWallpaper(Random.Shared.Next(Wallpapers.Length), fade: false);
+        _wallpaperTimer = new DispatcherTimer { Interval = WallpaperInterval };
+        _wallpaperTimer.Tick += (_, _) => NextWallpaper();
+        _wallpaperTimer.Start();
 
         // Mise à jour automatique : au démarrage, puis toutes les 20 minutes.
         AppUpdater.Cleanup();
@@ -182,14 +189,54 @@ public sealed class ShellViewModel : ViewModelBase
         set
         {
             if (SetProperty(ref _isPortrait, value))
-                OnPropertyChanged(nameof(Wallpaper));
+                ShowWallpaper(_wallpaperIndex, fade: false);
         }
     }
 
     public bool ShowDesktopLayout => IsDesktopScreen && !IsCompact;
     public bool ShowMobileLayout => IsDesktopScreen && IsCompact;
 
-    public Bitmap Wallpaper => ImageLoader.Asset(IsPortrait ? "Wallpapers/portrait.jpg" : "Wallpapers/landscape.jpg");
+    // ===== Fond d'écran changeant (bureau et écran de verrouillage) =====
+
+    /// <summary>Photos du diaporama : paysage (ordinateur) et portrait (téléphone), dans le même ordre.</summary>
+    private static readonly string[] Wallpapers = ["", "-2", "-3", "-4"];
+    public static readonly TimeSpan WallpaperInterval = TimeSpan.FromMinutes(10);
+    private int _wallpaperIndex;
+    private Bitmap? _wallpaperA, _wallpaperB;
+    private bool _showA = true;
+
+    private static Bitmap WallpaperOf(int index, bool portrait)
+        => ImageLoader.Asset($"Wallpapers/{(portrait ? "portrait" : "landscape")}{Wallpapers[index % Wallpapers.Length]}.jpg");
+
+    /// <summary>Deux calques superposés : la nouvelle photo apparaît en fondu au-dessus de l'ancienne.</summary>
+    public Bitmap? WallpaperA { get => _wallpaperA; private set => SetProperty(ref _wallpaperA, value); }
+    public Bitmap? WallpaperB { get => _wallpaperB; private set => SetProperty(ref _wallpaperB, value); }
+    public bool ShowWallpaperA { get => _showA; private set { if (SetProperty(ref _showA, value)) OnPropertyChanged(nameof(ShowWallpaperB)); } }
+    public bool ShowWallpaperB => !_showA;
+    public Bitmap Wallpaper => WallpaperOf(_wallpaperIndex, IsPortrait);
+
+    public void NextWallpaper() => ShowWallpaper(_wallpaperIndex + 1, fade: true);
+
+    private void ShowWallpaper(int index, bool fade)
+    {
+        _wallpaperIndex = index % Wallpapers.Length;
+        var image = WallpaperOf(_wallpaperIndex, IsPortrait);
+        if (!fade)
+        {
+            if (ShowWallpaperA) WallpaperA = image; else WallpaperB = image;
+        }
+        else if (ShowWallpaperA)
+        {
+            WallpaperB = image;
+            ShowWallpaperA = false;
+        }
+        else
+        {
+            WallpaperA = image;
+            ShowWallpaperA = true;
+        }
+        OnPropertyChanged(nameof(Wallpaper));
+    }
 
     /// <summary>Bouton d'arrêt (quitter ARGOS) : sur ordinateur seulement.</summary>
     public bool CanQuit => !AppPaths.IsMobile;
