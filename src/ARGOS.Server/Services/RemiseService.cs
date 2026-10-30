@@ -12,9 +12,9 @@ public sealed class RemiseService(OdeDatabase db, OdeService ode, RealtimeHub hu
 {
     private readonly SemaphoreSlim _gate = new(1, 1);
 
-    /// <summary>Gestion du parc : opérateurs, encadrement et administration (l'habilitation SREMISE viendra de SIGTAO).</summary>
-    public static bool CanManage(ArgosUserDto user)
-        => user.Levels.Any(l => l is AccessLevels.Operateur or AccessLevels.Encadrement or AccessLevels.Administration);
+    /// <summary>Gestion du parc : habilitation SREMISE (SIGTAO) ; encadrement et administration toujours.</summary>
+    public bool CanManage(ArgosUserDto user)
+        => user.Levels.Contains(AccessLevels.Encadrement) || SigtaoAccess.Has(db, user, Habilitations.Sremise);
 
     // ===== Lecture =====
 

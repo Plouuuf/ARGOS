@@ -32,6 +32,9 @@ public static class RealtimeTypes
     /// <summary>Les mains courantes (MCO) ont changé.</summary>
     public const string McoChanged = "mco-changed";
 
+    /// <summary>SIGTAO a changé (dossiers, comptes, comptes-rendus).</summary>
+    public const string SigtaoChanged = "sigtao-changed";
+
     /// <summary>Ouvrir la prise d'appel de l'appel indiqué (Text = identifiant), au décroché d'un 18.</summary>
     public const string OpenCall = "open-call";
 }

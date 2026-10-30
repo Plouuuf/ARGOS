@@ -42,6 +42,7 @@ public static class Program
         builder.Services.AddSingleton<OdeService>();
         builder.Services.AddSingleton<RemiseService>();
         builder.Services.AddSingleton<McoService>();
+        builder.Services.AddSingleton<SigtaoService>();
         builder.Services.Configure<WebhookOptions>(builder.Configuration.GetSection("Webhooks"));
         builder.Services.AddSingleton<DiscordWebhookService>();
 
@@ -61,7 +62,7 @@ public static class Program
         {
             status = "ok",
             version = typeof(Program).Assembly.GetName().Version?.ToString(3),
-            applications = new[] { "adagio-ode", "adagio-remise", "mco" },
+            applications = new[] { "adagio-ode", "adagio-remise", "mco", "sigtao" },
             utc = DateTimeOffset.UtcNow,
             connections = hub.ConnectionCount
         }));
@@ -312,6 +313,54 @@ public static class Program
         {
             var user = await AuthenticateAsync(context, oauth);
             return user is null ? Results.Unauthorized() : ToResult(await service.ArchiveAsync(user, id));
+        });
+
+        // ===== SIGTAO =====
+
+        var sigtao = app.MapGroup("/api/sigtao");
+
+        sigtao.MapGet("/state", async (HttpContext context, DiscordOAuthService oauth, SigtaoService service) =>
+        {
+            var user = await AuthenticateAsync(context, oauth);
+            return user is null ? Results.Unauthorized() : Results.Ok(service.Snapshot(user));
+        });
+
+        sigtao.MapGet("/history", async (HttpContext context, DiscordOAuthService oauth, SigtaoService service) =>
+        {
+            var user = await AuthenticateAsync(context, oauth);
+            return user is null ? Results.Unauthorized() : Results.Ok(service.History(user));
+        });
+
+        sigtao.MapPost("/military", async (MilitaryRecord record, HttpContext context, DiscordOAuthService oauth, SigtaoService service) =>
+        {
+            var user = await AuthenticateAsync(context, oauth);
+            return user is null ? Results.Unauthorized() : ToResult(await service.SaveMilitaryAsync(user, record));
+        });
+
+        sigtao.MapPost("/military/{id}/entries", async (string id, DossierEntry entry, HttpContext context, DiscordOAuthService oauth, SigtaoService service) =>
+        {
+            var user = await AuthenticateAsync(context, oauth);
+            return user is null ? Results.Unauthorized() : ToResult(await service.AddEntryAsync(user, id, entry));
+        });
+
+        sigtao.MapPost("/accounts", async (UserAccount account, HttpContext context, DiscordOAuthService oauth, SigtaoService service) =>
+        {
+            var user = await AuthenticateAsync(context, oauth);
+            return user is null ? Results.Unauthorized() : ToResult(await service.SaveAccountAsync(user, account));
+        });
+
+        sigtao.MapPost("/accounts/{id}/reset", async (string id, HttpContext context, DiscordOAuthService oauth, SigtaoService service) =>
+        {
+            var user = await AuthenticateAsync(context, oauth);
+            if (user is null) return Results.Unauthorized();
+            var result = await service.ResetAccessAsync(user, id);
+            return result.Ok ? Results.Ok(result) : Results.BadRequest(result);
+        });
+
+        sigtao.MapPost("/reports", async (CompteRendu report, HttpContext context, DiscordOAuthService oauth, SigtaoService service) =>
+        {
+            var user = await AuthenticateAsync(context, oauth);
+            return user is null ? Results.Unauthorized() : ToResult(await service.SaveReportAsync(user, report));
         });
 
         // ===== Intégrations serveur à serveur (clé ARGOS:AccessKey dans l'en-tête X-Argos-Key) =====

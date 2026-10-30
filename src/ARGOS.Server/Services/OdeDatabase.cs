@@ -58,6 +58,9 @@ public sealed class OdeDatabase
             CREATE TABLE IF NOT EXISTS remise_maintenances (id TEXT PRIMARY KEY, at TEXT NOT NULL, data TEXT NOT NULL);
             CREATE TABLE IF NOT EXISTS remise_movements (id TEXT PRIMARY KEY, at TEXT NOT NULL, data TEXT NOT NULL);
             CREATE TABLE IF NOT EXISTS mco_reports (id TEXT PRIMARY KEY, at TEXT NOT NULL, data TEXT NOT NULL);
+            CREATE TABLE IF NOT EXISTS sigtao_military (id TEXT PRIMARY KEY, at TEXT NOT NULL, data TEXT NOT NULL);
+            CREATE TABLE IF NOT EXISTS sigtao_accounts (id TEXT PRIMARY KEY, at TEXT NOT NULL, data TEXT NOT NULL);
+            CREATE TABLE IF NOT EXISTS sigtao_reports (id TEXT PRIMARY KEY, at TEXT NOT NULL, data TEXT NOT NULL);
             -- Les mouvements de stock ne peuvent être ni modifiés ni effacés.
             CREATE TRIGGER IF NOT EXISTS movements_no_update BEFORE UPDATE ON remise_movements
                 BEGIN SELECT RAISE(ABORT, 'mouvements en lecture seule'); END;
@@ -188,6 +191,9 @@ public sealed class OdeDatabase
         public const string Maintenances = "remise_maintenances";
         public const string Movements = "remise_movements";
         public const string Mco = "mco_reports";
+        public const string Military = "sigtao_military";
+        public const string Accounts = "sigtao_accounts";
+        public const string CrReports = "sigtao_reports";
     }
 
     public void SaveDoc(string table, string id, DateTimeOffset at, object document)
