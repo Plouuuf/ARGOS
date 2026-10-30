@@ -40,6 +40,7 @@
                 </StackPanel>
                 <StackPanel Grid.Column="1" Spacing="6" VerticalAlignment="Center">
                     <Button Classes="adg" Content="Ajouter des moyens" Command="{Binding AddMeansCommand}" HorizontalAlignment="Stretch"/>
+                    <Button Classes="adg" Content="Rédiger la MCO" Command="{Binding WriteMcoCommand}" HorizontalAlignment="Stretch"/>
                     <Button Classes="adg danger" Content="Clôturer l'intervention" Command="{Binding AskCloseCommand}" HorizontalAlignment="Stretch"/>
                 </StackPanel>
             </Grid>

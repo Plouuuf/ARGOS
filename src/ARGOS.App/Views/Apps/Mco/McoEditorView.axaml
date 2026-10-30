@@ -1,0 +1,353 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="Argos.Views.Apps.Mco.McoEditorView"
+             Background="{StaticResource AdagioBack}"
+             FontFamily="{StaticResource AdagioFont}"
+             Foreground="Black">
+    <UserControl.Styles>
+        <Style Selector="Border.msg">
+            <Setter Property="Background" Value="#2E7D32"/>
+        </Style>
+        <Style Selector="Border.msg.error">
+            <Setter Property="Background" Value="#C62828"/>
+        </Style>
+        <Style Selector="TextBox.area">
+            <Setter Property="AcceptsReturn" Value="True"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+            <Setter Property="MinHeight" Value="56"/>
+            <Setter Property="VerticalContentAlignment" Value="Top"/>
+        </Style>
+        <Style Selector="TabItem">
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Padding" Value="10,4"/>
+            <Setter Property="MinHeight" Value="34"/>
+        </Style>
+        <Style Selector="TextBlock.hint">
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="Foreground" Value="#355C8C"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+        </Style>
+    </UserControl.Styles>
+
+    <DockPanel>
+        <!-- En-tête -->
+        <Border DockPanel.Dock="Top" Background="#4A1C1C" Padding="12,8">
+            <Grid ColumnDefinitions="Auto,12,*">
+                <Image Source="avares://ARGOS.App/Assets/Icons/mco.png" Width="34" Height="34"/>
+                <StackPanel Grid.Column="2">
+                    <TextBlock Text="{Binding Title}" Foreground="White" FontSize="16" FontWeight="Bold"/>
+                    <TextBlock Text="{Binding StatusLine}" Foreground="#E0B4B4" FontSize="11.5"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+        <!-- Barre d'actions -->
+        <Border DockPanel.Dock="Bottom" Background="#9DBBD0" Padding="10,6">
+            <Grid ColumnDefinitions="Auto,6,Auto,*,Auto,8,Auto,8,Auto,8,Auto">
+                <Button Classes="adg" Content="◀ Précédent" Command="{Binding PreviousTabCommand}"/>
+                <Button Grid.Column="2" Classes="adg" Content="Suivant ▶" Command="{Binding NextTabCommand}"/>
+                <Button Grid.Column="4" Classes="adg" Content="Enregistrer le brouillon" Command="{Binding SaveCommand}"
+                        IsVisible="{Binding IsEditable}"/>
+                <Button Grid.Column="6" Classes="adg primary" Content="Valider définitivement" Command="{Binding ValidateCommand}"
+                        IsVisible="{Binding IsEditable}"/>
+                <Button Grid.Column="8" Classes="adg" Content="Archiver" Command="{Binding ArchiveCommand}"
+                        IsVisible="{Binding !IsEditable}"/>
+                <Button Grid.Column="10" Classes="adg" Content="Fermer" Command="{Binding CloseCommand}"/>
+            </Grid>
+        </Border>
+        <Border DockPanel.Dock="Top" Classes="msg" Classes.error="{Binding MessageIsError}" Padding="10,6" IsVisible="{Binding HasMessage}">
+            <TextBlock Text="{Binding Message}" Foreground="White" FontWeight="Bold" TextWrapping="Wrap"/>
+        </Border>
+
+        <TabControl SelectedIndex="{Binding Tab}" Padding="0" Margin="6,4,6,0">
+            <!-- ===== 1. Identification ===== -->
+            <TabItem Header="1. Identification">
+                <ScrollViewer>
+                    <StackPanel Margin="4,6" Spacing="2" IsEnabled="{Binding IsEditable}">
+                        <HeaderedContentControl Classes="group" Header="Intervention ADAGIO ODE">
+                            <StackPanel Spacing="6">
+                                <Grid ColumnDefinitions="*,8,Auto">
+                                    <ComboBox Classes="adg" ItemsSource="{Binding InterventionChoices}" SelectedItem="{Binding SelectedIntervention}"
+                                              HorizontalAlignment="Stretch" PlaceholderText="Associer à un ODE existant"/>
+                                    <Button Grid.Column="2" Classes="adg primary" Content="Récupérer depuis l'ODE" Command="{Binding PrefillCommand}"/>
+                                </Grid>
+                                <TextBlock Classes="hint" Text="Reprend la nature, l'adresse, les autres engins, les renforts et les heures de statut de l'engin choisi (Parti, Sur les lieux, Disponible, Rentré)."/>
+                            </StackPanel>
+                        </HeaderedContentControl>
+                        <HeaderedContentControl Classes="group" Header="Identification">
+                            <Grid ColumnDefinitions="150,8,190,8,*" RowDefinitions="Auto,Auto">
+                                <TextBlock Classes="cap" Text="N° D'INTERVENTION"/>
+                                <TextBlock Grid.Column="2" Classes="cap" Text="DATE"/>
+                                <TextBlock Grid.Column="4" Classes="cap" Text="NATURE"/>
+                                <TextBox Grid.Row="1" Classes="adg" Text="{Binding Report.InterventionNumber}" Watermark="210-593"/>
+                                <CalendarDatePicker Grid.Row="1" Grid.Column="2" SelectedDate="{Binding ReportDate}" HorizontalAlignment="Stretch"
+                                                    SelectedDateFormat="Custom" CustomDateFormatString="dd/MM/yyyy" Watermark="jj/mm/aaaa"
+                                                    Background="{StaticResource AdagioField}"/>
+                                <AutoCompleteBox Grid.Row="1" Grid.Column="4" Classes="adg" ItemsSource="{Binding NatureChoices}"
+                                                 Text="{Binding NatureText}" FilterMode="Contains" Watermark="117 - Feu …"/>
+                            </Grid>
+                        </HeaderedContentControl>
+                        <HeaderedContentControl Classes="group" Header="Localisation">
+                            <Grid ColumnDefinitions="*,8,220" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto">
+                                <TextBlock Classes="cap" Text="ADRESSE COMPLÈTE"/>
+                                <TextBlock Grid.Column="2" Classes="cap" Text="COMMUNE / QUARTIER"/>
+                                <TextBox Grid.Row="1" Classes="adg" Text="{Binding Report.Address}"/>
+                                <TextBox Grid.Row="1" Grid.Column="2" Classes="adg" Text="{Binding Report.Locality}"/>
+                                <TextBlock Grid.Row="2" Classes="cap" Text="BÂTIMENT, ÉTAGE" Margin="2,8,0,2"/>
+                                <TextBlock Grid.Row="2" Grid.Column="2" Classes="cap" Text="ACCÈS" Margin="2,8,0,2"/>
+                                <TextBox Grid.Row="3" Classes="adg" Text="{Binding Report.Building}"/>
+                                <TextBox Grid.Row="3" Grid.Column="2" Classes="adg" Text="{Binding Report.Access}"/>
+                                <TextBlock Grid.Row="4" Classes="cap" Text="PRÉCISIONS DE LOCALISATION" Margin="2,8,0,2"/>
+                                <TextBox Grid.Row="5" Grid.ColumnSpan="3" Classes="adg area" Text="{Binding Report.LocationDetails}"/>
+                            </Grid>
+                        </HeaderedContentControl>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- ===== 2. Horodatage ===== -->
+            <TabItem Header="2. Horodatage">
+                <ScrollViewer>
+                    <StackPanel Margin="4,6">
+                        <HeaderedContentControl Classes="group" Header="Horaires (HH:mm)" IsEnabled="{Binding IsEditable}">
+                            <Grid ColumnDefinitions="*,8,*,8,*,8,*,8,*,8,*" RowDefinitions="Auto,Auto">
+                                <TextBlock Classes="cap" Text="DÉPART"/>
+                                <TextBlock Grid.Column="2" Classes="cap" Text="SUR LES LIEUX"/>
+                                <TextBlock Grid.Column="4" Classes="cap" Text="DÉBUT OPÉRATIONS"/>
+                                <TextBlock Grid.Column="6" Classes="cap" Text="FIN OPÉRATIONS"/>
+                                <TextBlock Grid.Column="8" Classes="cap" Text="DISPONIBLE"/>
+                                <TextBlock Grid.Column="10" Classes="cap" Text="RETOUR CS"/>
+                                <TextBox Grid.Row="1" Classes="adg center" Text="{Binding Report.TimeDepart}" Watermark="--:--"/>
+                                <TextBox Grid.Row="1" Grid.Column="2" Classes="adg center" Text="{Binding Report.TimeArrivee}" Watermark="--:--"/>
+                                <TextBox Grid.Row="1" Grid.Column="4" Classes="adg center" Text="{Binding Report.TimeDebutOperations}" Watermark="--:--"/>
+                                <TextBox Grid.Row="1" Grid.Column="6" Classes="adg center" Text="{Binding Report.TimeFinOperations}" Watermark="--:--"/>
+                                <TextBox Grid.Row="1" Grid.Column="8" Classes="adg center" Text="{Binding Report.TimeDisponible}" Watermark="--:--"/>
+                                <TextBox Grid.Row="1" Grid.Column="10" Classes="adg center" Text="{Binding Report.TimeRetour}" Watermark="--:--"/>
+                            </Grid>
+                        </HeaderedContentControl>
+                        <HeaderedContentControl Classes="group" Header="Événements horodatés">
+                            <StackPanel Spacing="4">
+                                <ItemsControl ItemsSource="{Binding Events}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Grid ColumnDefinitions="80,8,*,8,Auto" Margin="0,0,0,4">
+                                                <TextBox Classes="adg center" Text="{Binding Time}"
+                                                         IsEnabled="{Binding $parent[UserControl].DataContext.IsEditable}"/>
+                                                <TextBox Grid.Column="2" Classes="adg" Text="{Binding Text}"
+                                                         IsEnabled="{Binding $parent[UserControl].DataContext.IsEditable}"/>
+                                                <Button Grid.Column="4" Classes="adg" Content="Supprimer" Padding="6,1" FontSize="11"
+                                                        Command="{Binding RemoveCommand}"
+                                                        IsVisible="{Binding $parent[UserControl].DataContext.IsEditable}"/>
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                                <Button Classes="adg" Content="Ajouter un événement" HorizontalAlignment="Left" Command="{Binding AddEventCommand}"
+                                        IsVisible="{Binding IsEditable}"/>
+                            </StackPanel>
+                        </HeaderedContentControl>
+                        <HeaderedContentControl Classes="group" Header="Chronologie complète">
+                            <StackPanel>
+                                <ItemsControl ItemsSource="{Binding Chronologie}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding}" FontSize="12.5" FontFamily="Menlo, Consolas, monospace" Margin="0,1"/>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                                <TextBlock Classes="hint" Text="Mise à jour en changeant d'onglet." Margin="0,4,0,0"/>
+                            </StackPanel>
+                        </HeaderedContentControl>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- ===== 3. Engin et personnel ===== -->
+            <TabItem Header="3. Engin et personnel">
+                <ScrollViewer>
+                    <StackPanel Margin="4,6" IsEnabled="{Binding IsEditable}">
+                        <HeaderedContentControl Classes="group" Header="Engin engagé et chef d'agrès">
+                            <Grid ColumnDefinitions="220,8,130,8,*,8,*" RowDefinitions="Auto,Auto">
+                                <TextBlock Classes="cap" Text="ENGIN"/>
+                                <TextBlock Grid.Column="2" Classes="cap" Text="GRADE"/>
+                                <TextBlock Grid.Column="4" Classes="cap" Text="NOM"/>
+                                <TextBlock Grid.Column="6" Classes="cap" Text="PRÉNOM"/>
+                                <ComboBox Grid.Row="1" Classes="adg bold" ItemsSource="{Binding EnginChoices}" SelectedItem="{Binding Report.Engin}"
+                                          HorizontalAlignment="Stretch"/>
+                                <AutoCompleteBox Grid.Row="1" Grid.Column="2" Classes="adg" ItemsSource="{Binding Grades}"
+                                                 Text="{Binding Report.ChefAgres.Grade}"/>
+                                <TextBox Grid.Row="1" Grid.Column="4" Classes="adg" Text="{Binding Report.ChefAgres.Nom}"/>
+                                <TextBox Grid.Row="1" Grid.Column="6" Classes="adg" Text="{Binding Report.ChefAgres.Prenom}"/>
+                            </Grid>
+                        </HeaderedContentControl>
+                        <HeaderedContentControl Classes="group" Header="Équipage">
+                            <StackPanel Spacing="4">
+                                <Grid ColumnDefinitions="130,8,*,8,*,8,170,8,90">
+                                    <TextBlock Classes="cap" Text="GRADE"/>
+                                    <TextBlock Grid.Column="2" Classes="cap" Text="NOM"/>
+                                    <TextBlock Grid.Column="4" Classes="cap" Text="PRÉNOM"/>
+                                    <TextBlock Grid.Column="6" Classes="cap" Text="FONCTION"/>
+                                </Grid>
+                                <ItemsControl ItemsSource="{Binding Crew}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Grid ColumnDefinitions="130,8,*,8,*,8,170,8,90" Margin="0,0,0,4">
+                                                <AutoCompleteBox Classes="adg" ItemsSource="{Binding Grades}" Text="{Binding Grade}"/>
+                                                <TextBox Grid.Column="2" Classes="adg" Text="{Binding Nom}"/>
+                                                <TextBox Grid.Column="4" Classes="adg" Text="{Binding Prenom}"/>
+                                                <ComboBox Grid.Column="6" Classes="adg" ItemsSource="{Binding Fonctions}" SelectedItem="{Binding Fonction}"
+                                                          HorizontalAlignment="Stretch"/>
+                                                <Button Grid.Column="8" Classes="adg" Content="Retirer" Padding="6,1" FontSize="11"
+                                                        Command="{Binding RemoveCommand}"/>
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                                <Grid ColumnDefinitions="Auto,*,Auto">
+                                    <Button Classes="adg" Content="Ajouter un personnel" Command="{Binding AddCrewCommand}"/>
+                                    <TextBlock Grid.Column="2" Classes="lbl" Text="{Binding Effectif}" FontSize="13"/>
+                                </Grid>
+                            </StackPanel>
+                        </HeaderedContentControl>
+                        <HeaderedContentControl Classes="group" Header="Autres engins présents (un par ligne)">
+                            <TextBox Classes="adg area" Text="{Binding OtherEnginsText}"/>
+                        </HeaderedContentControl>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- ===== 4. Déroulement ===== -->
+            <TabItem Header="4. Déroulement">
+                <ScrollViewer>
+                    <StackPanel Margin="4,6" IsEnabled="{Binding IsEditable}">
+                        <HeaderedContentControl Classes="group" Header="Situation à l'arrivée"><TextBox Classes="adg area" Text="{Binding Report.SituationArrivee}"/></HeaderedContentControl>
+                        <HeaderedContentControl Classes="group" Header="Risques constatés"><TextBox Classes="adg area" Text="{Binding Report.Risques}"/></HeaderedContentControl>
+                        <HeaderedContentControl Classes="group" Header="Reconnaissances réalisées"><TextBox Classes="adg area" Text="{Binding Report.Reconnaissances}"/></HeaderedContentControl>
+                        <HeaderedContentControl Classes="group" Header="Actions entreprises"><TextBox Classes="adg area" Text="{Binding Report.Actions}"/></HeaderedContentControl>
+                        <HeaderedContentControl Classes="group" Header="Moyens utilisés"><TextBox Classes="adg area" Text="{Binding Report.Moyens}"/></HeaderedContentControl>
+                        <HeaderedContentControl Classes="group" Header="Difficultés rencontrées"><TextBox Classes="adg area" Text="{Binding Report.Difficultes}"/></HeaderedContentControl>
+                        <HeaderedContentControl Classes="group" Header="Renforts demandés"><TextBox Classes="adg area" Text="{Binding Report.Renforts}"/></HeaderedContentControl>
+                        <HeaderedContentControl Classes="group" Header="Situation finale"><TextBox Classes="adg area" Text="{Binding Report.SituationFinale}"/></HeaderedContentControl>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- ===== 5. Bilan ===== -->
+            <TabItem Header="5. Bilan">
+                <ScrollViewer>
+                    <StackPanel Margin="4,6">
+                        <StackPanel IsEnabled="{Binding IsEditable}">
+                            <HeaderedContentControl Classes="group" Header="Victimes et bilan">
+                                <StackPanel Spacing="4">
+                                    <Grid ColumnDefinitions="Auto,8,80">
+                                        <TextBlock Classes="lbl" Text="Nombre de victimes"/>
+                                        <TextBox Grid.Column="2" Classes="adg center" Text="{Binding VictimText}"/>
+                                    </Grid>
+                                    <TextBlock Classes="cap" Text="INFORMATIONS GÉNÉRALES DU BILAN" Margin="2,6,0,2"/>
+                                    <TextBox Classes="adg area" Text="{Binding Report.BilanGeneral}"/>
+                                    <TextBlock Classes="cap" Text="ACTIONS DE SECOURS" Margin="2,6,0,2"/>
+                                    <TextBox Classes="adg area" Text="{Binding Report.ActionsSecours}"/>
+                                </StackPanel>
+                            </HeaderedContentControl>
+                            <HeaderedContentControl Classes="group" Header="Transports">
+                                <Grid ColumnDefinitions="*,8,*" RowDefinitions="Auto,Auto">
+                                    <TextBlock Classes="cap" Text="MOYENS DE TRANSPORT ENGAGÉS"/>
+                                    <TextBlock Grid.Column="2" Classes="cap" Text="DESTINATIONS"/>
+                                    <TextBox Grid.Row="1" Classes="adg area" Text="{Binding Report.Transports}"/>
+                                    <TextBox Grid.Row="1" Grid.Column="2" Classes="adg area" Text="{Binding Report.Destinations}"/>
+                                </Grid>
+                            </HeaderedContentControl>
+                            <HeaderedContentControl Classes="group" Header="Observations du chef d'agrès">
+                                <TextBox Classes="adg area" Text="{Binding Report.ObservationsChef}"/>
+                            </HeaderedContentControl>
+                        </StackPanel>
+                        <HeaderedContentControl Classes="group" Header="Fiches eFiBi associées (lecture seule)">
+                            <StackPanel Spacing="4">
+                                <TextBox Classes="adg" Text="{Binding EfibiText}" IsEnabled="{Binding IsEditable}"
+                                         Watermark="Numéros des fiches bilans, séparés par des virgules"/>
+                                <TextBlock Classes="hint" Text="Les fiches s'afficheront ici en consultation dès qu'eFiBi sera relié à sa base de données."/>
+                            </StackPanel>
+                        </HeaderedContentControl>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- ===== 6. Synthèse ===== -->
+            <TabItem Header="6. Synthèse">
+                <Grid ColumnDefinitions="*,12,*" Margin="4,6">
+                    <DockPanel>
+                        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="8" Margin="6,0,0,6">
+                            <Button Classes="adg primary" Content="Générer la synthèse" Command="{Binding GenerateCommand}"/>
+                            <TextBlock Classes="hint" VerticalAlignment="Center" Text="Reprend toutes les rubriques ; modifiable ensuite."/>
+                        </StackPanel>
+                        <TextBox Classes="adg area" Text="{Binding Report.Synthese}" IsReadOnly="{Binding !IsEditable}"
+                                 FontFamily="Menlo, Consolas, monospace" FontSize="12" Margin="6,0,0,6"/>
+                    </DockPanel>
+                    <!-- Aperçu du document final -->
+                    <ScrollViewer Grid.Column="2">
+                        <Border Background="White" BorderBrush="#7A7A7A" BorderThickness="1" Padding="22,18" Margin="0,0,6,6"
+                                BoxShadow="0 3 12 0 #55000000">
+                            <StackPanel Spacing="6">
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <StackPanel>
+                                        <TextBlock Text="BRIGADE DE SAPEURS-POMPIERS DE PARIS" FontSize="11" FontWeight="Bold"/>
+                                        <TextBlock Text="Main courante opérationnelle" FontSize="16" FontWeight="Bold"/>
+                                    </StackPanel>
+                                    <TextBlock Grid.Column="1" Text="{Binding Report.Number}" FontWeight="Bold" FontSize="12"/>
+                                </Grid>
+                                <Border Height="2" Background="#B71C1C"/>
+                                <TextBlock Text="{Binding Report.Synthese}" FontSize="11.5" TextWrapping="Wrap" LineHeight="17"/>
+                                <Border Height="1" Background="#BBBBBB" Margin="0,6,0,0"/>
+                                <TextBlock Text="{Binding AuthorLine}" FontSize="10.5" Foreground="#444444"/>
+                                <TextBlock Text="{Binding ValidationLine}" FontSize="10.5" Foreground="#444444"/>
+                            </StackPanel>
+                        </Border>
+                    </ScrollViewer>
+                </Grid>
+            </TabItem>
+
+            <!-- ===== 7. Validation ===== -->
+            <TabItem Header="7. Validation">
+                <ScrollViewer>
+                    <StackPanel Margin="4,6">
+                        <HeaderedContentControl Classes="group" Header="Vérification des informations">
+                            <StackPanel Spacing="3">
+                                <TextBlock Text="Toutes les rubriques obligatoires sont renseignées." FontWeight="Bold" Foreground="#2E7D32"
+                                           IsVisible="{Binding IsComplete}"/>
+                                <ItemsControl ItemsSource="{Binding Checks}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding}" Foreground="#C62828" FontWeight="Bold" FontSize="12.5"/>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </HeaderedContentControl>
+                        <HeaderedContentControl Classes="group" Header="Rédacteur et validation">
+                            <StackPanel Spacing="3">
+                                <TextBlock Text="{Binding AuthorLine}" FontSize="13"/>
+                                <TextBlock Text="{Binding ValidationLine}" FontSize="13" FontWeight="Bold"/>
+                                <TextBlock Classes="hint" Margin="0,4,0,0"
+                                           Text="Une MCO validée est figée : elle ne peut plus être modifiée, seulement archivée. Le brouillon reste modifiable autant que nécessaire."/>
+                            </StackPanel>
+                        </HeaderedContentControl>
+                        <HeaderedContentControl Classes="group" Header="Historique des modifications">
+                            <ItemsControl ItemsSource="{Binding History}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid ColumnDefinitions="130,130,110,*" Margin="0,1">
+                                            <TextBlock Text="{Binding LocalAt, StringFormat='{}{0:dd/MM/yyyy HH:mm}'}" FontSize="12"/>
+                                            <TextBlock Grid.Column="1" Text="{Binding By}" FontSize="12" TextTrimming="CharacterEllipsis"/>
+                                            <TextBlock Grid.Column="2" Text="{Binding Action}" FontSize="12" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="3" Text="{Binding Details}" FontSize="12" TextWrapping="Wrap"/>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </HeaderedContentControl>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+        </TabControl>
+    </DockPanel>
+</UserControl>

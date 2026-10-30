@@ -208,3 +208,73 @@ public class RemiseScreenshots
         }
     }
 }
+
+/// <summary>Captures de la MCO (tableau de bord et rédaction pré-remplie).</summary>
+public class McoScreenshots
+{
+    private static readonly string Folder = Environment.GetEnvironmentVariable("ARGOS_SCREENSHOTS")
+                                            ?? Path.Combine(Path.GetTempPath(), "argos-screenshots");
+
+    private static void Capture(Control content, double width, double height, string name)
+    {
+        Directory.CreateDirectory(Folder);
+        var window = new Window { Width = width, Height = height, Content = content };
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+        var frame = window.CaptureRenderedFrame();
+        Assert.NotNull(frame);
+        frame!.Save(Path.Combine(Folder, name + ".png"));
+        window.Close();
+    }
+
+    [AvaloniaFact]
+    public void Application_MCO()
+    {
+        var user = new ArgosUserDto("1", "Santos", null, [AccessLevels.Sapeur, AccessLevels.Operateur]);
+        var previous = Argos.Services.ArgosSession.Current;
+        Argos.Services.ArgosSession.Current = new Argos.Services.ArgosSession(user, "test");
+        try
+        {
+            var now = DateTimeOffset.Now;
+            var report = new McoReport
+            {
+                Id = "r1", Number = "MCO-2026-0001", InterventionNumber = "210-593", Date = now, NatureCode = "117",
+                Address = "12 AVENUE BOSQUET", Locality = "L'ÉCHAT", Engin = "VSAV 947 CRET",
+                TimeDepart = "14:02", TimeArrivee = "14:09", TimeDisponible = "14:51",
+                ChefAgres = new McoPerson { Grade = "SGT", Nom = "Santos", Prenom = "Diego", Fonction = "Chef d'agrès" },
+                Crew = [new McoPerson { Grade = "CPL", Nom = "Martin", Prenom = "Paul", Fonction = "Conducteur" },
+                        new McoPerson { Grade = "SAP 1CL", Nom = "Durand", Prenom = "Léa", Fonction = "Équipier" }],
+                Events = [new McoEvent { Time = "14:15", Text = "Victime extraite par l'escalier" }],
+                SituationArrivee = "Fumées au 1er étage, une personne à la fenêtre.",
+                Actions = "Reconnaissance, extraction de la victime, ventilation.",
+                VictimCount = 1, AuthorName = "Santos", CreatedAt = now, UpdatedAt = now, UpdatedBy = "Santos",
+                History = [new McoHistoryEntry { At = now, By = "Santos", Action = "Création", Details = "Brouillon créé." }]
+            };
+            report.Synthese = McoPrefill.Synthese(report);
+            Argos.Services.ArgosSession.Current.Mco.Apply(new McoSnapshot
+            {
+                Reports = [report, new McoReport { Id = "r2", Number = "MCO-2026-0002", InterventionNumber = "418-207",
+                    Date = now.AddDays(-1), NatureCode = "112", Address = "RUE VIOLET", Engin = "PSE 212 CRET",
+                    AuthorName = "Martin", Status = McoStatuses.Validee }]
+            });
+            var desktop = new DesktopViewModel(user, null, () => { }, () => { });
+            Capture(new Argos.Views.Apps.Mco.McoAppView { DataContext = new Argos.ViewModels.Mco.McoAppViewModel(desktop) }, 1300, 800, "mco-tableau-de-bord");
+
+            var editor = new Argos.ViewModels.Mco.McoEditorViewModel(desktop, "r1", null, null, "test");
+            Assert.Equal("VSAV 947 CRET", editor.Report.Engin);
+            Assert.Equal(2, editor.Crew.Count);
+            Capture(new Argos.Views.Apps.Mco.McoEditorView { DataContext = editor }, 1100, 800, "mco-identification");
+            editor = new Argos.ViewModels.Mco.McoEditorViewModel(desktop, "r1", null, null, "test2") { Tab = 2 };
+            Capture(new Argos.Views.Apps.Mco.McoEditorView { DataContext = editor }, 1100, 800, "mco-personnel");
+            editor = new Argos.ViewModels.Mco.McoEditorViewModel(desktop, "r1", null, null, "test3") { Tab = 5 };
+            Capture(new Argos.Views.Apps.Mco.McoEditorView { DataContext = editor }, 1100, 800, "mco-synthese");
+            editor = new Argos.ViewModels.Mco.McoEditorViewModel(desktop, "r1", null, null, "test4") { Tab = 6 };
+            Assert.Contains(editor.Checks, c => c.Contains("intervention") is false);
+            Capture(new Argos.Views.Apps.Mco.McoEditorView { DataContext = editor }, 1100, 800, "mco-validation");
+        }
+        finally
+        {
+            Argos.Services.ArgosSession.Current = previous;
+        }
+    }
+}

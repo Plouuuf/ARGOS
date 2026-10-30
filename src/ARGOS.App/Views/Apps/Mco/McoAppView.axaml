@@ -1,0 +1,146 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="Argos.Views.Apps.Mco.McoAppView"
+             Background="{StaticResource AdagioBack}"
+             FontFamily="{StaticResource AdagioFont}"
+             Foreground="Black">
+    <UserControl.Styles>
+        <Style Selector="TextBlock.h1">
+            <Setter Property="FontSize" Value="18"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Margin" Value="0,0,0,8"/>
+        </Style>
+        <Style Selector="TextBlock.h2">
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Margin" Value="0,14,0,6"/>
+        </Style>
+        <Style Selector="TextBlock.big">
+            <Setter Property="FontSize" Value="28"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+        </Style>
+        <Style Selector="TextBlock.small">
+            <Setter Property="FontSize" Value="11.5"/>
+            <Setter Property="Foreground" Value="#355C8C"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+        </Style>
+        <Style Selector="TextBlock.cell">
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="Margin" Value="0,0,8,0"/>
+        </Style>
+    </UserControl.Styles>
+
+    <Grid ColumnDefinitions="190,*">
+        <Border Background="#4A1C1C">
+            <DockPanel>
+                <StackPanel DockPanel.Dock="Top" Margin="14,14,14,16" Spacing="2">
+                    <Image Source="avares://ARGOS.App/Assets/Icons/mco.png" Width="54" Height="54" HorizontalAlignment="Left"/>
+                    <TextBlock Text="MCO" Foreground="White" FontSize="17" FontWeight="Bold" Margin="0,6,0,0"/>
+                    <TextBlock Text="Main courante opérationnelle" Foreground="#E0B4B4" FontSize="11"/>
+                </StackPanel>
+                <StackPanel DockPanel.Dock="Bottom" Margin="10,0,10,12" Spacing="6">
+                    <Button Classes="adg primary" HorizontalAlignment="Stretch" Content="Nouvelle MCO" Command="{Binding NewCommand}"/>
+                    <Button Classes="adg" HorizontalAlignment="Stretch" Content="Actualiser" Command="{Binding RefreshCommand}"/>
+                    <TextBlock Text="{Binding OperatorName}" Foreground="#E0B4B4" FontSize="11" Margin="2,6,0,0" TextTrimming="CharacterEllipsis"/>
+                </StackPanel>
+                <StackPanel Margin="14,0" Spacing="10">
+                    <TextBlock Foreground="#E0B4B4" FontSize="11.5" TextWrapping="Wrap"
+                               Text="Comptes-rendus d'intervention : rédaction, validation et archives. Une MCO par engin engagé."/>
+                </StackPanel>
+            </DockPanel>
+        </Border>
+
+        <Grid Grid.Column="1" RowDefinitions="Auto,*">
+            <Border Background="#C62828" Padding="10,5" IsVisible="{Binding HasError}">
+                <TextBlock Text="{Binding Error}" Foreground="White" FontWeight="Bold" TextWrapping="Wrap"/>
+            </Border>
+            <ScrollViewer Grid.Row="1">
+                <StackPanel Margin="14">
+                    <TextBlock Classes="h1" Text="Tableau de bord MCO"/>
+                    <WrapPanel>
+                        <Border Classes="tile"><StackPanel><TextBlock Classes="big" Text="{Binding Drafts}" Foreground="#B26A00"/><TextBlock Classes="small" Text="Brouillons"/></StackPanel></Border>
+                        <Border Classes="tile"><StackPanel><TextBlock Classes="big" Text="{Binding Validated}" Foreground="#2E7D32"/><TextBlock Classes="small" Text="Validées"/></StackPanel></Border>
+                        <Border Classes="tile"><StackPanel><TextBlock Classes="big" Text="{Binding Archived}" Foreground="#5F5F5F"/><TextBlock Classes="small" Text="Archivées"/></StackPanel></Border>
+                        <Border Classes="tile"><StackPanel><TextBlock Classes="big" Text="{Binding ToWrite}" Foreground="#C62828"/><TextBlock Classes="small" Text="Interventions sans MCO"/></StackPanel></Border>
+                    </WrapPanel>
+
+                    <TextBlock Classes="h2" Text="Dernières interventions (ADAGIO ODE)"/>
+                    <Border Classes="tablehead">
+                        <Grid ColumnDefinitions="80,95,*,*,*,200,130">
+                            <TextBlock Text="N°"/>
+                            <TextBlock Grid.Column="1" Text="Date"/>
+                            <TextBlock Grid.Column="2" Text="Nature"/>
+                            <TextBlock Grid.Column="3" Text="Adresse"/>
+                            <TextBlock Grid.Column="4" Text="Engins"/>
+                            <TextBlock Grid.Column="5" Text="MCO"/>
+                            <TextBlock Grid.Column="6" Text=""/>
+                        </Grid>
+                    </Border>
+                    <ItemsControl ItemsSource="{Binding Interventions}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Background="#E9F0F5" BorderBrush="#C3D4E1" BorderThickness="0,0,0,1" Padding="6,4">
+                                    <Grid ColumnDefinitions="80,95,*,*,*,200,130">
+                                        <TextBlock Classes="cell" Text="{Binding Number}" FontWeight="Bold"/>
+                                        <TextBlock Grid.Column="1" Classes="cell" Text="{Binding Date}"/>
+                                        <TextBlock Grid.Column="2" Classes="cell" Text="{Binding Nature}"/>
+                                        <TextBlock Grid.Column="3" Classes="cell" Text="{Binding Address}"/>
+                                        <TextBlock Grid.Column="4" Classes="cell" Text="{Binding Engins}"/>
+                                        <TextBlock Grid.Column="5" Classes="cell" Text="{Binding McoState}" FontWeight="Bold"/>
+                                        <Button Grid.Column="6" Classes="adg" Content="Rédiger la MCO" Padding="6,2" FontSize="11"
+                                                Command="{Binding WriteCommand}"/>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <TextBlock Text="Aucune intervention." FontSize="12" Foreground="#355C8C" IsVisible="{Binding !Interventions.Count}"/>
+
+                    <TextBlock Classes="h2" Text="Mains courantes enregistrées"/>
+                    <Grid ColumnDefinitions="*,8,150,8,170,8,Auto" Margin="0,0,0,8">
+                        <TextBox Classes="adg" Text="{Binding Search}"
+                                 Watermark="Rechercher : n° d'intervention, adresse, nature, date (30/10/2026), engin, rédacteur"/>
+                        <ComboBox Grid.Column="2" Classes="adg" ItemsSource="{Binding StatusFilters}" SelectedItem="{Binding StatusFilter}"
+                                  HorizontalAlignment="Stretch"/>
+                        <ComboBox Grid.Column="4" Classes="adg" ItemsSource="{Binding EnginFilters}" SelectedItem="{Binding EnginFilter}"
+                                  HorizontalAlignment="Stretch"/>
+                        <TextBlock Grid.Column="6" Classes="lbl" Text="{Binding ReportsCount}"/>
+                    </Grid>
+                    <Border Classes="tablehead">
+                        <Grid ColumnDefinitions="115,80,90,*,*,140,130,85">
+                            <TextBlock Text="MCO"/>
+                            <TextBlock Grid.Column="1" Text="Interv."/>
+                            <TextBlock Grid.Column="2" Text="Date"/>
+                            <TextBlock Grid.Column="3" Text="Nature"/>
+                            <TextBlock Grid.Column="4" Text="Adresse"/>
+                            <TextBlock Grid.Column="5" Text="Engin"/>
+                            <TextBlock Grid.Column="6" Text="Rédacteur"/>
+                            <TextBlock Grid.Column="7" Text="Statut"/>
+                        </Grid>
+                    </Border>
+                    <ItemsControl ItemsSource="{Binding Reports}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Button Classes="row" Command="{Binding OpenCommand}">
+                                    <Grid ColumnDefinitions="115,80,90,*,*,140,130,85">
+                                        <TextBlock Classes="cell" Text="{Binding Number}" FontWeight="Bold"/>
+                                        <TextBlock Grid.Column="1" Classes="cell" Text="{Binding Intervention}"/>
+                                        <TextBlock Grid.Column="2" Classes="cell" Text="{Binding Date}"/>
+                                        <TextBlock Grid.Column="3" Classes="cell" Text="{Binding Nature}"/>
+                                        <TextBlock Grid.Column="4" Classes="cell" Text="{Binding Address}"/>
+                                        <TextBlock Grid.Column="5" Classes="cell" Text="{Binding Engin}"/>
+                                        <TextBlock Grid.Column="6" Classes="cell" Text="{Binding Author}"/>
+                                        <TextBlock Grid.Column="7" Classes="cell" Text="{Binding Status}" FontWeight="Bold"/>
+                                    </Grid>
+                                </Button>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <TextBlock Text="Aucune MCO ne correspond." FontSize="12" Foreground="#355C8C" IsVisible="{Binding !Reports.Count}"/>
+                </StackPanel>
+            </ScrollViewer>
+        </Grid>
+    </Grid>
+</UserControl>

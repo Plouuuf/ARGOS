@@ -32,6 +32,9 @@ public sealed class InterventionViewModel : ViewModelBase, IDisposable
         AskCloseCommand = new RelayCommand(() => ConfirmClose = true, () => IsActive);
         CancelCloseCommand = new RelayCommand(() => ConfirmClose = false);
         CloseInterventionCommand = new RelayCommand(() => _ = CloseInterventionAsync());
+        // Main courante de l'intervention : pré-remplie depuis l'ODE (premier engin par défaut).
+        WriteMcoCommand = new RelayCommand(() => _desktop.OpenWindow(
+            Argos.Views.Apps.Mco.McoWindows.Editor(_desktop, null, InterventionId, null)));
 
         if (ArgosSession.Current is { } session)
             session.Ode.Changed += Reload;
@@ -78,6 +81,7 @@ public sealed class InterventionViewModel : ViewModelBase, IDisposable
     public RelayCommand AskCloseCommand { get; }
     public RelayCommand CancelCloseCommand { get; }
     public RelayCommand CloseInterventionCommand { get; }
+    public RelayCommand WriteMcoCommand { get; }
 
     private void Reload()
     {
