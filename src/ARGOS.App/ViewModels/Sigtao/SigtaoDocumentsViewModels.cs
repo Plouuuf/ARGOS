@@ -128,66 +128,38 @@ public sealed class DossierViewModel : ViewModelBase, IDisposable
         OnPropertyChanged(nameof(HasEntries));
     }
 
-    /// <param name="draft">Vrai : brouillon (sans numéro, modifiable plus tard) ; faux : validation et transmission.</param>
-    private async Task SaveAsync(bool draft)
+    private async Task SaveAsync()
     {
         var session = ArgosSession.Current;
-        if (session is null || _busy) return;
-        _busy = true;
-        try
+        if (session is null) return;
+        var result = await session.Api.SendAsync(HttpMethod.Post, "api/sigtao/military", _record);
+        ShowMessage(result.Ok ? "Dossier enregistré." : result.Error ?? "Enregistrement refusé.", !result.Ok);
+        if (result.Ok && result.Id is { } id)
         {
-            if (!draft && string.IsNullOrWhiteSpace(_cr.Synthese)) _cr.Synthese = CrText.Synthese(_cr);
-            _cr.IsDraft = draft;
-            var result = await session.Api.SendAsync(HttpMethod.Post, "api/sigtao/reports", _cr);
-            if (!result.Ok)
-            {
-                if (!draft && !string.IsNullOrEmpty(_cr.Id)) _cr.IsDraft = true;
-                ShowMessage(result.Error ?? "Enregistrement refusé.", true);
-                return;
-            }
-            await session.Sigtao.RefreshAsync();
-            if (result.Id is { } id && session.Sigtao.FindReport(id) is { } saved)
-            {
-                _cr = saved;
-                IsReadOnly = !saved.IsDraft;
-                foreach (var n in new[] { nameof(Report), nameof(IsReadOnly), nameof(IsEditable), nameof(IsDraft), nameof(Title), nameof(NumLine),
-                                          nameof(Body), nameof(Synthese) })
-                    OnPropertyChanged(n);
-                SaveCommand.RaiseCanExecuteChanged();
-                SaveDraftCommand.RaiseCanExecuteChanged();
-                DeleteDraftCommand.RaiseCanExecuteChanged();
-                GenerateCommand.RaiseCanExecuteChanged();
-            }
-            ShowMessage(draft
-                ? $"Brouillon enregistré à {DateTime.Now:HH:mm} : il reste modifiable depuis la liste des comptes-rendus."
-                : $"Compte-rendu N° {_cr.NumDoc} enregistré.", false);
+            _id = id;
+            _record.Id = id;
+            foreach (var n in new[] { nameof(IsNew), nameof(Title) }) OnPropertyChanged(n);
+            AddEntryCommand.RaiseCanExecuteChanged();
         }
-        finally
-        {
-            _busy = false;
-        }
+        await session.Sigtao.RefreshAsync();
     }
 
-    private async Task DeleteDraftAsync()
+    private async Task AddEntryAsync()
     {
         var session = ArgosSession.Current;
-        if (session is null || _busy || string.IsNullOrEmpty(_cr.Id)) return;
-        _busy = true;
-        try
+        if (session is null || _id is null) return;
+        var result = await session.Api.SendAsync(HttpMethod.Post, $"api/sigtao/military/{_id}/entries", new DossierEntry
         {
-            var result = await session.Api.SendAsync(HttpMethod.Post, $"api/sigtao/reports/{_cr.Id}/delete");
-            if (!result.Ok)
-            {
-                ShowMessage(result.Error ?? "Suppression refusée.", true);
-                return;
-            }
-            await session.Sigtao.RefreshAsync();
-            _desktop.CloseWindow(_key);
-        }
-        finally
-        {
-            _busy = false;
-        }
+            Kind = EntryKind, Title = EntryTitle, Details = EntryDetails, Date = Offset(EntryDate) ?? DateTimeOffset.Now
+        });
+        ShowMessage(result.Ok ? $"{EntryKind} ajouté(e) au dossier." : result.Error ?? "Ajout refusé.", !result.Ok);
+        if (!result.Ok) return;
+        EntryTitle = string.Empty;
+        EntryDetails = string.Empty;
+        await session.Sigtao.RefreshAsync();
+        // Promotion / affectation / mutation modifient la fiche : on la recharge.
+        if (session.Sigtao.FindMilitary(_id) is { } fresh)
+            Load(Clone(fresh));
     }
 
     private void ShowMessage(string text, bool error)
@@ -317,17 +289,20 @@ public sealed class CompteRenduViewModel : ViewModelBase
     public RelayCommand CloseCommand { get; }
     public RelayCommand RemoveAttachmentCommand { get; }
 
-    private async Task SaveAsync()
+    /// <param name="draft">Vrai : brouillon (sans numéro, modifiable plus tard) ; faux : validation et transmission.</param>
+    private async Task SaveAsync(bool draft)
     {
         var session = ArgosSession.Current;
         if (session is null || _busy) return;
         _busy = true;
         try
         {
-            if (string.IsNullOrWhiteSpace(_cr.Synthese)) _cr.Synthese = CrText.Synthese(_cr);
+            if (!draft && string.IsNullOrWhiteSpace(_cr.Synthese)) _cr.Synthese = CrText.Synthese(_cr);
+            _cr.IsDraft = draft;
             var result = await session.Api.SendAsync(HttpMethod.Post, "api/sigtao/reports", _cr);
             if (!result.Ok)
             {
+                if (!draft && !string.IsNullOrEmpty(_cr.Id)) _cr.IsDraft = true;
                 ShowMessage(result.Error ?? "Enregistrement refusé.", true);
                 return;
             }
@@ -335,14 +310,40 @@ public sealed class CompteRenduViewModel : ViewModelBase
             if (result.Id is { } id && session.Sigtao.FindReport(id) is { } saved)
             {
                 _cr = saved;
-                IsReadOnly = true;
-                foreach (var n in new[] { nameof(Report), nameof(IsReadOnly), nameof(IsEditable), nameof(Title), nameof(NumLine),
+                IsReadOnly = !saved.IsDraft;
+                foreach (var n in new[] { nameof(Report), nameof(IsReadOnly), nameof(IsEditable), nameof(IsDraft), nameof(Title), nameof(NumLine),
                                           nameof(Body), nameof(Synthese) })
                     OnPropertyChanged(n);
                 SaveCommand.RaiseCanExecuteChanged();
+                SaveDraftCommand.RaiseCanExecuteChanged();
+                DeleteDraftCommand.RaiseCanExecuteChanged();
                 GenerateCommand.RaiseCanExecuteChanged();
             }
-            ShowMessage($"Compte-rendu N° {_cr.NumDoc} enregistré.", false);
+            ShowMessage(draft
+                ? $"Brouillon enregistré à {DateTime.Now:HH:mm} : il reste modifiable depuis la liste des comptes-rendus."
+                : $"Compte-rendu N° {_cr.NumDoc} enregistré.", false);
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private async Task DeleteDraftAsync()
+    {
+        var session = ArgosSession.Current;
+        if (session is null || _busy || string.IsNullOrEmpty(_cr.Id)) return;
+        _busy = true;
+        try
+        {
+            var result = await session.Api.SendAsync(HttpMethod.Post, $"api/sigtao/reports/{_cr.Id}/delete");
+            if (!result.Ok)
+            {
+                ShowMessage(result.Error ?? "Suppression refusée.", true);
+                return;
+            }
+            await session.Sigtao.RefreshAsync();
+            _desktop.CloseWindow(_key);
         }
         finally
         {
