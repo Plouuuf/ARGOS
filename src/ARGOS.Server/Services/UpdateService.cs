@@ -152,11 +152,30 @@ public sealed class UpdateService(IConfiguration configuration, RealtimeHub hub,
             var zip = Path.Combine(Dir, $"serveur-{build}.zip");
             await DownloadAsync(options, serverUrl, zip, ct);
             File.WriteAllText(Path.Combine(Dir, "tentative.txt"), build.ToString());
+            foreach (var old in Directory.GetFiles(Dir, "serveur-*.zip").Where(f => !f.EndsWith($"serveur-{build}.zip", StringComparison.Ordinal)))
+                try { File.Delete(old); } catch { /* anciens paquets */ }
             logger.LogWarning("Installation du serveur ARGOS build {Build} : redémarrage.", build);
             Trace($"Installation du serveur build {build} lancée (dossier {AppContext.BaseDirectory}).");
-            await hub.BroadcastAsync(new RealtimeMessage(RealtimeTypes.Notify, Title: "Mise à jour d'ARGOS",
-                Text: "Le serveur redémarre pour se mettre à jour : reconnexion automatique dans quelques secondes."), ct);
-            InstallServer(zip);
+            // L'annonce aux postes ne doit jamais empêcher l'installation (c'est ce qui bloquait les builds 43 à 62).
+            try
+            {
+                await hub.BroadcastAsync(new RealtimeMessage(RealtimeTypes.Notify, Title: "Mise à jour d'ARGOS",
+                    Text: "Le serveur redémarre pour se mettre à jour : reconnexion automatique dans quelques secondes."), ct);
+            }
+            catch (Exception ex)
+            {
+                Trace("Annonce aux postes impossible (sans gravité) : " + ex.Message);
+            }
+            try
+            {
+                InstallServer(zip);
+            }
+            catch (Exception ex)
+            {
+                Trace("Lancement de l'installation impossible : " + ex);
+                File.Delete(Path.Combine(Dir, "tentative.txt"));   // nouvel essai à la prochaine vérification
+                throw;
+            }
         }
     }
 
@@ -235,10 +254,19 @@ public sealed class UpdateService(IConfiguration configuration, RealtimeHub hub,
         const string task = "ARGOS Mise a jour";
         Run("schtasks", $"/Create /TN \"{task}\" /SC ONCE /ST 00:00 /SD 01/01/2030 /RU SYSTEM /RL HIGHEST /F " +
                         $"/TR \"powershell.exe -NoProfile -ExecutionPolicy Bypass -File \\\"{script}\\\"\"");
-        Run("schtasks", $"/Run /TN \"{task}\"");
+        if (!Run("schtasks", $"/Run /TN \"{task}\""))
+        {
+            // Planificateur indisponible : script lancé directement, détaché du serveur.
+            Process.Start(new ProcessStartInfo("powershell.exe", $"-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File \"{script}\"")
+            {
+                UseShellExecute = true,
+                CreateNoWindow = true
+            });
+            Trace("Script lancé directement (sans tâche planifiée).");
+        }
     }
 
-    private void Run(string file, string args)
+    private bool Run(string file, string args)
     {
         using var process = Process.Start(new ProcessStartInfo(file, args) { UseShellExecute = false, CreateNoWindow = true, RedirectStandardOutput = true, RedirectStandardError = true });
         process?.WaitForExit(30_000);
@@ -249,6 +277,7 @@ public sealed class UpdateService(IConfiguration configuration, RealtimeHub hub,
             Trace($"{file} {args} a échoué (code {process.ExitCode}) : {error.Trim()}");
         }
         else Trace($"{file} {args.Split(' ').FirstOrDefault()} : OK");
+        return process is { HasExited: true, ExitCode: 0 };
     }
 
     public override void Dispose()
