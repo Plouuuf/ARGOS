@@ -10,6 +10,9 @@
                     <TextBlock Classes="muted" Text="{Binding GardeStatus}" Margin="0,-6,0,0"/>
                 </StackPanel>
                 <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Top">
+                    <Button Classes="sg light" Content="M'inscrire en renfort" Command="{Binding GardeSelfReserveCommand}" IsVisible="{Binding CanSelfReserve}"
+                            ToolTip.Tip="S'inscrire sur la garde de ce centre (le tien ou un autre CS). Pour un poste précis : bouton « Moi » à côté du poste libre."/>
+                    <Button Classes="sg light" Content="Me retirer de cette garde" Command="{Binding GardeSelfRemoveCommand}" IsVisible="{Binding IAmOnGarde}"/>
                     <Button Classes="sg light" Content="Reprendre la garde précédente" Command="{Binding GardeCopyCommand}" IsVisible="{Binding !IsGardeReadOnly}"/>
                     <Button Classes="sg light" Content="Imprimer" Command="{Binding GardePrintCommand}"/>
                     <Button Classes="sg light" Content="Enregistrer" Command="{Binding GardeSaveCommand}" IsVisible="{Binding !IsGardeReadOnly}"/>
@@ -37,8 +40,8 @@
                     <TextBlock Grid.Column="1" Text="{Binding GardeEffectif}" FontSize="12.5" FontWeight="SemiBold" Foreground="#13294B"/>
                 </Grid>
             </Border>
-            <TextBlock Classes="muted" IsVisible="{Binding IsGardeReadOnly}" Margin="0,0,0,4"
-                       Text="Consultation seule : la feuille de garde est préparée et validée par l'encadrement."/>
+            <TextBlock Classes="muted" IsVisible="{Binding IsGardeReadOnly}" Margin="0,0,0,4" TextWrapping="Wrap"
+                       Text="La feuille est préparée et validée par l'encadrement. Tu peux t'inscrire toi-même sur un poste libre (bouton « Moi ») ou en renfort, y compris dans un autre centre : choisis-le dans la liste CENTRE."/>
         </StackPanel>
 
         <ScrollViewer Margin="0,10,0,0">
@@ -53,10 +56,14 @@
                             </ItemsControl.ItemsPanel>
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
-                                    <StackPanel Width="270" Margin="0,0,14,8">
+                                    <StackPanel Width="300" Margin="0,0,14,8">
                                         <TextBlock Classes="label" Text="{Binding Poste}"/>
-                                        <ComboBox Classes="sg" ItemsSource="{Binding Options}" SelectedItem="{Binding Selected}" HorizontalAlignment="Stretch"
-                                                  IsEnabled="{Binding IsEditable}"/>
+                                        <Grid ColumnDefinitions="*,Auto">
+                                            <ComboBox Classes="sg" ItemsSource="{Binding Options}" SelectedItem="{Binding Selected}" HorizontalAlignment="Stretch"
+                                                      IsEnabled="{Binding IsEditable}"/>
+                                            <Button Grid.Column="1" Classes="sg light" Content="Moi" Padding="8,3" Margin="4,0,0,0" FontSize="12"
+                                                    Command="{Binding SelfCommand}" IsVisible="{Binding CanSelf}" ToolTip.Tip="M'inscrire sur ce poste"/>
+                                        </Grid>
                                     </StackPanel>
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
@@ -92,11 +99,13 @@
                                         <ItemsControl ItemsSource="{Binding Slots}" IsVisible="{Binding Arme}">
                                             <ItemsControl.ItemTemplate>
                                                 <DataTemplate>
-                                                    <Grid ColumnDefinitions="100,*" Margin="0,0,0,5">
+                                                    <Grid ColumnDefinitions="96,*,Auto" Margin="0,0,0,5">
                                                         <TextBlock Text="{Binding Poste}" FontSize="12" FontWeight="SemiBold" Foreground="#4A5868" VerticalAlignment="Center"
                                                                    TextTrimming="CharacterEllipsis"/>
                                                         <ComboBox Grid.Column="1" Classes="sg" ItemsSource="{Binding Options}" SelectedItem="{Binding Selected}"
                                                                   HorizontalAlignment="Stretch" IsEnabled="{Binding IsEditable}"/>
+                                                        <Button Grid.Column="2" Classes="sg light" Content="Moi" Padding="8,3" Margin="4,0,0,0" FontSize="12"
+                                                                Command="{Binding SelfCommand}" IsVisible="{Binding CanSelf}" ToolTip.Tip="M'inscrire sur ce poste"/>
                                                     </Grid>
                                                 </DataTemplate>
                                             </ItemsControl.ItemTemplate>

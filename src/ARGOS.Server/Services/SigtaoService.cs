@@ -529,6 +529,107 @@ public sealed class SigtaoService(OdeDatabase db, RealtimeHub hub)
 
     public FeuilleGarde? Garde(string id) => db.GetDoc<FeuilleGarde>(RemiseTables.Gardes, id);
 
+    /// <summary>
+    /// Inscription personnelle sur une garde, dans son centre ou en renfort dans un autre : poste libre uniquement,
+    /// jamais dans deux centres le même jour. La feuille déjà validée le reste ; l'encadrement revalide pour réarmer.
+    /// </summary>
+    public async Task<OdeResult> SelfAssignAsync(ArgosUserDto user, SelfGardeRequest request)
+    {
+        if (!DateTime.TryParseExact(request.Date, "yyyy-MM-dd", null, System.Globalization.DateTimeStyles.None, out _))
+            return new(false, "Date de garde invalide.");
+        var centre = (request.Centre ?? string.Empty).Trim().ToUpperInvariant();
+        if (centre.Length == 0) return new(false, "Centre de secours obligatoire.");
+
+        await _gate.WaitAsync();
+        try
+        {
+            var accounts = SigtaoAccess.Accounts(db).Select(a => a.Account).ToList();
+            var mine = accounts.FirstOrDefault(a => a.DiscordUserId == user.UserId);
+            var military = db.Docs<MilitaryRecord>(RemiseTables.Military);
+            var me = military.FirstOrDefault(m => m.Id == mine?.DossierId) ?? military.FirstOrDefault(m => m.DiscordUserId == user.UserId);
+            if (me is null) return new(false, "Aucun dossier militaire n'est relié à ton compte Discord : demande à l'encadrement de le créer.");
+            if (me.Status != MilitaryStatuses.Actif) return new(false, "Ton dossier n'est pas en activité.");
+            var name = $"{BsppGrades.Short(me.Grade)} {me.Nom.ToUpperInvariant()} {me.Prenom}".Trim();
+
+            var id = FeuilleGarde.BuildId(request.Date, centre);
+            var feuille = db.GetDoc<FeuilleGarde>(RemiseTables.Gardes, id)
+                          ?? new FeuilleGarde { Id = id, Date = request.Date, Centre = centre,
+                              Service = GardePostes.Service.Select(p => new GardeAffectation { Poste = p }).ToList() };
+
+            void Clear()
+            {
+                foreach (var (a, _) in feuille.Affectations().Where(x => x.Affectation.MilitaryId == me.Id).ToList())
+                {
+                    a.MilitaryId = string.Empty;
+                    a.Nom = string.Empty;
+                }
+                feuille.Reserve.RemoveAll(r => !r.Pourvu);
+            }
+
+            string detail;
+            if (request.Retirer)
+            {
+                if (!feuille.Affectations().Any(a => a.Affectation.MilitaryId == me.Id))
+                    return new(false, "Tu n'es pas inscrit sur cette garde.");
+                Clear();
+                detail = "retrait";
+            }
+            else
+            {
+                var ailleurs = db.Docs<FeuilleGarde>(RemiseTables.Gardes)
+                    .FirstOrDefault(g => g.Date == request.Date && g.Id != id && g.Affectations().Any(a => a.Affectation.MilitaryId == me.Id));
+                if (ailleurs is not null)
+                    return new(false, $"Tu es déjà de garde au centre {ailleurs.Centre} ce jour-là : retire-toi d'abord de cette feuille.");
+
+                var poste = string.IsNullOrWhiteSpace(request.Poste) ? "Renfort" : request.Poste.Trim();
+                GardeAffectation? slot;
+                if (!string.IsNullOrWhiteSpace(request.Engin))
+                {
+                    var engin = feuille.Engins.FirstOrDefault(e => string.Equals(e.Engin, request.Engin.Trim(), StringComparison.OrdinalIgnoreCase));
+                    if (engin is null)
+                    {
+                        engin = new GardeEngin
+                        {
+                            Engin = request.Engin.Trim().ToUpperInvariant(), Type = request.Type ?? string.Empty,
+                            Postes = GardePostes.For(request.Type).Select(p => new GardeAffectation { Poste = p }).ToList()
+                        };
+                        feuille.Engins.Add(engin);
+                    }
+                    if (!engin.Arme) return new(false, $"{engin.Engin} est déclaré non armé sur cette garde.");
+                    slot = engin.Postes.FirstOrDefault(p => p.Poste == poste);
+                    if (slot is null) return new(false, $"Poste « {poste} » inconnu sur {engin.Engin}.");
+                }
+                else if (poste == "Renfort")
+                {
+                    slot = new GardeAffectation { Poste = "Renfort" };
+                }
+                else
+                {
+                    slot = feuille.Service.FirstOrDefault(p => p.Poste == poste);
+                    if (slot is null) return new(false, $"Poste « {poste} » inconnu.");
+                }
+                if (slot.Pourvu && slot.MilitaryId != me.Id) return new(false, $"Poste déjà tenu par {slot.Nom}.");
+                Clear();
+                slot.MilitaryId = me.Id;
+                slot.Nom = name;
+                if (slot.Poste == "Renfort" && !feuille.Reserve.Contains(slot)) feuille.Reserve.Add(slot);
+                detail = string.IsNullOrWhiteSpace(request.Engin) ? poste : $"{poste} {request.Engin}";
+            }
+
+            var now = DateTimeOffset.UtcNow;
+            feuille.UpdatedAt = now;
+            feuille.UpdatedBy = user.DisplayName;
+            db.SaveDoc(RemiseTables.Gardes, feuille.Id, now, feuille);
+            Journal(user, SigtaoJournal.Garde, $"{centre} {request.Date}", $"{name} : {detail}");
+            await NotifyAsync();
+            return new(true, null, feuille.Id);
+        }
+        finally
+        {
+            _gate.Release();
+        }
+    }
+
     // ===== Import de l'effectif =====
 
     /// <summary>Crée ou met à jour les dossiers depuis le tableau d'effectif Discord.</summary>

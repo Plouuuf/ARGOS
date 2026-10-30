@@ -419,6 +419,12 @@ public static class Program
             return ToResult(new OdeResult(true, armed.Error, saved.Id));
         });
 
+        sigtao.MapPost("/gardes/moi", async (SelfGardeRequest request, HttpContext context, DiscordOAuthService oauth, SigtaoService service) =>
+        {
+            var user = await AuthenticateAsync(context, oauth);
+            return user is null ? Results.Unauthorized() : ToResult(await service.SelfAssignAsync(user, request));
+        });
+
         sigtao.MapPost("/reports/{id}/delete", async (string id, HttpContext context, DiscordOAuthService oauth, SigtaoService service) =>
         {
             var user = await AuthenticateAsync(context, oauth);

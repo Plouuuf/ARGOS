@@ -114,6 +114,20 @@ public sealed class FeuilleGarde
     public int Effectif => Affectations().Select(a => a.Affectation.MilitaryId).Distinct().Count();
 }
 
+/// <summary>Un militaire s'inscrit lui-même sur la garde d'un centre (le sien ou un autre), ou s'en retire.</summary>
+public sealed class SelfGardeRequest
+{
+    public string Date { get; set; } = string.Empty;
+    public string Centre { get; set; } = string.Empty;
+    /// <summary>Engin visé ; vide = personnels de service ou renfort.</summary>
+    public string? Engin { get; set; }
+    public string? Type { get; set; }
+    /// <summary>Poste visé ; « Renfort » = réserve.</summary>
+    public string Poste { get; set; } = "Renfort";
+    /// <summary>Vrai : se retirer de cette feuille.</summary>
+    public bool Retirer { get; set; }
+}
+
 public sealed class SaveGardeRequest
 {
     public FeuilleGarde Feuille { get; set; } = new();

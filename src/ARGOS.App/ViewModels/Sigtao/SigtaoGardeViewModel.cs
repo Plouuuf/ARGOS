@@ -37,6 +37,13 @@ public sealed class GardeSlot : ViewModelBase
     public RelayCommand? RemoveCommand { get; }
     public bool CanRemove => RemoveCommand is not null && IsEditable;
 
+    /// <summary>Engin du poste (vide = service ou renfort), pour l'inscription personnelle.</summary>
+    public string? Engin { get; init; }
+    public string? Type { get; init; }
+    /// <summary>« Moi » : s'inscrire soi-même sur ce poste libre.</summary>
+    public RelayCommand? SelfCommand { get; init; }
+    public bool CanSelf => SelfCommand is not null && _selected.Id.Length == 0;
+
     public PersonnelOption Selected
     {
         get => _selected;
@@ -44,6 +51,7 @@ public sealed class GardeSlot : ViewModelBase
         {
             if (!SetProperty(ref _selected, value ?? PersonnelOption.None)) return;
             OnPropertyChanged(nameof(Display));
+            OnPropertyChanged(nameof(CanSelf));
             _changed();
         }
     }
@@ -307,7 +315,8 @@ public sealed partial class SigtaoAppViewModel
 
         var options = new[] { PersonnelOption.None }.Concat(Snapshot.Military
                 .Where(m => m.Status == MilitaryStatuses.Actif)
-                .Select(m => new PersonnelOption(m.Id, $"{BsppGrades.Short(m.Grade)} {m.Nom.ToUpperInvariant()} {m.Prenom}".Trim())))
+                .Select(m => new PersonnelOption(m.Id, $"{BsppGrades.Short(m.Grade)} {m.Nom.ToUpperInvariant()} {m.Prenom}".Trim()
+                                                       + (string.IsNullOrWhiteSpace(m.Affectation) ? string.Empty : $" · {m.Affectation}"))))
             .ToList();
         if (!options.SequenceEqual(GardePersonnel))
         {
@@ -349,6 +358,8 @@ public sealed partial class SigtaoAppViewModel
         _gardeSaved = saved;
         Apply(saved ?? Blank());
         _gardeDirty = false;
+        OnPropertyChanged(nameof(IAmOnGarde));
+        OnPropertyChanged(nameof(CanSelfReserve));
         OnPropertyChanged(nameof(GardeStatus));
         OnPropertyChanged(nameof(GardeIsValidated));
         OnPropertyChanged(nameof(GardeEffectif));
@@ -388,7 +399,7 @@ public sealed partial class SigtaoAppViewModel
 
         var service = GardePostes.Service.Select(p => f.Service.FirstOrDefault(a => a.Poste == p) ?? new GardeAffectation { Poste = p })
             .Concat(f.Service.Where(a => !GardePostes.Service.Contains(a.Poste)));
-        Fill(GardeService, service.Select(a => new GardeSlot(a.Poste, Option(a.MilitaryId), GardePersonnel, editable, GardeChanged)));
+        Fill(GardeService, service.Select(a => Slot(a.Poste, a.MilitaryId, editable, null, null)));
 
         // Engins : ceux de la feuille, puis les engins actifs du centre qui n'y figurent pas encore.
         var engins = f.Engins.ToList();
@@ -400,12 +411,62 @@ public sealed partial class SigtaoAppViewModel
             var availability = fleet is null ? string.Empty
                 : fleet.Availability == FleetAvailability.Disponible ? FleetAvailability.Disponible
                 : $"{fleet.Availability}{(string.IsNullOrWhiteSpace(fleet.AvailabilityReason) ? string.Empty : " - " + fleet.AvailabilityReason)}";
-            var slots = e.Postes.Select(a => new GardeSlot(a.Poste, Option(a.MilitaryId), GardePersonnel, editable, GardeChanged)).ToList();
+            var slots = e.Postes.Select(a => Slot(a.Poste, a.MilitaryId, editable, e.Engin, e.Type)).ToList();
             return new GardeEnginVm(e.Engin, e.Type, fleet?.Libelle ?? string.Empty, availability, e.Arme, slots, editable, GardeChanged);
         }));
 
         Fill(GardeReserve, f.Reserve.Select(a => NewReserveSlot(Option(a.MilitaryId))));
         OnPropertyChanged(nameof(HasGardeReserve));
+    }
+
+    private GardeSlot Slot(string poste, string? militaryId, bool editable, string? engin, string? type)
+    {
+        return new GardeSlot(poste, Option(militaryId), GardePersonnel, editable, GardeChanged)
+        {
+            Engin = engin,
+            Type = type,
+            SelfCommand = HasMe ? new RelayCommand(() => _ = SelfAsync(engin, type, poste, false)) : null
+        };
+    }
+
+    // ===== Inscription personnelle (son centre ou un autre CS) =====
+
+    public bool IAmOnGarde => Snapshot.MyDossierId is { } me && (_gardeSaved?.Affectations().Any(a => a.Affectation.MilitaryId == me) ?? false);
+    public bool CanSelfReserve => HasMe && !IAmOnGarde;
+    public RelayCommand GardeSelfReserveCommand => new(() => _ = SelfAsync(null, null, "Renfort", false));
+    public RelayCommand GardeSelfRemoveCommand => new(() => _ = SelfAsync(null, null, string.Empty, true));
+
+    private async Task SelfAsync(string? engin, string? type, string poste, bool retirer)
+    {
+        var session = ArgosSession.Current;
+        if (session is null || _gardeBusy) return;
+        if (_gardeDirty && Rights.ManageGarde)
+        {
+            ShowMessage("Enregistre d'abord la feuille en cours de saisie.", true);
+            return;
+        }
+        _gardeBusy = true;
+        try
+        {
+            var result = await session.Api.SendAsync(HttpMethod.Post, "api/sigtao/gardes/moi", new SelfGardeRequest
+            {
+                Date = _gardeDate.ToString("yyyy-MM-dd"), Centre = _gardeCentre, Engin = engin, Type = type, Poste = poste, Retirer = retirer
+            });
+            if (!result.Ok)
+            {
+                ShowMessage(result.Error ?? "Inscription refusée.", true);
+                return;
+            }
+            await session.Sigtao.RefreshAsync();
+            LoadGarde(force: true);
+            ShowMessage(retirer ? $"Tu es retiré de la garde {_gardeCentre} du {_gardeDate:dd/MM}."
+                : $"Inscrit sur la garde {_gardeCentre} du {_gardeDate:dd/MM} : {(engin is null ? poste : $"{poste} {engin}")}." +
+                  (_gardeSaved?.IsValidated == true ? " La feuille était déjà validée : l'encadrement la revalidera pour armer l'engin." : string.Empty), false);
+        }
+        finally
+        {
+            _gardeBusy = false;
+        }
     }
 
     private GardeSlot NewReserveSlot(PersonnelOption selected)

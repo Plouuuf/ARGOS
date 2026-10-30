@@ -148,6 +148,29 @@ public sealed class SigtaoServiceTests : IDisposable
         Assert.Equal(FleetAvailability.Disponible, _remise.Snapshot(Chef).Engins.First(e => e.Nom == pse.Nom).Availability);
     }
 
+    [Fact]
+    public async Task Inscription_personnelle_dans_un_autre_centre()
+    {
+        await _sigtao.SaveMilitaryAsync(Chef, new MilitaryRecord { Nom = "Martin", Prenom = "Paul", Grade = "Caporal", DiscordUserId = "200" });
+        var date = DateTime.Today.ToString("yyyy-MM-dd");
+
+        var ok = await _sigtao.SelfAssignAsync(Autre, new SelfGardeRequest { Date = date, Centre = "MALF", Engin = "FPTL 202 MALF", Type = "FPTL", Poste = "Conducteur" });
+        Assert.True(ok.Ok, ok.Error);
+        var malf = _sigtao.Garde(ok.Id!)!;
+        Assert.Equal("CPL MARTIN Paul", malf.Engins.Single().Postes.Single(p => p.Poste == "Conducteur").Nom);
+
+        // Pas deux centres le même jour ; changement de poste dans le même centre autorisé.
+        Assert.False((await _sigtao.SelfAssignAsync(Autre, new SelfGardeRequest { Date = date, Centre = "CRET" })).Ok);
+        Assert.True((await _sigtao.SelfAssignAsync(Autre, new SelfGardeRequest { Date = date, Centre = "MALF", Poste = "Renfort" })).Ok);
+        malf = _sigtao.Garde(ok.Id!)!;
+        Assert.Single(malf.Reserve);
+        Assert.Equal(1, malf.Effectif);
+
+        Assert.True((await _sigtao.SelfAssignAsync(Autre, new SelfGardeRequest { Date = date, Centre = "MALF", Retirer = true })).Ok);
+        Assert.Equal(0, _sigtao.Garde(ok.Id!)!.Effectif);
+        Assert.True((await _sigtao.SelfAssignAsync(Autre, new SelfGardeRequest { Date = date, Centre = "CRET" })).Ok);
+    }
+
     public void Dispose()
     {
         Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
