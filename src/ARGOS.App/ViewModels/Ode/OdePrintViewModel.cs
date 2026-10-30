@@ -1,4 +1,5 @@
 using Argos.Services;
+using Argos.Shared.Contracts;
 using Argos.Views.Apps.Ode;
 
 namespace Argos.ViewModels.Ode;
@@ -29,6 +30,9 @@ public sealed class OdePrintViewModel : ViewModelBase
     public string Status { get => _status; private set => SetProperty(ref _status, value); }
     public string PrintLabel => _printCount > 0 ? "Réimprimer" : "Imprimer";
 
+    /// <summary>Photographie la feuille affichée (fourni par la vue) pour l'export Discord.</summary>
+    public Func<byte[]?>? CaptureSheet { get; set; }
+
     public RelayCommand PrintCommand { get; }
     public RelayCommand CloseCommand { get; }
     public RelayCommand OpenInterventionCommand { get; }
@@ -52,17 +56,35 @@ public sealed class OdePrintViewModel : ViewModelBase
     {
         var session = ArgosSession.Current;
         if (session is null) return;
+        string? image = null;
+        try
+        {
+            if (CaptureSheet?.Invoke() is { Length: > 0 } png)
+                image = Convert.ToBase64String(png);
+        }
+        catch
+        {
+            // Capture impossible : l'ODE part sur Discord sans image (résumé seul).
+        }
+        Status = "Impression en cours…";
         var result = await session.Api.SendAsync(HttpMethod.Post,
-            $"api/ode/interventions/{Uri.EscapeDataString(InterventionId)}/printed/{OrderNumber}");
+            $"api/ode/interventions/{Uri.EscapeDataString(InterventionId)}/printed/{OrderNumber}",
+            new PrintRequest { ImagePng = image });
         if (!result.Ok)
         {
             Status = result.Error ?? "Impression impossible.";
             return;
         }
         _printCount++;
-        Status = $"Envoyé à l'imprimante du CS à {DateTime.Now:HH:mm:ss}.";
+        var discord = result.Id switch
+        {
+            PrintDiscord.Sent => " Publié sur le salon Discord.",
+            PrintDiscord.Failed => " Échec de la publication sur Discord.",
+            _ => string.Empty
+        };
+        Status = $"Envoyé à l'imprimante du CS à {DateTime.Now:HH:mm:ss}.{discord}";
         OnPropertyChanged(nameof(PrintLabel));
-        _desktop.ShowNotification("Imprimante ADAGIO", $"ODE {Document?.Number} imprimé.");
+        _desktop.ShowNotification("Imprimante ADAGIO", $"ODE {Document?.Number} imprimé.{discord}");
         _ = session.Ode.RefreshAsync();
     }
 }

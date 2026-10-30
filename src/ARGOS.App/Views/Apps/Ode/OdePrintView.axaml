@@ -17,7 +17,7 @@
         </Border>
         <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Auto">
             <Border Margin="20" HorizontalAlignment="Center" BoxShadow="0 4 18 0 #66000000">
-                <ode:OdeDocumentView DataContext="{Binding Document}"/>
+                <ode:OdeDocumentView Name="Sheet" DataContext="{Binding Document}"/>
             </Border>
         </ScrollViewer>
     </Grid>

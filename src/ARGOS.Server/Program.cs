@@ -41,6 +41,8 @@ public static class Program
         builder.Services.AddSingleton(_ => new OdeDatabase());
         builder.Services.AddSingleton<OdeService>();
         builder.Services.AddSingleton<RemiseService>();
+        builder.Services.Configure<WebhookOptions>(builder.Configuration.GetSection("Webhooks"));
+        builder.Services.AddSingleton<DiscordWebhookService>();
 
         var app = builder.Build();
 
@@ -197,10 +199,29 @@ public static class Program
             return user is null ? Results.Unauthorized() : ToResult(await service.AddInterventionMessageAsync(user, id, request.Text, kind == "renfort" ? "renfort" : "message"));
         });
 
-        ode.MapPost("/interventions/{id}/printed/{order:int}", async (string id, int order, HttpContext context, DiscordOAuthService oauth, OdeService service) =>
+        ode.MapPost("/interventions/{id}/printed/{order:int}", async (string id, int order, PrintRequest? request, HttpContext context,
+            DiscordOAuthService oauth, OdeService service, DiscordWebhookService webhook) =>
         {
             var user = await AuthenticateAsync(context, oauth);
-            return user is null ? Results.Unauthorized() : ToResult(await service.MarkPrintedAsync(user, id, order));
+            if (user is null) return Results.Unauthorized();
+            var result = await service.MarkPrintedAsync(user, id, order);
+            if (!result.Ok) return ToResult(result);
+
+            // Export de l'ODE dans le salon Discord (image de la feuille envoyée par le poste).
+            if (!webhook.OdeEnabled)
+                return Results.Ok(result with { Id = PrintDiscord.Disabled });
+            byte[]? png = null;
+            try
+            {
+                if (!string.IsNullOrWhiteSpace(request?.ImagePng) && request.ImagePng.Length < 12_000_000)
+                    png = Convert.FromBase64String(request.ImagePng);
+            }
+            catch (FormatException) { }
+            var intervention = service.GetIntervention(id);
+            var departure = intervention?.Orders.FirstOrDefault(o => o.Number == order);
+            var sent = intervention is not null && departure is not null
+                       && await webhook.SendOdeAsync(intervention, departure, user.DisplayName, png);
+            return Results.Ok(result with { Id = sent ? PrintDiscord.Sent : PrintDiscord.Failed });
         });
 
         ode.MapPost("/interventions/{id}/close", async (string id, HttpContext context, DiscordOAuthService oauth, OdeService service) =>

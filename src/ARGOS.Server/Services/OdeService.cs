@@ -36,6 +36,8 @@ public sealed class OdeService(OdeDatabase db, RealtimeHub hub, ILogger<OdeServi
 
     public CallRecord? GetCall(string id) => db.GetCall(id);
 
+    public Intervention? GetIntervention(string id) => db.GetIntervention(id);
+
     // ===== Appels =====
 
     /// <summary>Nouvelle fiche d'appel (décroché manuel ou SIMCALL).</summary>

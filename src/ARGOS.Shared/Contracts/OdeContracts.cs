@@ -269,6 +269,20 @@ public sealed class CreateOdeRequest
 
 public sealed record EnginStatusRequest(string Nom, string Status);
 public sealed record TextRequest(string Text);
+
+/// <summary>Impression d'un ODE : image PNG de la feuille (base 64), publiée sur Discord si le webhook est configuré.</summary>
+public sealed class PrintRequest
+{
+    public string? ImagePng { get; set; }
+}
+
+/// <summary>Valeurs de <see cref="OdeResult.Id"/> renvoyées par l'impression, pour le webhook Discord.</summary>
+public static class PrintDiscord
+{
+    public const string Sent = "discord:envoye";
+    public const string Disabled = "discord:inactif";
+    public const string Failed = "discord:echec";
+}
 public sealed record SansSuiteRequest(string Procedure, string Reason);
 public sealed record LinkCallRequest(string InterventionId);
 

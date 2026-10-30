@@ -24,7 +24,9 @@ param(
     [string]$EncadrementRoleIds = "",
     [string]$AdministrationRoleIds = "",
     [string]$PublicBaseUrl = "http://46.105.78.32:8092",
-    [int]$Port = 8092
+    [int]$Port = 8092,
+    # Webhook du salon Discord qui reçoit les ODE imprimés (laisser vide pour garder le réglage actuel).
+    [string]$OdeWebhookUrl = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -106,6 +108,8 @@ if ($existing -and $existing.Discord.LevelRoles) {
     }
 }
 
+$odeWebhook = if ($OdeWebhookUrl) { $OdeWebhookUrl.Trim() } elseif ($existing -and $existing.Webhooks) { [string]$existing.Webhooks.Ode } else { "" }
+
 $settings = [ordered]@{
     Urls = "http://0.0.0.0:$Port"
     ARGOS = [ordered]@{ AccessKey = $accessKey }
@@ -117,9 +121,12 @@ $settings = [ordered]@{
         RequiredRoleId = $RequiredRoleId
         LevelRoles = $levels
     }
+    Webhooks = [ordered]@{ Ode = $odeWebhook }
 }
 $settings | ConvertTo-Json -Depth 5 | Set-Content -Path $LocalSettings -Encoding utf8
 Ok "appsettings.Local.json écrit (rôle requis : $RequiredRoleId)."
+if ($odeWebhook) { Ok "ODE imprimés publiés sur Discord (webhook configuré)." }
+else { Warn "Pas de webhook Discord pour les ODE : relancer avec -OdeWebhookUrl ""https://discord.com/api/webhooks/…""" }
 
 # Le fichier contient des secrets : lecture réservée aux administrateurs et au système.
 try {

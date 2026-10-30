@@ -104,3 +104,15 @@ curl -X POST http://127.0.0.1:8092/api/integrations/notify \
 
 Ajouter `?userId=<ID Discord>` pour ne viser qu'un joueur. C'est la même entrée qu'utiliseront SIMCALL
 (décroché d'un 18) et le script eFIBI.
+
+## Export des ODE sur Discord
+
+À chaque impression (ou réimpression) d'un ODE, l'image de la feuille et un résumé sont publiés dans un salon
+Discord. Créer un webhook (salon › Modifier › Intégrations › Webhooks › Nouveau webhook › Copier l'URL), puis sur le VPS :
+
+```powershell
+cd C:\ARGOS
+.\INSTALLER-ARGOS.cmd -OdeWebhookUrl "https://discord.com/api/webhooks/…"
+```
+
+L'adresse reste dans `appsettings.Local.json` (section `Webhooks:Ode`), jamais dans le dépôt.
