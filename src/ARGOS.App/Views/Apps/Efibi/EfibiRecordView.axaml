@@ -1,0 +1,109 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="Argos.Views.Apps.Efibi.EfibiRecordView"
+             Background="#F3F6F9"
+             FontFamily="Segoe UI, Helvetica Neue, Arial, Liberation Sans"
+             Foreground="#1C2733">
+    <DockPanel>
+        <Border DockPanel.Dock="Top" Background="#0B5A8C" Padding="16,10">
+            <Grid ColumnDefinitions="*,Auto">
+                <StackPanel>
+                    <TextBlock Text="{Binding Title}" Foreground="White" FontSize="18" FontWeight="Bold"/>
+                    <TextBlock Foreground="#BFD9EC" FontSize="12">
+                        <Run Text="Intervention "/><Run Text="{Binding Intervention}"/><Run Text="  ·  Code de partage "/><Run Text="{Binding ShareCode}"/>
+                    </TextBlock>
+                </StackPanel>
+                <Border Grid.Column="1" Background="#C62828" CornerRadius="3" Padding="8,3" VerticalAlignment="Center">
+                    <TextBlock Text="LECTURE SEULE" Foreground="White" FontSize="11" FontWeight="Bold"/>
+                </Border>
+            </Grid>
+        </Border>
+        <Border DockPanel.Dock="Bottom" Background="White" BorderBrush="#D5DEE7" BorderThickness="0,1,0,0" Padding="16,8">
+            <Button HorizontalAlignment="Right" Content="Revenir au registre" Command="{Binding CloseCommand}"
+                    Background="White" Foreground="#0B5A8C" BorderBrush="#0B5A8C" BorderThickness="1" CornerRadius="4" Padding="14,6"/>
+        </Border>
+        <Border DockPanel.Dock="Top" Background="#C62828" IsVisible="{Binding HasError}" Padding="16,8">
+            <TextBlock Text="{Binding Error}" Foreground="White" FontWeight="SemiBold" TextWrapping="Wrap"/>
+        </Border>
+
+        <ScrollViewer IsVisible="{Binding HasRecord}">
+            <StackPanel Margin="18,14" Spacing="12">
+                <!-- Identification et transmission -->
+                <Grid ColumnDefinitions="*,12,*">
+                    <Border Background="White" BorderBrush="#D5DEE7" BorderThickness="1" CornerRadius="6" Padding="14,12">
+                        <StackPanel Spacing="4">
+                            <TextBlock Text="VICTIME" FontSize="11" FontWeight="Bold" Foreground="#C62828"/>
+                            <TextBlock Text="{Binding Victim}" FontSize="17" FontWeight="SemiBold"/>
+                            <TextBlock FontSize="12" Foreground="#5B6B7B"><Run Text="Fiche créée le "/><Run Text="{Binding Created}"/></TextBlock>
+                            <TextBlock FontSize="12" Foreground="#5B6B7B"><Run Text="Prise en charge : "/><Run Text="{Binding Started}"/></TextBlock>
+                            <TextBlock FontSize="12" Foreground="#5B6B7B"><Run Text="Dernière mise à jour : "/><Run Text="{Binding Updated}"/></TextBlock>
+                            <TextBlock FontSize="12" Foreground="#5B6B7B"><Run Text="Rédacteur (identifiant FiveM) : "/><Run Text="{Binding Author}"/></TextBlock>
+                        </StackPanel>
+                    </Border>
+                    <Border Grid.Column="2" Background="White" BorderBrush="#D5DEE7" BorderThickness="1" CornerRadius="6" Padding="14,12">
+                        <StackPanel Spacing="4">
+                            <TextBlock Text="TRANSMISSION" FontSize="11" FontWeight="Bold" Foreground="#C62828"/>
+                            <TextBlock Text="{Binding Status}" FontSize="15" FontWeight="SemiBold"/>
+                            <TextBlock FontSize="12" Foreground="#5B6B7B"><Run Text="Date : "/><Run Text="{Binding TransmissionDate}"/><Run Text="  ·  Heure : "/><Run Text="{Binding TransmissionTime}"/></TextBlock>
+                            <TextBlock FontSize="12" Foreground="#5B6B7B"><Run Text="Code de partage : "/><Run Text="{Binding ShareCode}"/></TextBlock>
+                            <ItemsControl ItemsSource="{Binding Destination}" IsVisible="{Binding HasDestination}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock FontSize="12" TextWrapping="Wrap"><Run Text="{Binding Label}" FontWeight="SemiBold"/><Run Text=" : "/><Run Text="{Binding Value}"/></TextBlock>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <TextBlock Text="Erreurs et historique de transmission : Non renseigné" FontSize="11.5" Foreground="#8A97A5"/>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+
+                <!-- Rubriques du bilan -->
+                <ItemsControl ItemsSource="{Binding Sections}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border Background="White" BorderBrush="#D5DEE7" BorderThickness="1" CornerRadius="6" Margin="0,0,0,12">
+                                <StackPanel>
+                                    <Border Background="#FBECEC" BorderBrush="#C62828" BorderThickness="4,0,0,0" Padding="12,7" CornerRadius="6,6,0,0">
+                                        <TextBlock Text="{Binding Title}" FontSize="13" FontWeight="Bold" Foreground="#9E1C1C"/>
+                                    </Border>
+                                    <ItemsControl ItemsSource="{Binding Fields}" Margin="14,8,14,4">
+                                        <ItemsControl.ItemsPanel>
+                                            <ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate>
+                                        </ItemsControl.ItemsPanel>
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <StackPanel Width="285" Margin="0,0,14,8">
+                                                    <TextBlock Text="{Binding Label}" FontSize="11" Foreground="#5B6B7B" TextWrapping="Wrap"/>
+                                                    <TextBlock Text="{Binding Value}" FontSize="13" FontWeight="SemiBold" TextWrapping="Wrap"/>
+                                                </StackPanel>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                    <ItemsControl ItemsSource="{Binding Lists}" Margin="14,0,14,10">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <StackPanel Margin="0,0,0,6">
+                                                    <TextBlock Text="{Binding Name}" FontSize="11" Foreground="#5B6B7B"/>
+                                                    <ItemsControl ItemsSource="{Binding Items}">
+                                                        <ItemsControl.ItemTemplate>
+                                                            <DataTemplate>
+                                                                <TextBlock Text="{Binding StringFormat='• {0}'}" FontSize="12.5" TextWrapping="Wrap"/>
+                                                            </DataTemplate>
+                                                        </ItemsControl.ItemTemplate>
+                                                    </ItemsControl>
+                                                    <TextBlock Text="Non renseigné" FontSize="12.5" Foreground="#8A97A5" IsVisible="{Binding !Items.Count}"/>
+                                                </StackPanel>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+        </ScrollViewer>
+        <TextBlock Text="Chargement de la fiche…" Margin="18" Foreground="#5B6B7B" IsVisible="{Binding Loading}"/>
+    </DockPanel>
+</UserControl>

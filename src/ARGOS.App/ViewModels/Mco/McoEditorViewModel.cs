@@ -32,6 +32,9 @@ public sealed class McoEventViewModel(McoEvent ev, Action<McoEventViewModel> rem
     public RelayCommand RemoveCommand => _remove ??= new RelayCommand(() => remove(this));
 }
 
+/// <summary>Fiche eFiBi trouvée pour l'intervention : consulter, ou associer à la MCO.</summary>
+public sealed record EfibiLink(long Id, string Label, RelayCommand OpenCommand, RelayCommand AttachCommand);
+
 /// <summary>Intervention ADAGIO ODE proposée pour rattacher la MCO.</summary>
 public sealed record InterventionChoice(string Id, string Label)
 {
@@ -193,6 +196,47 @@ public sealed class McoEditorViewModel : ViewModelBase, IDisposable
     }
 
     public string EfibiText { get => _efibiText; set { if (SetProperty(ref _efibiText, value)) Touch(); } }
+
+    /// <summary>Fiches eFiBi déjà enregistrées pour ce numéro d'intervention (lecture seule).</summary>
+    public ObservableCollection<EfibiLink> EfibiMatches { get; } = [];
+    public string EfibiSearchStatus { get => _efibiStatus; private set => SetProperty(ref _efibiStatus, value); }
+    private string _efibiStatus = string.Empty;
+    public RelayCommand FindEfibiCommand => _findEfibi ??= new RelayCommand(() => _ = FindEfibiAsync());
+    private RelayCommand? _findEfibi;
+
+    private async Task FindEfibiAsync()
+    {
+        var session = ArgosSession.Current;
+        if (session is null) return;
+        if (string.IsNullOrWhiteSpace(_report.InterventionNumber))
+        {
+            EfibiSearchStatus = "Renseigne d'abord le numéro d'intervention (onglet Identification).";
+            return;
+        }
+        try
+        {
+            var page = await session.Api.PostAsync<EfibiPage>("api/efibi/search",
+                new EfibiQuery { Intervention = _report.InterventionNumber, PageSize = 50 });
+            EfibiMatches.Clear();
+            foreach (var f in page.Items)
+            {
+                var id = f.Id;
+                EfibiMatches.Add(new EfibiLink(id, $"Fiche {f.Id} · {(string.IsNullOrWhiteSpace(f.VictimName) ? "victime non renseignée" : f.VictimName)} · {f.TransmissionStatus}",
+                    new RelayCommand(() => _desktop.OpenWindow(Argos.Views.Apps.Efibi.EfibiWindows.Record(_desktop, id))),
+                    new RelayCommand(() =>
+                    {
+                        var ids = EfibiText.Split(new[] { ',', ';', '\n' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList();
+                        if (!ids.Contains(id.ToString())) ids.Add(id.ToString());
+                        EfibiText = string.Join(", ", ids);
+                    })));
+            }
+            EfibiSearchStatus = page.Error ?? (page.Items.Count == 0 ? "Aucune fiche eFiBi pour cette intervention." : $"{page.Items.Count} fiche(s) trouvée(s).");
+        }
+        catch (Exception ex)
+        {
+            EfibiSearchStatus = ex.Message.Contains("403") ? "Le rôle Discord eFIBI est nécessaire pour consulter les fiches." : "eFiBi injoignable.";
+        }
+    }
 
     // ===== Validation =====
 

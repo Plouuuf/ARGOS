@@ -363,3 +363,36 @@ public class SigtaoScreenshots
         }
     }
 }
+
+/// <summary>Capture d'une fiche eFiBi (données fictives, sans base).</summary>
+public class EfibiScreenshots
+{
+    [AvaloniaFact]
+    public void Fiche_eFiBi()
+    {
+        var folder = Environment.GetEnvironmentVariable("ARGOS_SCREENSHOTS") ?? Path.Combine(Path.GetTempPath(), "argos-screenshots");
+        Directory.CreateDirectory(folder);
+        var desktop = new DesktopViewModel(new ArgosUserDto("1", "Santos", null, [AccessLevels.Sapeur]), null, () => { }, () => { });
+        var record = new EfibiRecord
+        {
+            Summary = new EfibiSummary { Id = 42, ShareCode = "K7P2QX", InterventionNumber = "210-593", VictimName = "Jean TEST",
+                TransmissionStatus = "Transmis", Author = "ABC12345", CreatedAt = DateTimeOffset.Now.AddHours(-2),
+                UpdatedAt = DateTimeOffset.Now, StartedAt = DateTimeOffset.Now.AddHours(-2), TransmittedAt = DateTimeOffset.Now.AddHours(-1) }
+        };
+        EfibiPayload.Parse("""
+            {"sections":{
+              "identityForm":{"title":"IDENTITÉ","controls":[{"index":0,"label":"Nom","type":"text","value":"TEST"},{"index":1,"label":"Prénom","type":"text","value":"Jean"},{"index":2,"label":"Âge","type":"number","value":"42"},{"index":3,"label":"Téléphone","type":"text","value":""}],"lists":{"allergieList":[{"text":"Pénicilline"}],"traitementList":[]},"choices":[]},
+              "circulatoryForm":{"title":"BILAN CIRCULATOIRE","controls":[{"index":0,"label":"Pouls","type":"number","value":"96"},{"index":1,"label":"Tension","type":"text","value":"13/8"},{"index":2,"label":"Saturation","type":"number","value":"97"}],"lists":[],"choices":[]},
+              "regulationForm":{"title":"CONTACT RÉGULATION","controls":[{"index":0,"label":"Médecin régulateur","type":"text","value":"Dr Martin"},{"index":1,"label":"Destination","type":"text","value":"CHU Henri Mondor"}],"lists":{"regTimeline":[]},"choices":[]}
+            }}
+            """, record);
+        var vm = new Argos.ViewModels.Efibi.EfibiRecordViewModel(desktop, 42, "t");
+        vm.Apply(record);
+        var window = new Window { Width = 980, Height = 900, Content = new Argos.Views.Apps.Efibi.EfibiRecordView { DataContext = vm } };
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+        window.CaptureRenderedFrame()!.Save(Path.Combine(folder, "efibi-fiche.png"));
+        window.Close();
+        Assert.Equal(3, vm.Sections.Count);
+    }
+}

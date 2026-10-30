@@ -1,0 +1,197 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="Argos.Views.Apps.Efibi.EfibiAppView"
+             Background="#F3F6F9"
+             FontFamily="Segoe UI, Helvetica Neue, Arial, Liberation Sans"
+             Foreground="#1C2733">
+    <!-- eFiBi : registre des fiches bilans (lecture seule). -->
+    <UserControl.Styles>
+        <Style Selector="TextBox.ef">
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="BorderBrush" Value="#C7D2DE"/>
+            <Setter Property="CornerRadius" Value="4"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="MinHeight" Value="30"/>
+            <Setter Property="Foreground" Value="#1C2733"/>
+        </Style>
+        <Style Selector="ComboBox.ef">
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="BorderBrush" Value="#C7D2DE"/>
+            <Setter Property="CornerRadius" Value="4"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="MinHeight" Value="30"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+        </Style>
+        <Style Selector="Button.ef">
+            <Setter Property="Background" Value="#0B5A8C"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="CornerRadius" Value="4"/>
+            <Setter Property="Padding" Value="14,6"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        <Style Selector="Button.ef:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="#1270AA"/>
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+        <Style Selector="Button.ef.light">
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="Foreground" Value="#0B5A8C"/>
+            <Setter Property="BorderBrush" Value="#0B5A8C"/>
+            <Setter Property="BorderThickness" Value="1"/>
+        </Style>
+        <Style Selector="Button.ef.light:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="#E8F2F9"/>
+            <Setter Property="Foreground" Value="#0B5A8C"/>
+        </Style>
+        <Style Selector="TextBlock.lbl">
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="#5B6B7B"/>
+            <Setter Property="Margin" Value="0,0,0,3"/>
+        </Style>
+        <Style Selector="TextBlock.cell">
+            <Setter Property="FontSize" Value="12.5"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+            <Setter Property="Margin" Value="0,0,10,0"/>
+        </Style>
+        <Style Selector="Button.row">
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="BorderBrush" Value="#E5EAF0"/>
+            <Setter Property="BorderThickness" Value="0,0,0,1"/>
+            <Setter Property="CornerRadius" Value="0"/>
+            <Setter Property="Padding" Value="12,8"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            <Setter Property="Foreground" Value="#1C2733"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        <Style Selector="Button.row:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="#EAF4FB"/>
+            <Setter Property="Foreground" Value="#1C2733"/>
+        </Style>
+    </UserControl.Styles>
+
+    <DockPanel>
+        <!-- Bandeau -->
+        <Border DockPanel.Dock="Top" Background="#0B5A8C" Padding="16,10">
+            <Grid ColumnDefinitions="Auto,12,*,Auto">
+                <Border Background="White" CornerRadius="6" Padding="4">
+                    <Image Source="avares://ARGOS.App/Assets/Icons/efibi.png" Width="30" Height="30"/>
+                </Border>
+                <StackPanel Grid.Column="2" VerticalAlignment="Center">
+                    <TextBlock Text="eFiBi" Foreground="White" FontSize="19" FontWeight="Bold"/>
+                    <TextBlock Text="Fiches bilans numériques · consultation" Foreground="#BFD9EC" FontSize="11"/>
+                </StackPanel>
+                <Border Grid.Column="3" Background="#C62828" CornerRadius="3" Padding="8,3" VerticalAlignment="Center">
+                    <TextBlock Text="LECTURE SEULE" Foreground="White" FontSize="11" FontWeight="Bold"/>
+                </Border>
+            </Grid>
+        </Border>
+        <Border DockPanel.Dock="Top" Background="#C62828" IsVisible="{Binding HasError}" Padding="16,8">
+            <TextBlock Text="{Binding Error}" Foreground="White" FontWeight="SemiBold" TextWrapping="Wrap"/>
+        </Border>
+
+        <!-- Recherche -->
+        <StackPanel DockPanel.Dock="Top" Margin="18,14,18,8" Spacing="8">
+            <Grid ColumnDefinitions="*,10,200,10,Auto,8,Auto">
+                <TextBox Classes="ef" Text="{Binding Text}"
+                         Watermark="Rechercher : n° d'intervention, nom ou prénom de la victime, identifiant, code de partage"/>
+                <ComboBox Grid.Column="2" Classes="ef" ItemsSource="{Binding Statuses}" SelectedItem="{Binding Status}"/>
+                <Button Grid.Column="4" Classes="ef light" Content="Recherche avancée" Command="{Binding ToggleAdvancedCommand}"/>
+                <Button Grid.Column="6" Classes="ef light" Content="Actualiser" Command="{Binding RefreshCommand}"/>
+            </Grid>
+            <Border Background="White" BorderBrush="#C7D2DE" BorderThickness="1" CornerRadius="6" Padding="14,12" IsVisible="{Binding Advanced}">
+                <StackPanel Spacing="10">
+                    <Grid ColumnDefinitions="*,10,*,10,110,10,110">
+                        <StackPanel>
+                            <TextBlock Classes="lbl" Text="N° D'INTERVENTION"/>
+                            <TextBox Classes="ef" Text="{Binding Intervention}"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="2">
+                            <TextBlock Classes="lbl" Text="IDENTITÉ DE LA VICTIME"/>
+                            <TextBox Classes="ef" Text="{Binding Victim}"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="4">
+                            <TextBlock Classes="lbl" Text="IDENTIFIANT"/>
+                            <TextBox Classes="ef" Text="{Binding Identifier}"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="6">
+                            <TextBlock Classes="lbl" Text="CODE DE PARTAGE"/>
+                            <TextBox Classes="ef" Text="{Binding ShareCode}"/>
+                        </StackPanel>
+                    </Grid>
+                    <Grid ColumnDefinitions="170,10,170,16,Auto,*,Auto,8,Auto">
+                        <StackPanel>
+                            <TextBlock Classes="lbl" Text="DU"/>
+                            <CalendarDatePicker SelectedDate="{Binding From}" HorizontalAlignment="Stretch" SelectedDateFormat="Custom"
+                                                CustomDateFormatString="dd/MM/yyyy" Watermark="jj/mm/aaaa" Background="White"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="2">
+                            <TextBlock Classes="lbl" Text="AU"/>
+                            <CalendarDatePicker SelectedDate="{Binding To}" HorizontalAlignment="Stretch" SelectedDateFormat="Custom"
+                                                CustomDateFormatString="dd/MM/yyyy" Watermark="jj/mm/aaaa" Background="White"/>
+                        </StackPanel>
+                        <CheckBox Grid.Column="4" Content="Plus anciennes d'abord" IsChecked="{Binding OldestFirst}" VerticalAlignment="Bottom"/>
+                        <Button Grid.Column="6" Classes="ef light" Content="Réinitialiser" Command="{Binding ResetCommand}" VerticalAlignment="Bottom"/>
+                        <Button Grid.Column="8" Classes="ef" Content="Rechercher" Command="{Binding SearchCommand}" VerticalAlignment="Bottom"/>
+                    </Grid>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+
+        <!-- Pagination -->
+        <Grid DockPanel.Dock="Bottom" ColumnDefinitions="*,Auto,10,Auto,10,Auto" Margin="18,6,18,12">
+            <TextBlock Text="{Binding ResultLabel}" FontSize="12.5" FontWeight="SemiBold" VerticalAlignment="Center" Foreground="#5B6B7B"/>
+            <Button Grid.Column="1" Classes="ef light" Content="◀" Padding="10,4" Command="{Binding PreviousCommand}"/>
+            <TextBlock Grid.Column="3" Text="{Binding PageLabel}" FontSize="12.5" VerticalAlignment="Center"/>
+            <Button Grid.Column="5" Classes="ef light" Content="▶" Padding="10,4" Command="{Binding NextCommand}"/>
+        </Grid>
+
+        <!-- Registre -->
+        <Border Margin="18,0" Background="White" BorderBrush="#D5DEE7" BorderThickness="1" CornerRadius="6" ClipToBounds="True">
+            <DockPanel>
+                <Border DockPanel.Dock="Top" Background="#F4F7FA" BorderBrush="#D5DEE7" BorderThickness="0,0,0,1" Padding="12,8">
+                    <Grid ColumnDefinitions="80,90,110,*,130,160">
+                        <TextBlock Text="ID" FontSize="11.5" FontWeight="SemiBold" Foreground="#5B6B7B"/>
+                        <TextBlock Grid.Column="1" Text="CODE" FontSize="11.5" FontWeight="SemiBold" Foreground="#5B6B7B"/>
+                        <TextBlock Grid.Column="2" Text="INTERVENTION" FontSize="11.5" FontWeight="SemiBold" Foreground="#5B6B7B"/>
+                        <TextBlock Grid.Column="3" Text="VICTIME" FontSize="11.5" FontWeight="SemiBold" Foreground="#5B6B7B"/>
+                        <TextBlock Grid.Column="4" Text="CRÉÉE LE" FontSize="11.5" FontWeight="SemiBold" Foreground="#5B6B7B"/>
+                        <TextBlock Grid.Column="5" Text="TRANSMISSION" FontSize="11.5" FontWeight="SemiBold" Foreground="#5B6B7B"/>
+                    </Grid>
+                </Border>
+                <Panel>
+                    <ScrollViewer>
+                        <ItemsControl ItemsSource="{Binding Items}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Button Classes="row" Command="{Binding OpenCommand}">
+                                        <Grid ColumnDefinitions="80,90,110,*,130,160">
+                                            <TextBlock Classes="cell" Text="{Binding Id}" FontWeight="SemiBold"/>
+                                            <TextBlock Grid.Column="1" Classes="cell" Text="{Binding ShareCode}" FontFamily="Menlo, Consolas, monospace"/>
+                                            <TextBlock Grid.Column="2" Classes="cell" Text="{Binding Intervention}"/>
+                                            <TextBlock Grid.Column="3" Classes="cell" Text="{Binding Victim}" FontWeight="SemiBold"/>
+                                            <TextBlock Grid.Column="4" Classes="cell" Text="{Binding Created}"/>
+                                            <Border Grid.Column="5" CornerRadius="10" Padding="8,2" HorizontalAlignment="Left"
+                                                    Background="#FDECEA" IsVisible="{Binding !Transmitted}">
+                                                <TextBlock Text="{Binding Status}" FontSize="11.5" Foreground="#B3261E" FontWeight="SemiBold"/>
+                                            </Border>
+                                            <Border Grid.Column="5" CornerRadius="10" Padding="8,2" HorizontalAlignment="Left"
+                                                    Background="#E3F4E7" IsVisible="{Binding Transmitted}">
+                                                <TextBlock Text="{Binding Status}" FontSize="11.5" Foreground="#1E7B34" FontWeight="SemiBold"/>
+                                            </Border>
+                                        </Grid>
+                                    </Button>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+                    <TextBlock Text="Aucune fiche bilan ne correspond." Foreground="#5B6B7B" Margin="14" IsVisible="{Binding IsEmpty}"/>
+                    <TextBlock Text="Chargement…" Foreground="#5B6B7B" Margin="14" IsVisible="{Binding Loading}"/>
+                </Panel>
+            </DockPanel>
+        </Border>
+    </DockPanel>
+</UserControl>
