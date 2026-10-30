@@ -216,9 +216,9 @@ public sealed partial class SigtaoAppViewModel
         }
     }
 
-    public DateTimeOffset? GardeDatePicker
+    public DateTime? GardeDateSelected
     {
-        get => new DateTimeOffset(_gardeDate);
+        get => _gardeDate;
         set { if (value is { } v) GardeDate = v.Date; }
     }
 
@@ -352,7 +352,7 @@ public sealed partial class SigtaoAppViewModel
         OnPropertyChanged(nameof(GardeStatus));
         OnPropertyChanged(nameof(GardeIsValidated));
         OnPropertyChanged(nameof(GardeEffectif));
-        OnPropertyChanged(nameof(GardeDatePicker));
+        OnPropertyChanged(nameof(GardeDateSelected));
     }
 
     /// <summary>Feuille vierge : personnels de service et engins actifs du centre, avec les postes de leur type.</summary>

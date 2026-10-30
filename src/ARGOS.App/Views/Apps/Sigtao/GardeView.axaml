@@ -21,7 +21,8 @@
             <Border Classes="card" Padding="12,10">
                 <Grid ColumnDefinitions="Auto,8,Auto,8,Auto,8,Auto,20,Auto,8,140,20,Auto,8,*">
                     <Button Classes="sg light" Content="◀" Padding="10,4" Command="{Binding GardePrevCommand}" ToolTip.Tip="Jour précédent"/>
-                    <DatePicker Grid.Column="2" SelectedDate="{Binding GardeDatePicker}" DayFormat="dd" MonthFormat="MMMM" YearFormat="yyyy"/>
+                    <CalendarDatePicker Grid.Column="2" Width="150" SelectedDate="{Binding GardeDateSelected}" SelectedDateFormat="Custom"
+                                        CustomDateFormatString="dd/MM/yyyy" Watermark="jj/mm/aaaa"/>
                     <Button Grid.Column="4" Classes="sg light" Content="▶" Padding="10,4" Command="{Binding GardeNextCommand}" ToolTip.Tip="Jour suivant"/>
                     <Button Grid.Column="6" Classes="sg light" Content="Aujourd'hui" Command="{Binding GardeTodayCommand}"/>
                     <TextBlock Grid.Column="8" Classes="label" Text="CENTRE" VerticalAlignment="Center" Margin="0"/>
