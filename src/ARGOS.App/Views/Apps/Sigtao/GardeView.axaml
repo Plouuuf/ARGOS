@@ -90,6 +90,14 @@
                                                                 </Grid>
                                                             </DataTemplate>
                                                         </ItemsControl.ItemTemplate>
+                                                    </ItemsControl>
+                                                    <TextBlock Text="Engin non armé : il passera indisponible dans ADAGIO REMISE à la validation."
+                                                               IsVisible="{Binding !Arme}" FontSize="12" Foreground="#A4262C" TextWrapping="Wrap"/>
+                                                </StackPanel>
+                                            </StackPanel>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
                                 </ItemsControl>
                             </StackPanel>
                         </DataTemplate>

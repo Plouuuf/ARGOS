@@ -40,6 +40,11 @@ public static class GardePostes
             "CMO" => ["DSM", "COND", "EQP"],
             "VLROGC" or "VLROGCSPVL" or "SPVL" => ["OGC", "COND"],
             "VLRDSM" => ["DSM", "COND"],
+            "VLROPCM" => ["OPCM", "COND"],
+            "CSP" or "CSL" => ["TSU", "COND"],
+            "CESD" => ["C/A", "COND"],
+            "VIMP" => ["C/A / IMP 3", "COND", "EQ / IMP 2 (1)", "EQ / IMP 2 (2)", "EQ / IMP 2 (3)"],
+            "VEII" => ["M.BCOM", "COND"],
             _ => ["C/A", "COND"]
         };
     }
@@ -65,25 +70,41 @@ public static class GardePostes
     };
 }
 
-/// <summary>Regroupement des engins sur la feuille : SANITAIRE, INCENDIE, DIVERS, COMMANDEMENT.</summary>
+/// <summary>
+/// Regroupement des engins sur la feuille : onglet « Feuille CDG GI » (SANITAIRE, INCENDIE, DIVERS, COMMANDEMENT)
+/// puis onglet « Feuille CDG SPE » (DIVISION SANTÉ, GROUPE SIA-SIS, GROUPE RSMU, COMMUNICATION).
+/// </summary>
 public static class GardeCategories
 {
     public const string Sanitaire = "SANITAIRE";
     public const string Incendie = "INCENDIE";
     public const string Divers = "DIVERS";
     public const string Commandement = "COMMANDEMENT";
+    public const string Sante = "SPÉCIALITÉS · DIVISION SANTÉ";
+    public const string SiaSis = "SPÉCIALITÉS · GROUPE SIA-SIS";
+    public const string Rsmu = "SPÉCIALITÉS · GROUPE RSMU";
+    public const string Communication = "SPÉCIALITÉS · COMMUNICATION";
 
-    public static readonly IReadOnlyList<string> All = [Sanitaire, Incendie, Divers, Commandement];
+    public static readonly IReadOnlyList<string> All = [Sanitaire, Incendie, Divers, Commandement, Sante, SiaSis, Rsmu, Communication];
 
-    public static string Of(string? type)
+    /// <summary>Engins de santé qui figurent sur la feuille GI (rubrique DIVERS) et non sur la feuille SPE.</summary>
+    private static readonly string[] DiversGi = ["AR 64", "VLI 05", "CMO 1"];
+
+    public static string Of(string? type, string? engin = null)
     {
         var t = (type ?? string.Empty).Replace(" ", string.Empty).ToUpperInvariant();
+        var nom = (engin ?? string.Empty).Trim().ToUpperInvariant();
+        if (DiversGi.Any(d => nom.StartsWith(d + " ", StringComparison.Ordinal) || nom == d)) return Divers;
         return t switch
         {
             "VSAV" or "VSAV2" or "VPS" => Sanitaire,
             "PSE" or "FPT" or "FPTL" or "PS" or "FPTSR" or "FA" or "CA" or "CD" or "EPA" or "EPAN" or "EPSA" or "BEA" => Incendie,
             "VLROGC" or "VLROGCSPVL" or "SPVL" => Commandement,
-            _ when t.StartsWith("VLR", StringComparison.Ordinal) && !t.Contains("DSM") => Commandement,
+            "AR" or "VLI" or "VLRDSM" or "VLROPCM" => Sante,
+            "CSP" or "CSL" or "CESD" => SiaSis,
+            "VIMP" or "GRIMP" => Rsmu,
+            "VEII" => Communication,
+            _ when t.StartsWith("VLR", StringComparison.Ordinal) => Commandement,
             _ => Divers
         };
     }

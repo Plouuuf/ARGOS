@@ -398,7 +398,10 @@ public sealed partial class SigtaoAppViewModel
         }).ToList()
     };
 
-    private static int CentreRank(string centre) => centre switch { EnginsCatalog.Creteil => 0, EnginsCatalog.MaisonsAlfort => 1, EnginsCatalog.Mass => 2, _ => 3 };
+    private static int CentreRank(string centre) => centre switch
+    {
+        EnginsCatalog.Creteil => 0, EnginsCatalog.MaisonsAlfort => 1, EnginsCatalog.Mass => 2, EnginsCatalog.Specialites => 3, _ => 4
+    };
 
     private List<FleetEngin> FleetOf(string centre)
     {
@@ -437,7 +440,7 @@ public sealed partial class SigtaoAppViewModel
             return new GardeEnginVm(e.Engin, e.Type, fleet?.Libelle ?? string.Empty, availability, e.Arme, slots, editable, GardeChanged);
         }));
         Fill(GardeGroups, GardeCategories.All
-            .Select(c => new GardeGroupVm(c, GardeEngins.Where(e => GardeCategories.Of(e.Type) == c).ToList()))
+            .Select(c => new GardeGroupVm(c, GardeEngins.Where(e => GardeCategories.Of(e.Type, e.Engin) == c).ToList()))
             .Where(g => g.Engins.Count > 0));
 
         Fill(GardeConsignes, GardeConsignes_(f, editable));

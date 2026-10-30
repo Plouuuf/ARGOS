@@ -163,7 +163,7 @@ public class ScreenTests
     {
         Assert.True(Natures.All.Count > 150);
         Assert.Equal("Feu de cheminée", Natures.Find("112")?.Label);
-        Assert.Equal(16, EnginsCatalog.All.Count);
+        Assert.Equal(25, EnginsCatalog.All.Count);
         Assert.NotNull(EnginsCatalog.Find("VSAV 947 CRET"));
         Assert.NotNull(EnginsCatalog.Find("PSE 212"));
     }

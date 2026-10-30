@@ -37,7 +37,7 @@ public sealed class GardePrintViewModel : ViewModelBase
             e.Postes.Select(p => new GardePrintLine(p.Poste, e.Arme && p.Pourvu ? p.Nom : "—")).ToList())).ToList();
         var types = feuille.Engins.ToDictionary(e => e.Engin, e => e.Type, StringComparer.OrdinalIgnoreCase);
         Groups = GardeCategories.All
-            .Select(c => new GardePrintGroup(c, Engins.Where(e => GardeCategories.Of(types.GetValueOrDefault(e.Titre)) == c).ToList()))
+            .Select(c => new GardePrintGroup(c, Engins.Where(e => GardeCategories.Of(types.GetValueOrDefault(e.Titre), e.Titre) == c).ToList()))
             .Where(g => g.Engins.Count > 0).ToList();
         Consignes = GardeConsignes.All
             .Select(t => new GardePrintLine(t.ToUpperInvariant() + " :", feuille.Consignes.FirstOrDefault(c => c.Titre == t)?.Texte is { Length: > 0 } x ? x : "—"))
