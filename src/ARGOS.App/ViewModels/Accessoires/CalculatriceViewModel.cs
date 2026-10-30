@@ -243,7 +243,7 @@ public sealed class CalculatriceViewModel : ViewModelBase
     {
         switch (key)
         {
-            case >= "0" and <= "9" when key.Length == 1: Digit(key); return true;
+            case { Length: 1 } when char.IsAsciiDigit(key[0]): Digit(key); return true;
             case "," or ".": Decimal(); return true;
             case "+": Operator("+"); return true;
             case "-": Operator("−"); return true;
