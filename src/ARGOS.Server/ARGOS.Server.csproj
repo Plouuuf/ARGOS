@@ -11,6 +11,8 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.Data.Sqlite" Version="9.0.0" />
+    <!-- eFiBi : lecture seule de la base MariaDB du serveur FiveM (table vdms_efibi_records). -->
+    <PackageReference Include="MySqlConnector" Version="2.4.0" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\ARGOS.Shared\ARGOS.Shared.csproj" />

@@ -43,6 +43,8 @@ public static class Program
         builder.Services.AddSingleton<RemiseService>();
         builder.Services.AddSingleton<McoService>();
         builder.Services.AddSingleton<SigtaoService>();
+        builder.Services.Configure<EfibiOptions>(builder.Configuration.GetSection("Efibi"));
+        builder.Services.AddSingleton<EfibiService>();
         builder.Services.Configure<WebhookOptions>(builder.Configuration.GetSection("Webhooks"));
         builder.Services.AddSingleton<DiscordWebhookService>();
 
@@ -62,7 +64,7 @@ public static class Program
         {
             status = "ok",
             version = typeof(Program).Assembly.GetName().Version?.ToString(3),
-            applications = new[] { "adagio-ode", "adagio-remise", "mco", "sigtao" },
+            applications = new[] { "adagio-ode", "adagio-remise", "mco", "sigtao", "efibi" },
             utc = DateTimeOffset.UtcNow,
             connections = hub.ConnectionCount
         }));
@@ -367,6 +369,24 @@ public static class Program
         {
             var user = await AuthenticateAsync(context, oauth);
             return user is null ? Results.Unauthorized() : ToResult(await service.SaveReportAsync(user, report));
+        });
+
+        // ===== eFiBi (lecture seule, rôle eFIBI obligatoire : données de santé) =====
+
+        app.MapPost("/api/efibi/search", async (EfibiQuery query, HttpContext context, DiscordOAuthService oauth, EfibiService service) =>
+        {
+            var user = await AuthenticateAsync(context, oauth);
+            if (user is null) return Results.Unauthorized();
+            if (!AccessLevels.CanUse(user.Levels, ArgosApps.Efibi)) return Results.StatusCode(StatusCodes.Status403Forbidden);
+            return Results.Ok(await service.SearchAsync(query));
+        });
+
+        app.MapGet("/api/efibi/records/{id:long}", async (long id, HttpContext context, DiscordOAuthService oauth, EfibiService service) =>
+        {
+            var user = await AuthenticateAsync(context, oauth);
+            if (user is null) return Results.Unauthorized();
+            if (!AccessLevels.CanUse(user.Levels, ArgosApps.Efibi)) return Results.StatusCode(StatusCodes.Status403Forbidden);
+            return Results.Ok(await service.GetAsync(user, id));
         });
 
         // ===== Intégrations serveur à serveur (clé ARGOS:AccessKey dans l'en-tête X-Argos-Key) =====
