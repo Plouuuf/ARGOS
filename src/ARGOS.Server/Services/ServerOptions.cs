@@ -25,4 +25,10 @@ public sealed class DiscordOAuthOptions
     /// valeur = ID du rôle, ou plusieurs ID séparés par des virgules. Valeur vide = niveau attribué à personne.
     /// </summary>
     public Dictionary<string, string> LevelRoles { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>Rôle(s) Discord donnant accès à chaque application : clé = identifiant (adagio-ode, mco…), valeur = ID de rôle(s).</summary>
+    public Dictionary<string, string> AppRoles { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>Rôle(s) Discord « Accès RH/ADMIN ».</summary>
+    public string RhAdminRoleIds { get; set; } = string.Empty;
 }

@@ -87,6 +87,7 @@ public sealed class SigtaoAppViewModel : ViewModelBase, IDisposable
         ToggleImportCommand = new RelayCommand(() => ImportVisible = !ImportVisible, () => Rights.ManageCompany);
         ImportCommand = new RelayCommand(() => _ = ImportAsync(), () => Rights.ManageCompany);
 
+        SigtaoImages.AvatarLoaded += Build;
         if (ArgosSession.Current is { } session)
         {
             session.Sigtao.Changed += Build;
@@ -152,9 +153,9 @@ public sealed class SigtaoAppViewModel : ViewModelBase, IDisposable
     public string MeUnit => Store?.Me is { } m ? $"{m.Unite} · CS {m.Affectation}{(m.Section.Length > 0 ? " · " + m.Section : string.Empty)}" : "—";
     public string MeFonction => Store?.Me is { Fonction.Length: > 0 } m ? m.Fonction : "—";
     public string MeService => Store?.Me is { } m ? CrText.ServiceTime(m.ArrivalDate, DateTimeOffset.Now) : string.Empty;
-    public Bitmap? MePhoto => Store?.Me is { } m ? SigtaoImages.Photo(m.PhotoData) : null;
+    public Bitmap? MePhoto => Store?.Me is { } m ? SigtaoImages.Photo(m.PhotoData, m.AvatarUrl) : null;
     public bool HasMePhoto => MePhoto is not null;
-    public string MeHabilitations => Rights.Habilitations.Count == 0 ? "Aucune habilitation" : string.Join("  ·  ", Rights.Habilitations);
+    public string MeHabilitations => Rights.Habilitations.Count == 0 ? "—" : string.Join("  ·  ", Rights.Habilitations);
     public ObservableCollection<ReportRow> LatestReports { get; } = [];
     public ObservableCollection<NoticeRow> Notices { get; } = [];
 
@@ -254,7 +255,7 @@ public sealed class SigtaoAppViewModel : ViewModelBase, IDisposable
         var notices = new List<NoticeRow>();
         var me = Store?.Me;
         if (me is null)
-            notices.Add(new NoticeRow("Dossier militaire", "Aucun dossier n'est associé à ton compte Discord : demande sa création au secrétariat de la compagnie (SRH).", true));
+            notices.Add(new NoticeRow("Dossier militaire", "Aucun dossier n'est associé à ton compte Discord : demande sa création à la RH de la compagnie.", true));
         else
         {
             var lastSemestriel = me.Entries.Where(e => e.Kind == DossierKinds.EntretienSemestriel).Select(e => e.Date).DefaultIfEmpty().Max();
@@ -263,9 +264,6 @@ public sealed class SigtaoAppViewModel : ViewModelBase, IDisposable
             foreach (var e in me.Entries.OrderByDescending(e => e.RecordedAt).Take(3))
                 notices.Add(new NoticeRow(e.Kind, $"{e.Title} - {e.Date.ToLocalTime():dd/MM/yyyy}", false));
         }
-        var myAccount = s.Accounts.FirstOrDefault(a => a.Id == s.MyAccountId);
-        if (myAccount is { HasPassword: false })
-            notices.Add(new NoticeRow("Mot de passe", "Ton compte n'a pas encore de mot de passe : demande à un administrateur (SADMIN) de réinitialiser tes accès.", true));
         if (Rights.ManageCompany)
         {
             var arrivals = s.Military.Count(m => m.ArrivalDate is { } d && d > DateTimeOffset.Now.AddDays(-30) && m.Status == MilitaryStatuses.Actif);
@@ -311,7 +309,7 @@ public sealed class SigtaoAppViewModel : ViewModelBase, IDisposable
         var id = m.Id;
         return new MilitaryRow(m.Id, m.GradeLabel, m.Nom.Length == 0 ? "(nom à la 1re connexion)" : m.Nom.ToUpperInvariant(), m.Prenom, OdeFormat.OrDash(m.Nid), m.Unite, m.Affectation,
             OdeFormat.OrDash(m.Fonction), m.Status, OdeFormat.OrDash(m.Email), OdeFormat.OrDash(m.Telephone),
-            SigtaoImages.Photo(m.PhotoData),
+            SigtaoImages.Photo(m.PhotoData, m.AvatarUrl),
             new RelayCommand(() => _desktop.OpenWindow(SigtaoWindows.Dossier(_desktop, id))));
     }
 
@@ -460,6 +458,7 @@ public sealed class SigtaoAppViewModel : ViewModelBase, IDisposable
 
     public void Dispose()
     {
+        SigtaoImages.AvatarLoaded -= Build;
         if (ArgosSession.Current is { } session)
             session.Sigtao.Changed -= Build;
     }
@@ -470,24 +469,47 @@ public sealed record MilitaryChoice(string Id, string Label)
     public override string ToString() => Label;
 }
 
-/// <summary>Photos d'identité (base 64) en images, avec cache.</summary>
+/// <summary>
+/// Photos des dossiers : la photo choisie dans SIGTAO, sinon l'avatar Discord du joueur
+/// (téléchargé en arrière-plan ; <see cref="AvatarLoaded"/> prévient quand il est prêt).
+/// </summary>
 public static class SigtaoImages
 {
     private static readonly Dictionary<int, Bitmap> Cache = [];
+    private static readonly Dictionary<string, Bitmap?> Avatars = [];
 
-    public static Bitmap? Photo(string? data)
+    public static event Action? AvatarLoaded;
+
+    public static Bitmap? Photo(string? data, string? avatarUrl = null)
     {
-        if (string.IsNullOrWhiteSpace(data)) return null;
-        var key = data.GetHashCode(StringComparison.Ordinal);
-        if (Cache.TryGetValue(key, out var cached)) return cached;
-        try
+        if (!string.IsNullOrWhiteSpace(data))
         {
-            using var stream = new MemoryStream(Convert.FromBase64String(data));
-            return Cache[key] = new Bitmap(stream);
+            var key = data.GetHashCode(StringComparison.Ordinal);
+            if (Cache.TryGetValue(key, out var cached)) return cached;
+            try
+            {
+                using var stream = new MemoryStream(Convert.FromBase64String(data));
+                return Cache[key] = new Bitmap(stream);
+            }
+            catch
+            {
+                // Photo illisible : on tente l'avatar.
+            }
         }
-        catch
+        if (string.IsNullOrWhiteSpace(avatarUrl)) return null;
+        if (Avatars.TryGetValue(avatarUrl, out var avatar)) return avatar;
+        Avatars[avatarUrl] = null;
+        _ = LoadAsync(avatarUrl);
+        return null;
+    }
+
+    private static async Task LoadAsync(string url)
+    {
+        var bitmap = await Argos.Services.ImageLoader.AvatarAsync(url);
+        Avalonia.Threading.Dispatcher.UIThread.Post(() =>
         {
-            return null;
-        }
+            Avatars[url] = bitmap;
+            if (bitmap is not null) AvatarLoaded?.Invoke();
+        });
     }
 }

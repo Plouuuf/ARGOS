@@ -43,17 +43,25 @@ public sealed class SigtaoService(OdeDatabase db, RealtimeHub hub)
 {
     private readonly SemaphoreSlim _gate = new(1, 1);
 
+    /// <summary>Droits SIGTAO : le rôle Discord « Accès RH/ADMIN » gère la compagnie et lit tous les comptes-rendus.</summary>
     public SigtaoRights Rights(ArgosUserDto user)
     {
-        var admin = SigtaoAccess.Has(db, user, Habilitations.Sadmin);
+        var rh = AccessLevels.IsRhAdmin(user.Levels);
         return new SigtaoRights
         {
-            ManageAccounts = admin,
-            ManageCompany = admin || SigtaoAccess.Has(db, user, Habilitations.Srh) || user.Levels.Contains(AccessLevels.Encadrement),
-            ReadAllReports = admin || user.Levels.Contains(AccessLevels.Encadrement),
-            Habilitations = Habilitations.All.Select(h => h.Code).Where(c => SigtaoAccess.Has(db, user, c)).ToList()
+            ManageAccounts = rh,
+            ManageCompany = rh,
+            ReadAllReports = rh,
+            Habilitations = AppCatalogLabels.Where(a => AccessLevels.CanUse(user.Levels, a.Id)).Select(a => a.Label)
+                .Concat(rh ? new[] { "RH / ADMIN" } : Array.Empty<string>()).ToList()
         };
     }
+
+    private static readonly (string Id, string Label)[] AppCatalogLabels =
+    [
+        (ArgosApps.AdagioOde, "ADAGIO ODE"), (ArgosApps.AdagioRemise, "ADAGIO REMISE"), (ArgosApps.Efibi, "eFIBI"),
+        (ArgosApps.Ilias, "ILIAS"), (ArgosApps.Mail, "Mail"), (ArgosApps.Mco, "MCO"), (ArgosApps.Sigtao, "SIGTAO")
+    ];
 
     public SigtaoSnapshot Snapshot(ArgosUserDto user)
     {
@@ -72,6 +80,13 @@ public sealed class SigtaoService(OdeDatabase db, RealtimeHub hub)
             m.UpdatedBy = "ARGOS";
             db.SaveDoc(RemiseTables.Military, m.Id, m.UpdatedAt, m);
             Journal(user, SigtaoJournal.DossierModifie, m.FullName, "nom repris du pseudo Discord");
+        }
+        // Photo par défaut : l'avatar Discord du joueur, mis à jour à chaque connexion.
+        foreach (var m in military.Where(m => m.DiscordUserId == user.UserId && !string.IsNullOrWhiteSpace(user.AvatarUrl)
+                                              && m.AvatarUrl != user.AvatarUrl))
+        {
+            m.AvatarUrl = user.AvatarUrl!;
+            db.SaveDoc(RemiseTables.Military, m.Id, DateTimeOffset.UtcNow, m);
         }
         military = military.OrderBy(m => GradeRank(m.Grade)).ThenBy(m => m.Nom).ThenBy(m => m.Prenom).ToList();
         var myDossier = military.FirstOrDefault(m => m.Id == mine?.DossierId) ?? military.FirstOrDefault(m => m.DiscordUserId == user.UserId);

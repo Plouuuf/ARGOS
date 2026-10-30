@@ -237,7 +237,7 @@ public sealed class DiscordOAuthService(
         if (!levels.Contains(AccessLevels.Sapeur))
         {
             _users.TryRemove(discordUser.Id, out _);
-            return new(false, true, "Accès refusé : le rôle Discord BSPP est requis pour utiliser ARGOS.", user);
+            return new(false, true, "Accès refusé : aucun de tes rôles Discord ne donne accès à ARGOS.", user);
         }
 
         _users[discordUser.Id] = user;
@@ -246,19 +246,24 @@ public sealed class DiscordOAuthService(
 
     private List<string> ComputeLevels(string[] roles)
     {
-        var levels = new List<string>();
-        if (roles.Contains(Options.RequiredRoleId, StringComparer.Ordinal))
-            levels.Add(AccessLevels.Sapeur);
-        else
-            return levels;
+        static string[] Ids(string? value) => (value ?? string.Empty).Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        bool HasAny(string? value) => Ids(value).Any(id => roles.Contains(id, StringComparer.Ordinal));
 
+        // Accès par application : un rôle Discord par logiciel.
+        var apps = Options.AppRoles.Where(a => HasAny(a.Value)).Select(a => AccessLevels.App(a.Key.ToLowerInvariant())).ToList();
+        var required = !string.IsNullOrWhiteSpace(Options.RequiredRoleId) && HasAny(Options.RequiredRoleId);
+        var levels = new List<string>();
+        if (apps.Count == 0 && !required)
+            return levels;                      // aucun rôle ARGOS : accès refusé
+
+        levels.Add(AccessLevels.Sapeur);
+        levels.AddRange(apps);
+        if (HasAny(Options.RhAdminRoleIds))
+            levels.Add(AccessLevels.RhAdmin);
         foreach (var (level, roleIds) in Options.LevelRoles)
-        {
-            var ids = (roleIds ?? string.Empty).Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-            if (ids.Any(id => roles.Contains(id, StringComparer.Ordinal)))
+            if (HasAny(roleIds))
                 levels.Add(level.ToLowerInvariant());
-        }
-        return levels;
+        return levels.Distinct().ToList();
     }
 
     private static string BuildAvatarUrl(DiscordUser user)

@@ -35,6 +35,7 @@ public sealed class DossierViewModel : ViewModelBase, IDisposable
         AddEntryCommand = new RelayCommand(() => _ = AddEntryAsync(), () => CanEdit && _id is not null);
         CloseCommand = new RelayCommand(() => _desktop.CloseWindow(_key));
         RemovePhotoCommand = new RelayCommand(() => SetPhoto(string.Empty), () => CanEdit);
+        SigtaoImages.AvatarLoaded += OnAvatar;
         if (ArgosSession.Current is { } session)
         {
             session.Sigtao.Changed += Refresh;
@@ -67,7 +68,7 @@ public sealed class DossierViewModel : ViewModelBase, IDisposable
     public void SetPhoto(string base64)
     {
         _record.PhotoData = base64;
-        Photo = SigtaoImages.Photo(base64);
+        Photo = SigtaoImages.Photo(base64, _record.AvatarUrl);
     }
 
     public ObservableCollection<EntryRow> Entries { get; } = [];
@@ -112,7 +113,7 @@ public sealed class DossierViewModel : ViewModelBase, IDisposable
     private void Load(MilitaryRecord record)
     {
         Record = record;
-        Photo = SigtaoImages.Photo(record.PhotoData);
+        Photo = SigtaoImages.Photo(record.PhotoData, record.AvatarUrl);
         foreach (var n in new[] { nameof(GradeDate), nameof(ArrivalDate), nameof(ServiceTime), nameof(Title), nameof(IsNew) })
             OnPropertyChanged(n);
         BuildEntries();
@@ -171,8 +172,11 @@ public sealed class DossierViewModel : ViewModelBase, IDisposable
     private static MilitaryRecord Clone(MilitaryRecord r)
         => JsonSerializer.Deserialize<MilitaryRecord>(JsonSerializer.Serialize(r, Json), Json) ?? new MilitaryRecord();
 
+    private void OnAvatar() => Photo = SigtaoImages.Photo(_record.PhotoData, _record.AvatarUrl);
+
     public void Dispose()
     {
+        SigtaoImages.AvatarLoaded -= OnAvatar;
         if (ArgosSession.Current is { } session) session.Sigtao.Changed -= Refresh;
     }
 }

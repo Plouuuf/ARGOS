@@ -11,12 +11,29 @@ public static class AccessLevels
     public const string Encadrement = "encadrement";
     public const string Administration = "administration";
 
+    /// <summary>Rôle Discord « Accès RH/ADMIN » : gestion de la compagnie dans SIGTAO, tous les comptes-rendus.</summary>
+    public const string RhAdmin = "rh-admin";
+
+    /// <summary>Accès à une application (rôle Discord de l'application) : « app:adagio-ode ».</summary>
+    public static string App(string appId) => "app:" + appId;
+
+    /// <summary>
+    /// L'utilisateur peut-il ouvrir l'application ? Sans aucun niveau « app: » (serveur pas encore configuré
+    /// par application), toutes les applications restent accessibles.
+    /// </summary>
+    public static bool CanUse(IReadOnlyCollection<string>? levels, string appId)
+        => levels is null || !levels.Any(l => l.StartsWith("app:", StringComparison.Ordinal)) || levels.Contains(App(appId));
+
+    public static bool IsRhAdmin(IReadOnlyCollection<string>? levels)
+        => levels is not null && (levels.Contains(RhAdmin) || levels.Contains(Administration));
+
     /// <summary>Du plus élevé au plus bas, pour afficher le niveau principal.</summary>
-    public static readonly IReadOnlyList<string> ByRank = [Administration, Encadrement, Operateur, Sapeur];
+    public static readonly IReadOnlyList<string> ByRank = [Administration, RhAdmin, Encadrement, Operateur, Sapeur];
 
     public static string Label(string level) => level switch
     {
         Administration => "Administration",
+        RhAdmin => "RH / Administration",
         Encadrement => "Encadrement",
         Operateur => "Opérateur CTA",
         Sapeur => "Sapeur",

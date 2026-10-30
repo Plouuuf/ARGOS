@@ -12,8 +12,9 @@ public sealed class SigtaoServiceTests : IDisposable
     private readonly OdeDatabase _db;
     private readonly SigtaoService _sigtao;
     private readonly RemiseService _remise;
-    private static readonly ArgosUserDto Chef = new("100", "Santos", null, [AccessLevels.Sapeur, AccessLevels.Operateur]);
-    private static readonly ArgosUserDto Autre = new("200", "Martin", null, [AccessLevels.Sapeur, AccessLevels.Operateur]);
+    private static readonly ArgosUserDto Chef = new("100", "[1CL+15] SANTOS D.", "https://cdn.discordapp.com/avatars/100/abc.png",
+        [AccessLevels.Sapeur, AccessLevels.App(ArgosApps.Sigtao), AccessLevels.App(ArgosApps.AdagioRemise), AccessLevels.RhAdmin]);
+    private static readonly ArgosUserDto Autre = new("200", "Martin", null, [AccessLevels.Sapeur, AccessLevels.App(ArgosApps.Sigtao)]);
 
     public SigtaoServiceTests()
     {
@@ -29,59 +30,49 @@ public sealed class SigtaoServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task Dossier_compte_habilitations_et_compte_rendu()
+    public async Task Droits_par_role_dossiers_import_et_compte_rendu()
     {
-        // Mise en route : sans aucun compte, les opérateurs administrent.
-        Assert.True(_sigtao.Rights(Chef).ManageAccounts);
-
-        var created = await _sigtao.SaveMilitaryAsync(Chef, new MilitaryRecord
-        {
-            Nom = "Santos", Prenom = "Diego", Nid = "1234567", Grade = "Sergent", DiscordUserId = "100", Fonction = "Chef d'agrès"
-        });
-        Assert.True(created.Ok, created.Error);
-        Assert.False((await _sigtao.SaveMilitaryAsync(Chef, new MilitaryRecord { Nom = "X", Prenom = "Y", Nid = "1234567" })).Ok);
-
-        Assert.True((await _sigtao.AddEntryAsync(Chef, created.Id!, new DossierEntry
-        {
-            Kind = DossierKinds.Promotion, Title = "Sergent-chef", Date = DateTimeOffset.UtcNow
-        })).Ok);
-        Assert.Equal("Sergent-chef", _sigtao.Snapshot(Chef).Military.Single().Grade);
-
-        var account = await _sigtao.SaveAccountAsync(Chef, new UserAccount
-        {
-            DiscordUserId = "100", DossierId = created.Id!, Habilitations = [Habilitations.Sadmin, Habilitations.Sremise, Habilitations.Srh]
-        });
-        Assert.True(account.Ok, account.Error);
-        Assert.Equal("Santos", _sigtao.Snapshot(Chef).Accounts.Single().Nom);
-
-        // Un administrateur existe : les autres opérateurs perdent l'administration et la gestion du parc.
-        Assert.False(_sigtao.Rights(Autre).ManageAccounts);
-        Assert.False(_remise.CanManage(Autre));
+        Assert.True(_sigtao.Rights(Chef).ManageCompany);
+        Assert.False(_sigtao.Rights(Autre).ManageCompany);
         Assert.True(_remise.CanManage(Chef));
-        Assert.Empty(_sigtao.Snapshot(Autre).Accounts);
-        Assert.Empty(_sigtao.Snapshot(Autre).Military.Single().Entries);
+        Assert.False(_remise.CanManage(Autre));
+        Assert.Contains("SIGTAO", _sigtao.Rights(Autre).Habilitations);
+        Assert.DoesNotContain("ADAGIO ODE", _sigtao.Rights(Autre).Habilitations);
 
-        // Garde-fou : on ne retire pas sa propre habilitation SADMIN.
-        Assert.False((await _sigtao.SaveAccountAsync(Chef, new UserAccount { Id = account.Id!, DiscordUserId = "100", Habilitations = [] })).Ok);
+        // Import de l'effectif : dossier relié au joueur 100, sans nom (mention Discord).
+        var import = await _sigtao.ImportRosterAsync(Chef,
+            "<:1CL15:1> <@100> (Diego) - NID : 0000109823\n<:CNE:2> CNE FAUBOURG (Laurent) - *Commandant d'Unité* - NM : 0000109387");
+        Assert.True(import.Ok, import.Error);
+        Assert.False((await _sigtao.ImportRosterAsync(Autre, "<:SAP:1> <@300> (Lucas) - NID : 1")).Ok);
 
-        var reset = await _sigtao.ResetAccessAsync(Chef, account.Id!);
-        Assert.True(reset.Ok);
-        Assert.Equal(10, reset.TemporaryPassword!.Length);
-        var stored = SigtaoAccess.Accounts(_db).Single();
-        Assert.True(SigtaoService.CheckPassword(stored, reset.TemporaryPassword));
-        Assert.False(SigtaoService.CheckPassword(stored, "mauvais"));
-        Assert.True(_sigtao.Snapshot(Chef).Accounts.Single().HasPassword);
+        // À la connexion : nom repris du pseudo, photo = avatar Discord.
+        var me = _sigtao.Snapshot(Chef).Military.Single(m => m.DiscordUserId == "100");
+        Assert.Equal("SANTOS", me.Nom);
+        Assert.Equal("Sapeur de 1re classe +15", me.Grade);
+        Assert.Equal(Chef.AvatarUrl, me.AvatarUrl);
+        Assert.Equal(me.Id, _sigtao.Snapshot(Chef).MyDossierId);
+        Assert.Equal("Capitaine", _sigtao.Snapshot(Chef).Military[0].Grade);       // tri du plus haut grade
+
+        // Réimport : mise à jour sans doublon, promotion tracée.
+        Assert.True((await _sigtao.ImportRosterAsync(Chef, "<:CPL:1> <@100> (Diego) - NID : 0000109823")).Ok);
+        var promoted = _sigtao.Snapshot(Chef).Military.Single(m => m.DiscordUserId == "100");
+        Assert.Equal("Caporal", promoted.Grade);
+        Assert.Contains(promoted.Entries, e => e.Kind == DossierKinds.Promotion);
+        Assert.Equal(2, _sigtao.Snapshot(Chef).Military.Count);
+        Assert.Empty(_sigtao.Snapshot(Autre).Military.Single(m => m.DiscordUserId == "100").Entries);
+
+        Assert.False((await _sigtao.SaveMilitaryAsync(Autre, new MilitaryRecord { Nom = "X", Prenom = "Y" })).Ok);
 
         var cr = await _sigtao.SaveReportAsync(Autre, new CompteRendu
         {
-            AuthorGrade = "Caporal", AuthorNom = "Martin", AuthorPrenom = "Paul", DestGrade = "Capitaine", DestNom = "Leroy",
+            AuthorGrade = "Caporal", AuthorNom = "Martin", AuthorPrenom = "Paul", DestGrade = "Capitaine", DestNom = "Faubourg",
             Objet = "Perte de matériel", Body = "Lors de l'intervention, une **lance** a été endommagée. Elle a été remise au magasin."
         });
         Assert.True(cr.Ok, cr.Error);
         var saved = _sigtao.Snapshot(Autre).Reports.Single();
         Assert.Contains("lance a été endommagée", saved.Synthese);
         Assert.Matches(@"^\d{4}-\d{4}$", saved.NumDoc);
-        Assert.Single(_sigtao.Snapshot(Chef).Reports);            // l'administrateur voit tout
+        Assert.Single(_sigtao.Snapshot(Chef).Reports);            // RH/ADMIN voit tout
         Assert.NotEmpty(_sigtao.History(Chef));
         Assert.Empty(_sigtao.History(Autre));
     }

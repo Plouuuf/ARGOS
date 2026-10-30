@@ -42,7 +42,8 @@ public sealed class DesktopViewModel : ViewModelBase
         _levelLabel = AccessLevels.HighestLabel(user.Levels);
         _avatar = avatar;
 
-        foreach (var definition in AppCatalog.All)
+        // Une application par rôle Discord : seules celles autorisées apparaissent sur le bureau.
+        foreach (var definition in AppCatalog.All.Where(d => AccessLevels.CanUse(user.Levels, d.Id)))
             Apps.Add(new AppTileViewModel(definition, OpenApp));
 
         // Menu Démarrer : liste alphabétique avec une lettre par section, comme Windows 10.

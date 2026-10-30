@@ -111,7 +111,8 @@ public sealed class MilitaryRecord
     public string Echelon { get; set; } = string.Empty;             // « +15 » (insigne Discord 1CL15)
     public string Nom { get; set; } = string.Empty;
     public string Prenom { get; set; } = string.Empty;
-    public string PhotoData { get; set; } = string.Empty;           // photo d'identité (base 64)
+    public string PhotoData { get; set; } = string.Empty;           // photo d'identité choisie (base 64), prioritaire
+    public string AvatarUrl { get; set; } = string.Empty;           // avatar Discord (photo par défaut)
     public string Unite { get; set; } = "17e Cie";
     public string Affectation { get; set; } = EnginsCatalog.Creteil; // centre de secours
     public string Section { get; set; } = string.Empty;

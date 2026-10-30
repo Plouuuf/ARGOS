@@ -132,7 +132,7 @@ public static class Program
 
         // ===== ADAGIO ODE =====
 
-        var ode = app.MapGroup("/api/ode");
+        var ode = app.MapGroup("/api/ode").AddEndpointFilter(AppWriteFilter(ArgosApps.AdagioOde));
 
         ode.MapGet("/state", async (HttpContext context, DiscordOAuthService oauth, OdeService service) =>
             await AuthenticateAsync(context, oauth) is null ? Results.Unauthorized() : Results.Ok(service.Snapshot()));
@@ -234,7 +234,7 @@ public static class Program
 
         // ===== ADAGIO REMISE =====
 
-        var remise = app.MapGroup("/api/remise");
+        var remise = app.MapGroup("/api/remise").AddEndpointFilter(AppWriteFilter(ArgosApps.AdagioRemise));
 
         remise.MapGet("/state", async (HttpContext context, DiscordOAuthService oauth, RemiseService service) =>
         {
@@ -292,7 +292,7 @@ public static class Program
 
         // ===== MCO (main courante opérationnelle) =====
 
-        var mco = app.MapGroup("/api/mco");
+        var mco = app.MapGroup("/api/mco").AddEndpointFilter(AppWriteFilter(ArgosApps.Mco));
 
         mco.MapGet("/state", async (HttpContext context, DiscordOAuthService oauth, McoService service) =>
             await AuthenticateAsync(context, oauth) is null ? Results.Unauthorized() : Results.Ok(service.Snapshot()));
@@ -317,7 +317,7 @@ public static class Program
 
         // ===== SIGTAO =====
 
-        var sigtao = app.MapGroup("/api/sigtao");
+        var sigtao = app.MapGroup("/api/sigtao").AddEndpointFilter(AppWriteFilter(ArgosApps.Sigtao));
 
         sigtao.MapGet("/state", async (HttpContext context, DiscordOAuthService oauth, SigtaoService service) =>
         {
@@ -414,6 +414,34 @@ public static class Program
 
     private static IResult Html(string html, int statusCode = 200)
         => Results.Content(html, "text/html; charset=utf-8", Encoding.UTF8, statusCode);
+
+    /// <summary>
+    /// Lecture : tout utilisateur ARGOS (l'ODE affiche le parc REMISE, la MCO lit l'ODE…).
+    /// Écriture : réservée aux joueurs ayant le rôle Discord de l'application.
+    /// </summary>
+    private static Func<EndpointFilterInvocationContext, EndpointFilterDelegate, ValueTask<object?>> AppWriteFilter(string appId)
+        => async (ctx, next) =>
+        {
+            var http = ctx.HttpContext;
+            if (HttpMethods.IsGet(http.Request.Method))
+                return await next(ctx);
+            var user = await AuthenticateAsync(http, http.RequestServices.GetRequiredService<DiscordOAuthService>());
+            if (user is null)
+                return Results.Unauthorized();
+            if (!AccessLevels.CanUse(user.Levels, appId))
+                return Results.Json(new OdeResult(false, $"Accès refusé : ton rôle Discord ne permet pas d'utiliser {AppLabel(appId)}."),
+                    statusCode: StatusCodes.Status403Forbidden);
+            return await next(ctx);
+        };
+
+    private static string AppLabel(string appId) => appId switch
+    {
+        ArgosApps.AdagioOde => "ADAGIO ODE",
+        ArgosApps.AdagioRemise => "ADAGIO REMISE",
+        ArgosApps.Mco => "la MCO",
+        ArgosApps.Sigtao => "SIGTAO",
+        _ => appId
+    };
 
     private static async Task<ArgosUserDto?> AuthenticateAsync(HttpContext context, DiscordOAuthService oauth)
     {

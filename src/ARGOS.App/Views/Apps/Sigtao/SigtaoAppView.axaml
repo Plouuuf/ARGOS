@@ -51,7 +51,7 @@
                     <Button Classes="menu" Classes.selected="{Binding IsComptesRendus}" Content="Comptes-rendus" Command="{Binding NavigateCommand}" CommandParameter="ComptesRendus"/>
                     <Button Classes="menu" Classes.selected="{Binding IsCompagnie}" Content="Gestion de la compagnie" Command="{Binding NavigateCommand}" CommandParameter="Compagnie"/>
                     <Button Classes="menu" Classes.selected="{Binding IsComptes}" Content="Comptes et habilitations" Command="{Binding NavigateCommand}" CommandParameter="Comptes"
-                            IsVisible="{Binding Rights.ManageAccounts}"/>
+                            IsVisible="False"/>
                     <Button Classes="menu" Classes.selected="{Binding IsAnnuaire}" Content="Annuaire" Command="{Binding NavigateCommand}" CommandParameter="Annuaire"/>
                     <Button Classes="menu" Classes.selected="{Binding IsHistorique}" Content="Historique administratif" Command="{Binding NavigateCommand}" CommandParameter="Historique"
                             IsVisible="{Binding CanSeeHistory}"/>
@@ -109,7 +109,7 @@
                                     </ItemsControl.ItemTemplate>
                                 </ItemsControl>
                                 <TextBlock Classes="muted" Text="Aucune notification." IsVisible="{Binding !Notices.Count}"/>
-                                <TextBlock Classes="label" Text="MES HABILITATIONS" Margin="0,8,0,3"/>
+                                <TextBlock Classes="label" Text="MES ACCÈS (RÔLES DISCORD)" Margin="0,8,0,3"/>
                                 <TextBlock Text="{Binding MeHabilitations}" FontSize="12.5" FontWeight="SemiBold" Foreground="#1F5FAD" TextWrapping="Wrap"/>
                             </StackPanel>
                         </Border>
