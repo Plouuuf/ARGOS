@@ -47,7 +47,15 @@ public sealed class RemiseStore(ApiClient api)
             }
             catch (Exception ex)
             {
-                LastError = ex is UnauthorizedAccessException ? ex.Message : "Serveur ARGOS injoignable.";
+                LastError = ex switch
+                {
+                    UnauthorizedAccessException => ex.Message,
+                    InvalidOperationException when ex.Message.Contains("(404)") =>
+                        "Le serveur ARGOS n'est pas à jour : ADAGIO REMISE n'y est pas installée (mettre à jour le serveur du VPS).",
+                    InvalidOperationException => "Erreur du serveur ARGOS : " + ex.Message,
+                    HttpRequestException or TaskCanceledException => "Serveur ARGOS injoignable.",
+                    _ => "Réponse illisible du serveur ARGOS : " + ex.Message
+                };
             }
             Dispatcher.UIThread.Post(() => Changed?.Invoke());
 

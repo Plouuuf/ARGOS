@@ -54,7 +54,14 @@ public static class Program
         app.UseWebSockets(new WebSocketOptions { KeepAliveInterval = TimeSpan.FromSeconds(15) });
 
         app.MapGet("/", () => Results.Ok(new { service = "ARGOS Server", status = "online" }));
-        app.MapGet("/health", (RealtimeHub hub) => Results.Ok(new { status = "ok", utc = DateTimeOffset.UtcNow, connections = hub.ConnectionCount }));
+        app.MapGet("/health", (RealtimeHub hub) => Results.Ok(new
+        {
+            status = "ok",
+            version = typeof(Program).Assembly.GetName().Version?.ToString(3),
+            applications = new[] { "adagio-ode", "adagio-remise" },
+            utc = DateTimeOffset.UtcNow,
+            connections = hub.ConnectionCount
+        }));
 
         // ===== Connexion Discord =====
 
