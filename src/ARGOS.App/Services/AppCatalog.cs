@@ -4,7 +4,7 @@ namespace Argos.Services;
 
 /// <summary>Application du bureau ARGOS.</summary>
 public sealed record AppDefinition(string Id, string Title, string Subtitle, string IconPath,
-    bool Accessory = false, double Width = 980, double Height = 640);
+    bool Accessory = false, double Width = 980, double Height = 640, bool OnDesktop = true);
 
 /// <summary>Applications du bureau, dans l'ordre des icônes (la Corbeille en premier, comme sur Windows).</summary>
 public static class AppCatalog
@@ -22,7 +22,8 @@ public static class AppCatalog
         new(ArgosApps.Explorateur, "Explorateur de fichiers", "Mes documents", "Icons/explorateur.png", true, 940, 600),
         new(ArgosApps.BlocNotes, "Bloc-notes", "Notes et textes", "Icons/bloc-notes.png", true, 760, 560),
         new(ArgosApps.Calculatrice, "Calculatrice", "Calculatrice standard", "Icons/calculatrice.png", true, 340, 540),
-        new(ArgosApps.Imprimante, "Imprimante", "Imprimante du centre de secours", "Icons/imprimante.png", true, 1000, 640)
+        new(ArgosApps.Imprimante, "Imprimante", "Imprimante du centre de secours", "Icons/imprimante.png", true, 1000, 640, false),
+        new(ArgosApps.Parametres, "Paramètres", "Paramètres Windows", "Icons/parametres.png", true, 960, 640, false)
     ];
 
     public static AppDefinition? Find(string id) => All.FirstOrDefault(a => a.Id == id);

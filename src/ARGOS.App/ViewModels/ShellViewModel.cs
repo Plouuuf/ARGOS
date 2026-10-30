@@ -1,3 +1,4 @@
+using System.Collections.ObjectModel;
 using System.Globalization;
 using Argos.Services;
 using Argos.Shared.Contracts;
@@ -8,6 +9,7 @@ namespace Argos.ViewModels;
 
 public enum ShellScreen
 {
+    Boot,
     Lock,
     Login,
     Welcome,
@@ -72,11 +74,20 @@ public sealed class ShellViewModel : ViewModelBase
         _revalidation = new DispatcherTimer { Interval = RevalidationInterval };
         _revalidation.Tick += (_, _) => _ = RevalidateAsync();
 
-        // Fond d'écran : une photo au hasard au démarrage, puis la suivante toutes les 10 minutes.
-        ShowWallpaper(Random.Shared.Next(Wallpapers.Length), fade: false);
-        _wallpaperTimer = new DispatcherTimer { Interval = WallpaperInterval };
+        // Fond d'écran : diaporama (photo au hasard, puis la suivante à intervalle régulier) ou photo fixe (Paramètres).
+        var settings = WindowsSettings.Current;
+        ShowWallpaper(settings.Wallpaper >= 0 ? settings.Wallpaper : Random.Shared.Next(Wallpapers.Length), fade: false);
+        _wallpaperTimer = new DispatcherTimer { Interval = TimeSpan.FromMinutes(Math.Max(1, settings.WallpaperMinutes)) };
         _wallpaperTimer.Tick += (_, _) => NextWallpaper();
-        _wallpaperTimer.Start();
+        if (settings.Wallpaper < 0) _wallpaperTimer.Start();
+        WindowsSettings.Changed += OnWindowsSettingsChanged;
+
+        // Séquence de démarrage UEFI, puis écran de verrouillage.
+        if (settings.BootSequence)
+        {
+            _screen = ShellScreen.Boot;
+            _ = RunBootAsync();
+        }
 
         // Mise à jour automatique : au démarrage, puis toutes les 20 minutes.
         AppUpdater.Cleanup();
@@ -151,6 +162,7 @@ public sealed class ShellViewModel : ViewModelBase
         private set
         {
             if (!SetProperty(ref _screen, value)) return;
+            OnPropertyChanged(nameof(IsBootScreen));
             OnPropertyChanged(nameof(IsLockScreen));
             OnPropertyChanged(nameof(IsLoginScreen));
             OnPropertyChanged(nameof(IsWelcomeScreen));
@@ -161,6 +173,7 @@ public sealed class ShellViewModel : ViewModelBase
         }
     }
 
+    public bool IsBootScreen => Screen == ShellScreen.Boot;
     public bool IsLockScreen => Screen == ShellScreen.Lock;
     public bool IsLoginScreen => Screen == ShellScreen.Login;
     public bool IsWelcomeScreen => Screen == ShellScreen.Welcome;
@@ -371,7 +384,8 @@ public sealed class ShellViewModel : ViewModelBase
 
     public void ShowLogin()
     {
-        if (Screen != ShellScreen.Lock) return;
+        if (Screen == ShellScreen.Boot) _bootSkipped = true;
+        if (Screen is not (ShellScreen.Lock or ShellScreen.Boot)) return;
         ErrorText = null;
         Screen = ShellScreen.Login;
     }
@@ -465,7 +479,12 @@ public sealed class ShellViewModel : ViewModelBase
 
         ArgosSession.Current = new ArgosSession(user, _auth.SessionToken!);
         _ = ArgosSession.Current.Ode.RefreshAsync();
-        Desktop = new DesktopViewModel(user, Avatar, LockSession, () => _ = SignOutAsync());
+        Desktop = new DesktopViewModel(user, Avatar, LockSession, () => _ = SignOutAsync())
+        {
+            RestartRequested = () => _ = RestartAsync(),
+            ShutdownRequested = () => _ = ShutdownAsync(),
+            SwitchUserRequested = () => _ = SwitchUserAsync()
+        };
         Desktop.IsOnline = _realtime.IsConnected;
         _realtime.Start(_auth.SessionToken!);
         _revalidation.Start();
@@ -475,6 +494,87 @@ public sealed class ShellViewModel : ViewModelBase
         if (Screen == ShellScreen.Welcome)
             Screen = ShellScreen.Desktop;
     }
+
+    // ===== Alimentation et sessions =====
+
+    private bool _bootSkipped;
+    private int _bootProgress;
+    public ObservableCollection<BootLine> BootLines { get; } = [];
+    public bool BootLoadingWindows { get; private set; }
+    public int BootProgress { get => _bootProgress; private set => SetProperty(ref _bootProgress, value); }
+
+    /// <summary>Séquence UEFI simulée (processeur, mémoire, stockage, réseau, sécurité), puis chargement de Windows.</summary>
+    public async Task RunBootAsync()
+    {
+        _bootSkipped = false;
+        BootLines.Clear();
+        BootLoadingWindows = false;
+        OnPropertyChanged(nameof(BootLoadingWindows));
+        BootProgress = 0;
+        foreach (var line in BootInfo.Lines())
+        {
+            if (_bootSkipped) break;
+            BootLines.Add(line);
+            BootProgress = (int)(100.0 * BootLines.Count / BootInfo.Count);
+            await Task.Delay(line.DelayMs);
+        }
+        if (!_bootSkipped)
+        {
+            BootLoadingWindows = true;
+            OnPropertyChanged(nameof(BootLoadingWindows));
+            await Task.Delay(1800);
+        }
+        if (Screen == ShellScreen.Boot) Screen = ShellScreen.Lock;
+    }
+
+    public void SkipBoot()
+    {
+        if (Screen != ShellScreen.Boot) return;
+        _bootSkipped = true;
+        Screen = ShellScreen.Lock;
+    }
+
+    /// <summary>Redémarrer : ferme les applications et la session, réaffiche la séquence de démarrage.</summary>
+    public async Task RestartAsync()
+    {
+        await SignOutAsync();
+        Screen = ShellScreen.Boot;
+        await RunBootAsync();
+    }
+
+    /// <summary>Arrêter : ferme les applications puis ARGOS (sur téléphone, retour au verrouillage).</summary>
+    public async Task ShutdownAsync()
+    {
+        await SignOutAsync();
+        if (CanQuit) App.Quit();
+    }
+
+    /// <summary>Changer d'utilisateur : ferme la session et propose un autre compte Discord.</summary>
+    public async Task SwitchUserAsync()
+    {
+        await SignOutAsync();
+        Screen = ShellScreen.Login;
+        await UseOtherAccountAsync();
+    }
+
+    private void OnWindowsSettingsChanged()
+    {
+        var s = WindowsSettings.Current;
+        _wallpaperTimer.Interval = TimeSpan.FromMinutes(Math.Max(1, s.WallpaperMinutes));
+        if (s.Wallpaper < 0) { if (!_wallpaperTimer.IsEnabled) _wallpaperTimer.Start(); }
+        else
+        {
+            _wallpaperTimer.Stop();
+            if (s.Wallpaper != _wallpaperIndex) ShowWallpaper(s.Wallpaper, fade: true);
+        }
+        OnPropertyChanged(nameof(DisplayScale));
+        OnPropertyChanged(nameof(NightLight));
+    }
+
+    public static int WallpaperCount => Wallpapers.Length;
+    public static Bitmap WallpaperThumbnail(int index) => WallpaperOf(index, false);
+    public double DisplayScale => WindowsSettings.Current.Scale / 100.0;
+    public bool NightLight => WindowsSettings.Current.NightLight;
 
     /// <summary>Verrouiller : retour à l'écran de verrouillage, la session reste enregistrée.</summary>
     private void LockSession() => _ = SignOutAsync();

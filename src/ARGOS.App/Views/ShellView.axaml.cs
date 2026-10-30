@@ -30,6 +30,9 @@ public partial class ShellView : UserControl
         _vm.PropertyChanged += OnViewModelPropertyChanged;
     }
 
+    /// <summary>Clic pendant la séquence de démarrage : on passe directement à l'écran de verrouillage.</summary>
+    private void OnBootPressed(object? sender, PointerPressedEventArgs e) => _vm.SkipBoot();
+
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
     {
         base.OnAttachedToVisualTree(e);
@@ -90,6 +93,10 @@ public partial class ShellView : UserControl
     {
         switch (_vm.Screen)
         {
+            case ShellScreen.Boot:
+                _vm.SkipBoot();
+                e.Handled = true;
+                return;
             case ShellScreen.Lock:
                 _vm.ShowLogin();
                 e.Handled = true;

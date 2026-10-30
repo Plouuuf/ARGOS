@@ -88,14 +88,46 @@ public class Screenshots
         Capture(new OdeAppView { DataContext = new OdeAppViewModel(desktop) }, 980, 640, "adagio-ode");
         Capture(new CreateOdeView { DataContext = new CreateOdeViewModel(desktop, null, null, "ROUGE") }, 1020, 730, "creation-ode");
 
-        desktop.OpenApp(desktop.Apps[0]);
+        desktop.OpenApp(desktop.Apps.First(a => a.Id == ArgosApps.AdagioOde));
         Capture(new DesktopView { DataContext = desktop }, 1440, 900, "bureau");
+
+        // Windows 10 : recherche, vue des tâches, centre de notifications, menu Démarrer.
+        desktop.OpenApp(desktop.Apps.First(a => a.Id == ArgosApps.Calculatrice));
+        desktop.ShowNotification("Nouveau message", "Cne LEROY : Planning de garde - semaine 45");
+        desktop.ShowNotification("Imprimante du centre", "« ODE 210-593 n°1 » imprimé.");
+        desktop.IsSearchOpen = true;
+        desktop.SearchText = "ca";
+        Assert.Contains(desktop.SearchResults, r => r.Title == "Calculatrice");
+        Capture(new DesktopView { DataContext = desktop }, 1440, 900, "windows-recherche");
+        desktop.IsTaskViewOpen = true;
+        Capture(new DesktopView { DataContext = desktop }, 1440, 900, "windows-vue-des-taches");
+        desktop.IsActionCenterOpen = true;
+        Assert.Equal(2, desktop.Notifications.Count);
+        Capture(new DesktopView { DataContext = desktop }, 1440, 900, "windows-centre-notifications");
+        desktop.IsActionCenterOpen = false;
+        desktop.ToggleStartMenuCommand.Execute(null);
+        desktop.StartSearch = "mail";
+        Assert.Single(desktop.StartResults);
+        Capture(new DesktopView { DataContext = desktop }, 1440, 900, "windows-menu-demarrer");
+
+        var settings = new Argos.ViewModels.Accessoires.ParametresViewModel(desktop);
+        Capture(new Argos.Views.Apps.Accessoires.ParametresView { DataContext = settings }, 960, 640, "windows-parametres-systeme");
+        settings.NavigateCommand.Execute("personnalisation");
+        Assert.True(settings.IsPersonnalisation);
+        Capture(new Argos.Views.Apps.Accessoires.ParametresView { DataContext = settings }, 960, 640, "windows-parametres-fond");
     }
 
     [AvaloniaFact]
     public void Ecran_de_connexion()
     {
         var shell = new ShellView();
+        var vm = (ShellViewModel)shell.DataContext!;
+        if (vm.IsBootScreen)
+        {
+            Capture(shell, 1440, 900, "demarrage-uefi");
+            vm.SkipBoot();
+        }
+        Assert.True(vm.IsLockScreen);
         Capture(shell, 1440, 900, "verrouillage");
     }
 }

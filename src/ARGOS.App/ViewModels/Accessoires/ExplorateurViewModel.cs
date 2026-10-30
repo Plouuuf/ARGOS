@@ -78,8 +78,16 @@ public sealed class ExplorateurViewModel : ViewModelBase, IDisposable
             store.Changed += Build;
             if (!store.IsLoaded) _ = store.RefreshAsync();
         }
+        if (RequestedFolder is { } folder)
+        {
+            _folderId = folder;
+            RequestedFolder = null;
+        }
         Build();
     }
+
+    /// <summary>Dossier à ouvrir au lancement (recherche Windows, Imprimante…).</summary>
+    public static string? RequestedFolder { get; set; }
 
     private static FilesStore? Store => ArgosSession.Current?.Files;
     private FilesSnapshot S => Store?.Snapshot ?? new FilesSnapshot();

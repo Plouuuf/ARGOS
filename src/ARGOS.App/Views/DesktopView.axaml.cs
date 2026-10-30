@@ -37,6 +37,7 @@ public partial class DesktopView : UserControl
         if (_vm is not null)
         {
             _vm.Windows.CollectionChanged -= OnWindowsChanged;
+            _vm.PropertyChanged -= OnPanelsChanged;
             foreach (var window in _controls.Keys.ToList())
                 RemoveWindow(window);
         }
@@ -46,9 +47,47 @@ public partial class DesktopView : UserControl
             return;
 
         _vm.Windows.CollectionChanged += OnWindowsChanged;
+        _vm.PropertyChanged += OnPanelsChanged;
         foreach (var window in _vm.Windows)
             AddWindow(window);
         UpdateWorkArea();
+    }
+
+    /// <summary>Recherche et menu Démarrer : la saisie part directement dans la zone de recherche.</summary>
+    private void OnPanelsChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(DesktopViewModel.IsSearchOpen) && _vm?.IsSearchOpen == true)
+            Avalonia.Threading.Dispatcher.UIThread.Post(() => SearchBox.Focus());
+        if (e.PropertyName == nameof(DesktopViewModel.IsStartMenuOpen) && _vm?.IsStartMenuOpen == true)
+            Avalonia.Threading.Dispatcher.UIThread.Post(() => StartSearchBox.Focus());
+    }
+
+    private void OnTaskViewBackgroundPressed(object? sender, PointerPressedEventArgs e)
+    {
+        if (ReferenceEquals(e.Source, sender) && _vm is not null) _vm.IsTaskViewOpen = false;
+    }
+
+    protected override void OnKeyDown(KeyEventArgs e)
+    {
+        if (_vm is not null && e.Key == Key.Escape && (_vm.IsSearchOpen || _vm.IsTaskViewOpen || _vm.IsActionCenterOpen || _vm.IsStartMenuOpen))
+        {
+            _vm.OnDesktopBackgroundPressed();
+            e.Handled = true;
+            return;
+        }
+        if (_vm is not null && e.Key == Key.Enter && _vm.IsSearchOpen)
+        {
+            _vm.OpenFirstResultCommand.Execute(null);
+            e.Handled = true;
+            return;
+        }
+        if (_vm is not null && e.Key == Key.Enter && _vm.IsStartMenuOpen && _vm.StartResults.FirstOrDefault() is { } first)
+        {
+            first.OpenCommand.Execute(null);
+            e.Handled = true;
+            return;
+        }
+        base.OnKeyDown(e);
     }
 
     private void UpdateWorkArea()

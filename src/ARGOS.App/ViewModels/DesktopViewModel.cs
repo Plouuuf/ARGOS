@@ -13,7 +13,7 @@ namespace Argos.ViewModels;
 /// Bureau Windows 10 (ordinateur, iPad) et écran d'accueil (téléphone) : applications, fenêtres,
 /// barre des tâches, menu Démarrer et notifications.
 /// </summary>
-public sealed class DesktopViewModel : ViewModelBase
+public sealed partial class DesktopViewModel : ViewModelBase
 {
     private static readonly CultureInfo French = CultureInfo.GetCultureInfo("fr-FR");
     private const double DefaultWidth = 980;
@@ -55,7 +55,12 @@ public sealed class DesktopViewModel : ViewModelBase
                 StartMenuEntries.Add(app);
         }
 
-        ToggleStartMenuCommand = new RelayCommand(() => IsStartMenuOpen = !IsStartMenuOpen);
+        ToggleStartMenuCommand = new RelayCommand(() =>
+        {
+            IsStartMenuOpen = !IsStartMenuOpen;
+            if (IsStartMenuOpen) { IsSearchOpen = false; IsTaskViewOpen = false; IsActionCenterOpen = false; }
+            else StartSearch = string.Empty;
+        });
         CloseStartMenuCommand = new RelayCommand(() => IsStartMenuOpen = false);
         LockCommand = new RelayCommand(() => { IsStartMenuOpen = false; _lock(); });
         SignOutCommand = new RelayCommand(() => { IsStartMenuOpen = false; _signOut(); });
@@ -63,9 +68,13 @@ public sealed class DesktopViewModel : ViewModelBase
         MobileBackCommand = new RelayCommand(() => MobileApp = _mobileStack.Count > 0 ? _mobileStack.Pop() : null);
 
         UpdateClock(DateTime.Now);
+        WindowsSettings.Changed += OnWindowsSettingsChanged;
+        Windows.CollectionChanged += (_, _) => OnPropertyChanged(nameof(HasWindows));
     }
 
     public ObservableCollection<AppTileViewModel> Apps { get; } = [];
+    /// <summary>Raccourcis du Bureau (l'Imprimante et les Paramètres restent dans le menu Démarrer).</summary>
+    public IEnumerable<AppTileViewModel> DesktopApps => Apps.Where(a => a.Definition.OnDesktop);
     public ObservableCollection<object> StartMenuEntries { get; } = [];
     public ObservableCollection<AppWindowViewModel> Windows { get; } = [];
     public ObservableCollection<ToastViewModel> Toasts { get; } = [];
@@ -250,7 +259,7 @@ public sealed class DesktopViewModel : ViewModelBase
     /// <summary>Clic sur le fond d'écran : ferme le menu Démarrer et désélectionne les icônes.</summary>
     public void OnDesktopBackgroundPressed()
     {
-        IsStartMenuOpen = false;
+        CloseAllPanels();
         SelectIcon(null);
         foreach (var w in Windows)
             w.IsActive = false;
@@ -287,6 +296,7 @@ public sealed class DesktopViewModel : ViewModelBase
     {
         TrayTime = now.ToString("HH:mm", French);
         TrayDate = now.ToString("dd/MM/yyyy", French);
+        UpdateLongClock(now);
     }
 
     public void HandleRealtime(RealtimeMessage message)
@@ -344,6 +354,8 @@ public sealed class DesktopViewModel : ViewModelBase
 
     public void ShowNotification(string title, string text, Bitmap? icon = null)
     {
+        RecordNotification(title, text, icon);
+        if (!ToastsAllowed) return;
         var toast = new ToastViewModel(title, text, icon, t => Toasts.Remove(t));
         Toasts.Add(toast);
         while (Toasts.Count > 3)

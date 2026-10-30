@@ -1,0 +1,155 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="Argos.Views.Apps.Accessoires.ParametresView"
+             Classes="w10" Background="White"
+             FontFamily="Segoe UI, Helvetica Neue, Arial, Liberation Sans" Foreground="#1A1A1A">
+    <UserControl.Styles>
+        <Style Selector="TextBlock.title"><Setter Property="FontSize" Value="28"/><Setter Property="FontWeight" Value="Light"/><Setter Property="Margin" Value="0,0,0,18"/></Style>
+        <Style Selector="TextBlock.sub"><Setter Property="FontSize" Value="17"/><Setter Property="FontWeight" Value="SemiBold"/><Setter Property="Margin" Value="0,18,0,8"/></Style>
+        <Style Selector="TextBlock.hint"><Setter Property="FontSize" Value="12.5"/><Setter Property="Foreground" Value="#5D5D5D"/><Setter Property="TextWrapping" Value="Wrap"/></Style>
+        <Style Selector="Button.navitem">
+            <Setter Property="Background" Value="Transparent"/><Setter Property="BorderThickness" Value="0"/><Setter Property="CornerRadius" Value="0"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/><Setter Property="HorizontalContentAlignment" Value="Left"/>
+            <Setter Property="Padding" Value="16,10"/><Setter Property="FontSize" Value="14"/><Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        <Style Selector="Button.navitem:pointerover /template/ ContentPresenter#PART_ContentPresenter"><Setter Property="Background" Value="#E6E6E6"/></Style>
+        <Style Selector="Button.navitem.selected /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="#E6E6E6"/><Setter Property="BorderBrush" Value="#0078D7"/><Setter Property="BorderThickness" Value="4,0,0,0"/>
+        </Style>
+        <Style Selector="Button.accent">
+            <Setter Property="Background" Value="#0078D7"/><Setter Property="Foreground" Value="White"/><Setter Property="CornerRadius" Value="0"/><Setter Property="Padding" Value="16,6"/>
+        </Style>
+        <Style Selector="Button.plain">
+            <Setter Property="Background" Value="#CCCCCC"/><Setter Property="CornerRadius" Value="0"/><Setter Property="Padding" Value="16,6"/>
+        </Style>
+    </UserControl.Styles>
+    <Grid ColumnDefinitions="260,*">
+        <Border Background="#F2F2F2">
+            <StackPanel Margin="0,14">
+                <TextBlock Text="Paramètres" FontSize="15" FontWeight="SemiBold" Margin="16,0,0,14"/>
+                <ItemsControl ItemsSource="{Binding NavItems}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Button Classes="navitem" Command="{Binding Command}" Classes.selected="{Binding Selected}">
+                                <TextBlock Text="{Binding Title}"/>
+                            </Button>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+        </Border>
+
+        <ScrollViewer Grid.Column="1">
+            <Panel Margin="32,22,32,24" MaxWidth="720" HorizontalAlignment="Left">
+                <!-- Système -->
+                <StackPanel IsVisible="{Binding IsSysteme}">
+                    <TextBlock Classes="title" Text="Informations système"/>
+                    <Grid ColumnDefinitions="200,*" RowDefinitions="Auto,Auto,Auto" Margin="0,0,0,6">
+                        <TextBlock Classes="hint" Text="Nom de l'appareil"/>
+                        <TextBlock Grid.Column="1" Text="{Binding MachineName}" FontSize="13.5"/>
+                        <TextBlock Grid.Row="1" Classes="hint" Text="Version ARGOS" Margin="0,6,0,0"/>
+                        <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding ArgosVersion}" FontSize="13.5" Margin="0,6,0,0"/>
+                        <TextBlock Grid.Row="2" Classes="hint" Text="Système" Margin="0,6,0,0"/>
+                        <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding OsVersion}" FontSize="13.5" TextWrapping="Wrap" Margin="0,6,0,0"/>
+                    </Grid>
+                    <TextBlock Classes="sub" Text="Caractéristiques de l'appareil"/>
+                    <ItemsControl ItemsSource="{Binding Hardware}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Grid ColumnDefinitions="200,*" Margin="0,3">
+                                    <TextBlock Classes="hint" Text="{Binding Label}"/>
+                                    <TextBlock Grid.Column="1" Text="{Binding Value}" FontSize="13.5" TextWrapping="Wrap"/>
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+
+                <!-- Personnalisation -->
+                <StackPanel IsVisible="{Binding IsPersonnalisation}">
+                    <TextBlock Classes="title" Text="Arrière-plan"/>
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <RadioButton Content="Diaporama" GroupName="bg" IsChecked="{Binding IsSlideshow, Mode=OneWay}" Command="{Binding SlideshowCommand}"/>
+                        <TextBlock Classes="hint" Text="Changer d'image toutes les" VerticalAlignment="Center" Margin="20,0,0,0"/>
+                        <ComboBox ItemsSource="{Binding Intervals}" SelectedItem="{Binding Interval}" Width="80" IsEnabled="{Binding IsSlideshow}"/>
+                        <TextBlock Classes="hint" Text="minute(s)" VerticalAlignment="Center"/>
+                    </StackPanel>
+                    <TextBlock Classes="sub" Text="Choisir une photo fixe"/>
+                    <ItemsControl ItemsSource="{Binding Wallpapers}">
+                        <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Button Command="{Binding SelectCommand}" Padding="0" Margin="0,0,10,10" Background="Transparent" BorderThickness="0" Cursor="Hand">
+                                    <Border BorderThickness="3" Classes.on="{Binding Selected}" BorderBrush="Transparent">
+                                        <Border.Styles><Style Selector="Border.on"><Setter Property="BorderBrush" Value="#0078D7"/></Style></Border.Styles>
+                                        <Image Source="{Binding Image}" Width="200" Height="112" Stretch="UniformToFill"/>
+                                    </Border>
+                                </Button>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+
+                <!-- Affichage -->
+                <StackPanel IsVisible="{Binding IsAffichage}" Spacing="6">
+                    <TextBlock Classes="title" Text="Affichage"/>
+                    <TextBlock Classes="sub" Text="Mise à l'échelle et disposition" Margin="0,0,0,4"/>
+                    <TextBlock Classes="hint" Text="Modifier la taille du texte, des applications et d'autres éléments"/>
+                    <ComboBox ItemsSource="{Binding Scales}" SelectedItem="{Binding Scale}" Width="240"/>
+                    <TextBlock Classes="sub" Text="Couleur"/>
+                    <ToggleSwitch Content="Éclairage nocturne (couleurs plus chaudes)" IsChecked="{Binding NightLight}" OnContent="Activé" OffContent="Désactivé"/>
+                    <TextBlock Classes="sub" Text="Démarrage"/>
+                    <ToggleSwitch Content="Afficher la séquence de démarrage UEFI au lancement" IsChecked="{Binding BootSequence}" OnContent="Activé" OffContent="Désactivé"/>
+                </StackPanel>
+
+                <!-- Son -->
+                <StackPanel IsVisible="{Binding IsSon}" Spacing="6">
+                    <TextBlock Classes="title" Text="Son"/>
+                    <TextBlock Classes="hint" Text="Volume principal (haut-parleurs du poste)"/>
+                    <Grid ColumnDefinitions="*,80" MaxWidth="460" HorizontalAlignment="Left">
+                        <Slider Minimum="0" Maximum="100" Value="{Binding Volume}"/>
+                        <TextBlock Grid.Column="1" Text="{Binding VolumeText}" VerticalAlignment="Center" Margin="12,0,0,0"/>
+                    </Grid>
+                    <ToggleSwitch Content="Couper le son" IsChecked="{Binding Muted}" OnContent="Son coupé" OffContent="Son actif"/>
+                </StackPanel>
+
+                <!-- Réseau -->
+                <StackPanel IsVisible="{Binding IsReseau}" Spacing="6">
+                    <TextBlock Classes="title" Text="État du réseau"/>
+                    <TextBlock Text="{Binding ConnectionState}" FontSize="15" FontWeight="SemiBold"/>
+                    <TextBlock Classes="hint" Text="Serveur ARGOS"/>
+                    <TextBlock Text="{Binding ServerUrl}" FontSize="13.5"/>
+                    <Button Classes="plain" Content="Tester la connexion" Command="{Binding TestNetworkCommand}" Margin="0,10,0,0"/>
+                    <TextBlock Classes="hint" Text="{Binding NetworkTest}"/>
+                </StackPanel>
+
+                <!-- Notifications -->
+                <StackPanel IsVisible="{Binding IsNotifications}" Spacing="6">
+                    <TextBlock Classes="title" Text="Notifications et actions"/>
+                    <ToggleSwitch Content="Afficher les notifications des applications" IsChecked="{Binding Notifications}" OnContent="Activé" OffContent="Désactivé"/>
+                    <ToggleSwitch Content="Ne pas déranger (les notifications vont directement au centre de notifications)" IsChecked="{Binding DoNotDisturb}"
+                                  OnContent="Activé" OffContent="Désactivé"/>
+                    <Button Classes="plain" Content="Effacer toutes les notifications" Command="{Binding ClearNotificationsCommand}" Margin="0,10,0,0"/>
+                </StackPanel>
+
+                <!-- Comptes -->
+                <StackPanel IsVisible="{Binding IsComptes}" Spacing="6">
+                    <TextBlock Classes="title" Text="Vos informations"/>
+                    <Border Width="96" Height="96" CornerRadius="48" ClipToBounds="True" Background="#CCCCCC" HorizontalAlignment="Left">
+                        <Image Source="{Binding Avatar}" Stretch="UniformToFill" IsVisible="{Binding HasAvatar}"/>
+                    </Border>
+                    <TextBlock Text="{Binding DisplayName}" FontSize="20" FontWeight="SemiBold" Margin="0,8,0,0"/>
+                    <TextBlock Classes="hint" Text="{Binding LevelLabel}"/>
+                    <TextBlock Classes="hint"><Run Text="Compte Discord : "/><Run Text="{Binding UserId}"/></TextBlock>
+                    <TextBlock Classes="sub" Text="Habilitations (rôles Discord)"/>
+                    <TextBlock Classes="hint" Text="{Binding Roles}"/>
+                    <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,16,0,0">
+                        <Button Classes="plain" Content="Verrouiller" Command="{Binding LockCommand}"/>
+                        <Button Classes="plain" Content="Se déconnecter" Command="{Binding SignOutCommand}"/>
+                        <Button Classes="accent" Content="Changer d'utilisateur" Command="{Binding SwitchUserCommand}"/>
+                    </StackPanel>
+                </StackPanel>
+            </Panel>
+        </ScrollViewer>
+    </Grid>
+</UserControl>

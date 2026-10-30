@@ -29,7 +29,12 @@
                Opacity="{Binding ShowWallpaperA, Converter={x:Static views:ShellConverters.Opacity}}"
                Classes.blurred="{Binding IsWallpaperBlurred}"/>
 
-        <!-- Contenu, à l'intérieur des zones sûres (encoche, barre d'accueil) sur téléphone et tablette. -->
+        <!-- Contenu, à l'intérieur des zones sûres (encoche, barre d'accueil) sur téléphone et tablette.
+             Taille du texte et des applications (Paramètres › Affichage) : mise à l'échelle de tout l'écran. -->
+        <LayoutTransformControl>
+            <LayoutTransformControl.LayoutTransform>
+                <ScaleTransform ScaleX="{Binding DisplayScale}" ScaleY="{Binding DisplayScale}"/>
+            </LayoutTransformControl.LayoutTransform>
         <Panel Name="SafeArea">
             <views:LockScreenView IsVisible="{Binding IsLockScreen}"/>
             <views:LoginView IsVisible="{Binding IsLoginScreen}"/>
@@ -42,5 +47,36 @@
                 <views:MobileHomeView DataContext="{Binding Desktop}"/>
             </Panel>
         </Panel>
+        </LayoutTransformControl>
+
+        <!-- Éclairage nocturne (Paramètres › Affichage) -->
+        <Border Background="#FF8C00" Opacity="0.13" IsHitTestVisible="False" IsVisible="{Binding NightLight}"/>
+
+        <!-- ===== Démarrage UEFI ===== -->
+        <Border Background="Black" IsVisible="{Binding IsBootScreen}" PointerPressed="OnBootPressed">
+            <Panel>
+                <StackPanel Margin="48,40" Spacing="6" IsVisible="{Binding !BootLoadingWindows}">
+                    <ItemsControl ItemsSource="{Binding BootLines}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Grid ColumnDefinitions="170,*" Margin="0,3">
+                                    <TextBlock Text="{Binding Label}" Foreground="#E0E0E0" FontFamily="Consolas, Menlo, Liberation Mono, monospace" FontSize="15"/>
+                                    <TextBlock Grid.Column="1" Text="{Binding Value}" Foreground="#9FE59F" FontFamily="Consolas, Menlo, Liberation Mono, monospace"
+                                               FontSize="15" IsVisible="{Binding HasValue}" TextWrapping="Wrap"/>
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <ProgressBar Minimum="0" Maximum="100" Value="{Binding BootProgress}" Height="6" Width="320" HorizontalAlignment="Left"
+                                 Foreground="#9FE59F" Background="#222222" Margin="0,14,0,0"/>
+                    <TextBlock Text="Appuyez sur une touche ou cliquez pour passer" Foreground="#777777" FontSize="12" Margin="0,8,0,0"
+                               FontFamily="Consolas, Menlo, Liberation Mono, monospace"/>
+                </StackPanel>
+                <StackPanel IsVisible="{Binding BootLoadingWindows}" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="60">
+                    <PathIcon Data="{StaticResource IconWindows}" Width="110" Height="110" Foreground="#0A84D8"/>
+                    <ProgressBar IsIndeterminate="True" Width="80" Height="4" Foreground="White" Background="Transparent"/>
+                </StackPanel>
+            </Panel>
+        </Border>
     </Grid>
 </UserControl>

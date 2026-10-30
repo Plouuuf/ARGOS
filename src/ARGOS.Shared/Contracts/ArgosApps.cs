@@ -17,6 +17,7 @@ public static class ArgosApps
     public const string Calculatrice = "calculatrice";
     public const string Corbeille = "corbeille";
     public const string Imprimante = "imprimante";
+    public const string Parametres = "parametres";
 
     /// <summary>Fenêtre de prise d'appel, ouverte au décroché d'un 18 (pas d'icône sur le bureau).</summary>
     public const string PriseAppel = "prise-appel";
