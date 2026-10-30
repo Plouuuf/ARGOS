@@ -121,11 +121,14 @@ public sealed class CallRecord
     public string Observations { get; set; } = string.Empty;
 
     // Motif de l'appel
-    public string NatureCode { get; set; } = string.Empty;       // nature présumée puis définitive
+    public string PresumedNatureCode { get; set; } = string.Empty; // nature présumée (réception de l'appel)
+    public string NatureCode { get; set; } = string.Empty;       // nature retenue : définitive si qualifiée, sinon présumée
+    public string FinalNatureCode { get; set; } = string.Empty;  // nature définitive (qualification)
     public string Reason { get; set; } = string.Empty;           // grande zone de texte (circonstances)
     public int VictimCount { get; set; }
     public string Priority { get; set; } = string.Empty;
     public string Risks { get; set; } = string.Empty;
+    public string Instructions { get; set; } = string.Empty;     // consignes opérationnelles
 
     // Traitement
     public string Procedure { get; set; } = string.Empty;        // F1…F9
@@ -189,6 +192,7 @@ public sealed class Intervention
     public string CallerPhone { get; set; } = string.Empty;
     public string CallerInfo { get; set; } = string.Empty;       // informations requérants
     public string Consignes { get; set; } = string.Empty;        // consignes chef d'agrès
+    public string Motif { get; set; } = string.Empty;            // motif du départ (texte libre)
 
     public List<string> CallIds { get; set; } = [];
     public List<EngagedEngin> Engins { get; set; } = [];
@@ -260,6 +264,7 @@ public sealed class CreateOdeRequest
     public string CallerPhone { get; set; } = string.Empty;
     public string CallerInfo { get; set; } = string.Empty;
     public string Consignes { get; set; } = string.Empty;
+    public string Motif { get; set; } = string.Empty;
     public string FirstEngin { get; set; } = string.Empty;
     public List<string> ComplementaryEngins { get; set; } = [];
 
@@ -301,3 +306,19 @@ public sealed record SimcallCallAnswered(
 
 /// <summary>SIMCALL → ARGOS : l'appel est terminé (raccroché).</summary>
 public sealed record SimcallCallEnded(string SimcallCallId, DateTimeOffset EndedAt);
+
+/// <summary>Changement de procédure d'une intervention (selon les habilitations).</summary>
+public sealed record ProcedureChangeRequest(string Procedure, string Reason);
+
+/// <summary>Appels et interventions d'une période (historique, archives, statistiques).</summary>
+public sealed class OdeHistory
+{
+    public List<CallRecord> Calls { get; set; } = [];
+    public List<Intervention> Interventions { get; set; } = [];
+    public bool Truncated { get; set; }
+}
+
+public static class CallPriorities
+{
+    public static readonly IReadOnlyList<string> All = ["", "P1 - Urgence vitale", "P2 - Urgence", "P3 - Non urgent", "P4 - Différable"];
+}

@@ -29,6 +29,67 @@ public sealed class OdeAppViewModel : ViewModelBase, IDisposable
     private string _journalSearch = string.Empty;
     private string? _error;
     private List<JournalEntry> _journal = [];
+    private string _period = Periods[0];
+    private DateTime? _periodFrom = DateTime.Today.AddDays(-30);
+    private DateTime? _periodTo = DateTime.Today;
+    private OdeHistory? _history;
+    private string _periodInfo = string.Empty;
+
+    // ===== Période (historique des appels, archives, statistiques) =====
+
+    public static readonly IReadOnlyList<string> Periods =
+        ["Récents (300 derniers)", "Aujourd'hui", "7 derniers jours", "30 derniers jours", "12 derniers mois", "Période personnalisée"];
+    public IReadOnlyList<string> PeriodChoices => Periods;
+    public string Period
+    {
+        get => _period;
+        set { if (SetProperty(ref _period, value ?? Periods[0])) { OnPropertyChanged(nameof(IsCustomPeriod)); _ = LoadPeriodAsync(); } }
+    }
+    public bool IsCustomPeriod => Period == Periods[^1];
+    public DateTime? PeriodFrom { get => _periodFrom; set { if (SetProperty(ref _periodFrom, value) && IsCustomPeriod) _ = LoadPeriodAsync(); } }
+    public DateTime? PeriodTo { get => _periodTo; set { if (SetProperty(ref _periodTo, value) && IsCustomPeriod) _ = LoadPeriodAsync(); } }
+    public string PeriodInfo { get => _periodInfo; private set => SetProperty(ref _periodInfo, value); }
+
+    private IEnumerable<CallRecord> PeriodCalls => _history?.Calls ?? Snapshot.Calls;
+    private IEnumerable<Intervention> PeriodInterventions => _history?.Interventions ?? Snapshot.Interventions;
+
+    private async Task LoadPeriodAsync()
+    {
+        var today = DateTime.Today;
+        (DateTime From, DateTime To)? range = Period switch
+        {
+            "Aujourd'hui" => (today, today.AddDays(1)),
+            "7 derniers jours" => (today.AddDays(-6), today.AddDays(1)),
+            "30 derniers jours" => (today.AddDays(-29), today.AddDays(1)),
+            "12 derniers mois" => (today.AddMonths(-12), today.AddDays(1)),
+            "Période personnalisée" => ((PeriodFrom ?? today.AddDays(-30)).Date, (PeriodTo ?? today).Date.AddDays(1)),
+            _ => null
+        };
+        if (range is null)
+        {
+            _history = null;
+            PeriodInfo = "300 derniers appels et interventions";
+        }
+        else if (ArgosSession.Current is { } session)
+        {
+            try
+            {
+                var from = Uri.EscapeDataString(new DateTimeOffset(range.Value.From).ToString("O"));
+                var to = Uri.EscapeDataString(new DateTimeOffset(range.Value.To).ToString("O"));
+                _history = await session.Api.GetAsync<OdeHistory>($"api/ode/history?from={from}&to={to}");
+                PeriodInfo = $"Du {range.Value.From:dd/MM/yyyy} au {range.Value.To.AddDays(-1):dd/MM/yyyy}"
+                             + (_history.Truncated ? " (limité aux 5 000 plus récents)" : string.Empty);
+            }
+            catch (Exception ex)
+            {
+                _history = null;
+                Error = "Historique indisponible : " + ex.Message;
+            }
+        }
+        BuildCalls();
+        BuildArchives();
+        BuildStats();
+    }
 
     public OdeAppViewModel(DesktopViewModel desktop)
     {
@@ -49,6 +110,7 @@ public sealed class OdeAppViewModel : ViewModelBase, IDisposable
                 _ = session.Ode.RefreshAsync();
         }
         Rebuild();
+        PeriodInfo = "300 derniers appels et interventions";
     }
 
     // ===== Navigation =====
@@ -145,6 +207,11 @@ public sealed class OdeAppViewModel : ViewModelBase, IDisposable
     public ObservableCollection<StatRow> StatTotals { get; } = [];
     public ObservableCollection<StatRow> StatNatures { get; } = [];
     public ObservableCollection<StatRow> StatOperators { get; } = [];
+    public ObservableCollection<StatRow> StatCallNatures { get; } = [];
+    public ObservableCollection<StatRow> StatCategories { get; } = [];
+    public ObservableCollection<StatRow> StatProcedures { get; } = [];
+    public ObservableCollection<StatRow> StatOperatorOdes { get; } = [];
+    public ObservableCollection<StatRow> StatDays { get; } = [];
 
     // ===== Construction des listes =====
 
@@ -194,7 +261,7 @@ public sealed class OdeAppViewModel : ViewModelBase, IDisposable
     private void BuildCalls()
     {
         var q = CallSearch.Trim();
-        var rows = Snapshot.Calls
+        var rows = PeriodCalls
             .Where(c => CallStatusFilter == "Tous" || c.Status == CallStatusFilter)
             .Where(c => q.Length == 0
                         || Contains(c.Id, q) || Contains(c.CallerPhone, q) || Contains(c.CallerName, q)
@@ -208,7 +275,7 @@ public sealed class OdeAppViewModel : ViewModelBase, IDisposable
     private void BuildArchives()
     {
         var q = ArchiveSearch.Trim();
-        var rows = Snapshot.Interventions
+        var rows = PeriodInterventions
             .Where(i => q.Length == 0
                         || Contains(i.Number, q) || Contains(i.Address, q) || Contains(i.Locality, q)
                         || Contains(OdeFormat.Nature(i.NatureCode), q) || Contains(i.Procedure, q)
@@ -221,33 +288,59 @@ public sealed class OdeAppViewModel : ViewModelBase, IDisposable
 
     private void BuildStats()
     {
-        var s = Snapshot;
-        var withDelay = s.Interventions
-            .Select(i => (i, call: i.CallIds.Select(id => s.Calls.FirstOrDefault(c => c.Id == id)).FirstOrDefault(c => c is not null)))
+        var calls = PeriodCalls.ToList();
+        var interventions = PeriodInterventions.ToList();
+        var callById = calls.Concat(Snapshot.Calls).GroupBy(c => c.Id).ToDictionary(g => g.Key, g => g.First());
+
+        // Délai entre le décroché et le premier déclenchement (validation du premier ODE).
+        var toDeparture = interventions
+            .Select(i => (i, call: i.CallIds.Select(id => callById.GetValueOrDefault(id)).FirstOrDefault(c => c is not null)))
             .Where(x => x.call is not null && x.i.Orders.Count > 0)
             .Select(x => (x.i.Orders.Min(o => o.ValidatedAt) - x.call!.ReceivedAt).TotalSeconds)
-            .Where(d => d >= 0)
-            .ToList();
+            .Where(d => d >= 0).ToList();
+        // Durée de traitement de l'appel (décroché → raccroché / clôture).
+        var callDurations = calls.Where(c => c.EndedAt is not null)
+            .Select(c => (c.EndedAt!.Value - c.ReceivedAt).TotalSeconds).Where(d => d >= 0).ToList();
+        // Délai d'arrivée du premier engin sur les lieux (horodatage du statut « sur les lieux » dans la main courante).
+        var toScene = interventions.Where(i => i.Orders.Count > 0)
+            .Select(i => (start: i.Orders.Min(o => o.ValidatedAt),
+                          arrival: i.Events.Where(e => e.Text.Contains(EnginStatuses.SurLesLieux, StringComparison.OrdinalIgnoreCase))
+                              .Select(e => (DateTimeOffset?)e.At).Min()))
+            .Where(x => x.arrival is not null).Select(x => (x.arrival!.Value - x.start).TotalSeconds).Where(d => d >= 0).ToList();
+        var durations = interventions.Where(i => i.ClosedAt is not null)
+            .Select(i => (i.ClosedAt!.Value - i.CreatedAt).TotalSeconds).Where(d => d >= 0).ToList();
+        string Avg(List<double> values) => values.Count == 0 ? "—" : OdeFormat.Duration(TimeSpan.FromSeconds(values.Average()));
 
         Fill(StatTotals, new[]
         {
-            new StatRow("Appels reçus", s.Calls.Count.ToString(), 1),
-            new StatRow("Appels classés sans suite", s.Calls.Count(c => c.Status == CallStatuses.SansSuite).ToString(), 1),
-            new StatRow("Interventions (ODE)", s.Interventions.Count.ToString(), 1),
-            new StatRow("Ordres de départ générés", s.Interventions.Sum(i => i.Orders.Count).ToString(), 1),
-            new StatRow("Délai moyen appel → départ",
-                withDelay.Count == 0 ? "—" : OdeFormat.Duration(TimeSpan.FromSeconds(withDelay.Average())), 1)
+            new StatRow("Appels reçus", calls.Count.ToString(), 1),
+            new StatRow("Appels classés sans suite", calls.Count(c => c.Status == CallStatuses.SansSuite).ToString(), 1),
+            new StatRow("Appels ayant donné lieu à un départ", calls.Count(c => c.Status == CallStatuses.Intervention).ToString(), 1),
+            new StatRow("Interventions", interventions.Count.ToString(), 1),
+            new StatRow("Ordres de départ générés", interventions.Sum(i => i.Orders.Count).ToString(), 1),
+            new StatRow("Durée moyenne de traitement d'un appel", Avg(callDurations), 1),
+            new StatRow("Délai moyen appel → déclenchement", Avg(toDeparture), 1),
+            new StatRow("Délai moyen déclenchement → sur les lieux", Avg(toScene), 1),
+            new StatRow("Durée moyenne d'une intervention", Avg(durations), 1)
         });
 
-        var byNature = s.Interventions.GroupBy(i => OdeFormat.Nature(i.NatureCode))
-            .Select(g => (g.Key, Count: g.Count())).OrderByDescending(x => x.Count).Take(12).ToList();
-        var maxNature = Math.Max(1, byNature.Select(x => x.Count).DefaultIfEmpty(1).Max());
-        Fill(StatNatures, byNature.Select(x => new StatRow(x.Key, x.Count.ToString(), (double)x.Count / maxNature)));
+        static IEnumerable<StatRow> Bars(IEnumerable<string> keys, int take = 12)
+        {
+            var groups = keys.GroupBy(k => k).Select(g => (g.Key, Count: g.Count())).OrderByDescending(x => x.Count).Take(take).ToList();
+            var max = Math.Max(1, groups.Select(x => x.Count).DefaultIfEmpty(1).Max());
+            return groups.Select(x => new StatRow(x.Key, x.Count.ToString(), (double)x.Count / max));
+        }
 
-        var byOperator = s.Calls.GroupBy(c => c.OperatorName)
-            .Select(g => (g.Key, Count: g.Count())).OrderByDescending(x => x.Count).Take(12).ToList();
-        var maxOp = Math.Max(1, byOperator.Select(x => x.Count).DefaultIfEmpty(1).Max());
-        Fill(StatOperators, byOperator.Select(x => new StatRow(x.Key, x.Count.ToString(), (double)x.Count / maxOp)));
+        Fill(StatCallNatures, Bars(calls.Select(c => string.IsNullOrWhiteSpace(c.NatureCode) ? "Nature non renseignée" : OdeFormat.Nature(c.NatureCode))));
+        Fill(StatNatures, Bars(interventions.Select(i => OdeFormat.Nature(i.NatureCode))));
+        Fill(StatCategories, Bars(interventions.Select(i => Natures.Find(i.NatureCode)?.CategoryLabel ?? "Autre")));
+        Fill(StatProcedures, Bars(interventions.Select(i => Procedures.Find(i.Procedure)?.Label ?? i.Procedure)));
+        Fill(StatOperators, Bars(calls.Select(c => string.IsNullOrWhiteSpace(c.OperatorName) ? "—" : c.OperatorName)));
+        Fill(StatOperatorOdes, Bars(interventions.SelectMany(i => i.Orders).Select(o => string.IsNullOrWhiteSpace(o.OperatorName) ? "—" : o.OperatorName)));
+        var days = interventions.GroupBy(i => i.CreatedAt.ToLocalTime().Date).OrderByDescending(g => g.Key).Take(14)
+            .Select(g => (Day: g.Key, Count: g.Count())).ToList();
+        var maxDay = Math.Max(1, days.Select(d => d.Count).DefaultIfEmpty(1).Max());
+        Fill(StatDays, days.Select(d => new StatRow(d.Day.ToString("ddd dd/MM", OdeFormat.French), d.Count.ToString(), (double)d.Count / maxDay)));
     }
 
     private async Task LoadJournalAsync()

@@ -32,6 +32,14 @@ public sealed class InterventionViewModel : ViewModelBase, IDisposable
         AskCloseCommand = new RelayCommand(() => ConfirmClose = true, () => IsActive);
         CancelCloseCommand = new RelayCommand(() => ConfirmClose = false);
         CloseInterventionCommand = new RelayCommand(() => _ = CloseInterventionAsync());
+        AskProcedureCommand = new RelayCommand(() =>
+        {
+            NewProcedure = Procedures.Find(_intervention?.Procedure);
+            ProcedureReason = string.Empty;
+            ChangingProcedure = true;
+        }, () => IsActive);
+        CancelProcedureCommand = new RelayCommand(() => ChangingProcedure = false);
+        ChangeProcedureCommand = new RelayCommand(() => _ = ChangeProcedureAsync());
         // Main courante de l'intervention : pré-remplie depuis l'ODE (premier engin par défaut).
         WriteMcoCommand = new RelayCommand(() => _desktop.OpenWindow(
             Argos.Views.Apps.Mco.McoWindows.Editor(_desktop, null, InterventionId, null)));
@@ -82,6 +90,29 @@ public sealed class InterventionViewModel : ViewModelBase, IDisposable
     public RelayCommand CancelCloseCommand { get; }
     public RelayCommand CloseInterventionCommand { get; }
     public RelayCommand WriteMcoCommand { get; }
+    public RelayCommand AskProcedureCommand { get; }
+    public RelayCommand CancelProcedureCommand { get; }
+    public RelayCommand ChangeProcedureCommand { get; }
+
+    // Changement de procédure (auteur de l'intervention et encadrement, contrôlé par le serveur)
+    private bool _changingProcedure;
+    private Procedures.ProcedureDefinition? _newProcedure;
+    private string _procedureReason = string.Empty;
+    public bool ChangingProcedure { get => _changingProcedure; set => SetProperty(ref _changingProcedure, value); }
+    public IReadOnlyList<Procedures.ProcedureDefinition> ProcedureChoices { get; } = Procedures.All.Where(p => p.Departure).ToList();
+    public Procedures.ProcedureDefinition? NewProcedure { get => _newProcedure; set => SetProperty(ref _newProcedure, value); }
+    public string ProcedureReason { get => _procedureReason; set => SetProperty(ref _procedureReason, value ?? string.Empty); }
+
+    private async Task ChangeProcedureAsync()
+    {
+        var session = ArgosSession.Current;
+        if (session is null || NewProcedure is null) return;
+        var result = await session.Api.SendAsync(HttpMethod.Post,
+            $"api/ode/interventions/{Uri.EscapeDataString(InterventionId)}/procedure",
+            new ProcedureChangeRequest(NewProcedure.Code, ProcedureReason));
+        Error = result.Ok ? null : result.Error;
+        if (result.Ok) ChangingProcedure = false;
+    }
 
     private void Reload()
     {
@@ -139,6 +170,7 @@ public sealed class InterventionViewModel : ViewModelBase, IDisposable
         RenfortCommand.RaiseCanExecuteChanged();
         AddMeansCommand.RaiseCanExecuteChanged();
         AskCloseCommand.RaiseCanExecuteChanged();
+        AskProcedureCommand.RaiseCanExecuteChanged();
     }
 
     private async Task SetStatusAsync(string nom, string status)

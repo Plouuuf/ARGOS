@@ -128,6 +128,17 @@
             <DockPanel Grid.Row="1" IsVisible="{Binding IsCalls}" Margin="14">
                 <StackPanel DockPanel.Dock="Top" Spacing="8" Margin="0,0,0,8">
                     <TextBlock Classes="h1" Text="Historique des appels" Margin="0"/>
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <TextBlock Classes="lbl" Text="Période"/>
+                        <ComboBox Classes="adg" Width="210" ItemsSource="{Binding PeriodChoices}" SelectedItem="{Binding Period}"/>
+                        <StackPanel Orientation="Horizontal" Spacing="6" IsVisible="{Binding IsCustomPeriod}">
+                            <TextBlock Classes="lbl" Text="du"/>
+                            <CalendarDatePicker SelectedDate="{Binding PeriodFrom}" SelectedDateFormat="Custom" CustomDateFormatString="dd/MM/yyyy" Width="130" Background="White"/>
+                            <TextBlock Classes="lbl" Text="au"/>
+                            <CalendarDatePicker SelectedDate="{Binding PeriodTo}" SelectedDateFormat="Custom" CustomDateFormatString="dd/MM/yyyy" Width="130" Background="White"/>
+                        </StackPanel>
+                        <TextBlock Classes="lbl" Text="{Binding PeriodInfo}" FontWeight="Normal" Foreground="#355C8C"/>
+                    </StackPanel>
                     <Grid ColumnDefinitions="*,8,170,8,Auto">
                         <TextBox Classes="adg" Text="{Binding CallSearch}"
                                  Watermark="Rechercher : n° d'appel, téléphone, requérant, adresse, opérateur, nature"/>
@@ -207,6 +218,17 @@
             <DockPanel Grid.Row="1" IsVisible="{Binding IsArchives}" Margin="14">
                 <StackPanel DockPanel.Dock="Top" Spacing="8" Margin="0,0,0,8">
                     <TextBlock Classes="h1" Text="Archives des ordres de départ" Margin="0"/>
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <TextBlock Classes="lbl" Text="Période"/>
+                        <ComboBox Classes="adg" Width="210" ItemsSource="{Binding PeriodChoices}" SelectedItem="{Binding Period}"/>
+                        <StackPanel Orientation="Horizontal" Spacing="6" IsVisible="{Binding IsCustomPeriod}">
+                            <TextBlock Classes="lbl" Text="du"/>
+                            <CalendarDatePicker SelectedDate="{Binding PeriodFrom}" SelectedDateFormat="Custom" CustomDateFormatString="dd/MM/yyyy" Width="130" Background="White"/>
+                            <TextBlock Classes="lbl" Text="au"/>
+                            <CalendarDatePicker SelectedDate="{Binding PeriodTo}" SelectedDateFormat="Custom" CustomDateFormatString="dd/MM/yyyy" Width="130" Background="White"/>
+                        </StackPanel>
+                        <TextBlock Classes="lbl" Text="{Binding PeriodInfo}" FontWeight="Normal" Foreground="#355C8C"/>
+                    </StackPanel>
                     <Grid ColumnDefinitions="*,8,Auto">
                         <TextBox Classes="adg" Text="{Binding ArchiveSearch}"
                                  Watermark="Rechercher : n° d'intervention, adresse, nature, procédure, engin"/>
@@ -253,10 +275,21 @@
             <ScrollViewer Grid.Row="1" IsVisible="{Binding IsStats}">
                 <StackPanel Margin="14" Spacing="6">
                     <TextBlock Classes="h1" Text="Statistiques"/>
+                    <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,0,0,8">
+                        <TextBlock Classes="lbl" Text="Période"/>
+                        <ComboBox Classes="adg" Width="210" ItemsSource="{Binding PeriodChoices}" SelectedItem="{Binding Period}"/>
+                        <StackPanel Orientation="Horizontal" Spacing="6" IsVisible="{Binding IsCustomPeriod}">
+                            <TextBlock Classes="lbl" Text="du"/>
+                            <CalendarDatePicker SelectedDate="{Binding PeriodFrom}" SelectedDateFormat="Custom" CustomDateFormatString="dd/MM/yyyy" Width="130" Background="White"/>
+                            <TextBlock Classes="lbl" Text="au"/>
+                            <CalendarDatePicker SelectedDate="{Binding PeriodTo}" SelectedDateFormat="Custom" CustomDateFormatString="dd/MM/yyyy" Width="130" Background="White"/>
+                        </StackPanel>
+                        <TextBlock Classes="lbl" Text="{Binding PeriodInfo}" FontWeight="Normal" Foreground="#355C8C"/>
+                    </StackPanel>
                     <ItemsControl ItemsSource="{Binding StatTotals}">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                                <Grid ColumnDefinitions="260,*" Margin="0,2">
+                                <Grid ColumnDefinitions="330,*" Margin="0,2">
                                     <TextBlock Text="{Binding Label}" FontSize="13"/>
                                     <TextBlock Grid.Column="1" Text="{Binding Value}" FontSize="13" FontWeight="Bold"/>
                                 </Grid>
@@ -264,6 +297,58 @@
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
 
+                    <TextBlock Classes="h1" Text="Interventions par jour" Margin="0,14,0,4"/>
+                    <ItemsControl ItemsSource="{Binding StatDays}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Grid ColumnDefinitions="320,*,40" Margin="0,2">
+                                    <TextBlock Text="{Binding Label}" FontSize="12" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+                                    <ProgressBar Grid.Column="1" Minimum="0" Maximum="1" Value="{Binding Ratio}" Height="12"
+                                                 Foreground="#2C6FB7" Background="#E9F0F5" Margin="8,0"/>
+                                    <TextBlock Grid.Column="2" Text="{Binding Value}" FontWeight="Bold" FontSize="12" VerticalAlignment="Center"/>
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <TextBlock Classes="h1" Text="Appels par nature" Margin="0,14,0,4"/>
+                    <ItemsControl ItemsSource="{Binding StatCallNatures}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Grid ColumnDefinitions="320,*,40" Margin="0,2">
+                                    <TextBlock Text="{Binding Label}" FontSize="12" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+                                    <ProgressBar Grid.Column="1" Minimum="0" Maximum="1" Value="{Binding Ratio}" Height="12"
+                                                 Foreground="#2C6FB7" Background="#E9F0F5" Margin="8,0"/>
+                                    <TextBlock Grid.Column="2" Text="{Binding Value}" FontWeight="Bold" FontSize="12" VerticalAlignment="Center"/>
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <TextBlock Classes="h1" Text="Interventions par catégorie" Margin="0,14,0,4"/>
+                    <ItemsControl ItemsSource="{Binding StatCategories}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Grid ColumnDefinitions="320,*,40" Margin="0,2">
+                                    <TextBlock Text="{Binding Label}" FontSize="12" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+                                    <ProgressBar Grid.Column="1" Minimum="0" Maximum="1" Value="{Binding Ratio}" Height="12"
+                                                 Foreground="#2C6FB7" Background="#E9F0F5" Margin="8,0"/>
+                                    <TextBlock Grid.Column="2" Text="{Binding Value}" FontWeight="Bold" FontSize="12" VerticalAlignment="Center"/>
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <TextBlock Classes="h1" Text="Interventions par procédure" Margin="0,14,0,4"/>
+                    <ItemsControl ItemsSource="{Binding StatProcedures}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Grid ColumnDefinitions="320,*,40" Margin="0,2">
+                                    <TextBlock Text="{Binding Label}" FontSize="12" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+                                    <ProgressBar Grid.Column="1" Minimum="0" Maximum="1" Value="{Binding Ratio}" Height="12"
+                                                 Foreground="#2C6FB7" Background="#E9F0F5" Margin="8,0"/>
+                                    <TextBlock Grid.Column="2" Text="{Binding Value}" FontWeight="Bold" FontSize="12" VerticalAlignment="Center"/>
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
                     <TextBlock Classes="h1" Text="Interventions par nature" Margin="0,14,0,4"/>
                     <ItemsControl ItemsSource="{Binding StatNatures}">
                         <ItemsControl.ItemTemplate>
@@ -280,6 +365,19 @@
 
                     <TextBlock Classes="h1" Text="Appels par opérateur" Margin="0,14,0,4"/>
                     <ItemsControl ItemsSource="{Binding StatOperators}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Grid ColumnDefinitions="320,*,40" Margin="0,2">
+                                    <TextBlock Text="{Binding Label}" FontSize="12" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+                                    <ProgressBar Grid.Column="1" Minimum="0" Maximum="1" Value="{Binding Ratio}" Height="12"
+                                                 Foreground="#2C6FB7" Background="#E9F0F5" Margin="8,0"/>
+                                    <TextBlock Grid.Column="2" Text="{Binding Value}" FontWeight="Bold" FontSize="12" VerticalAlignment="Center"/>
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <TextBlock Classes="h1" Text="Ordres de départ par opérateur" Margin="0,14,0,4"/>
+                    <ItemsControl ItemsSource="{Binding StatOperatorOdes}">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
                                 <Grid ColumnDefinitions="320,*,40" Margin="0,2">

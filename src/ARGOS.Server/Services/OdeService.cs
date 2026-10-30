@@ -194,6 +194,51 @@ public sealed class OdeService(OdeDatabase db, RealtimeHub hub, ILogger<OdeServi
         }
     }
 
+    /// <summary>Appels et interventions d'une période (sans la limite des 300 derniers de l'état courant).</summary>
+    public OdeHistory History(DateTimeOffset from, DateTimeOffset to)
+    {
+        const int limit = 5000;
+        var calls = db.CallsBetween(from, to, limit);
+        var interventions = db.InterventionsBetween(from, to, limit);
+        return new OdeHistory { Calls = calls, Interventions = interventions, Truncated = calls.Count >= limit || interventions.Count >= limit };
+    }
+
+    /// <summary>
+    /// Change la procédure d'une intervention en cours. Autorisé à l'auteur de l'intervention
+    /// et aux rôles d'encadrement (Encadrement, Administration, RH/ADMIN). L'ancienne valeur reste dans l'historique.
+    /// </summary>
+    public async Task<OdeResult> ChangeProcedureAsync(ArgosUserDto user, string interventionId, ProcedureChangeRequest request)
+    {
+        var procedure = Procedures.Find(request.Procedure);
+        if (procedure is null || !procedure.Departure)
+            return new(false, "Procédure inconnue (seules les procédures de départ s'appliquent à une intervention).");
+        await _gate.WaitAsync();
+        try
+        {
+            var intervention = db.GetIntervention(interventionId);
+            if (intervention is null) return new(false, "Intervention introuvable.");
+            if (!intervention.Active) return new(false, "Intervention clôturée : procédure figée.");
+            var allowed = intervention.CreatedBy == user.DisplayName || AccessLevels.IsRhAdmin(user.Levels)
+                          || user.Levels.Contains(AccessLevels.Encadrement);
+            if (!allowed) return new(false, "Seuls l'auteur de l'intervention et l'encadrement peuvent changer la procédure.");
+            if (intervention.Procedure == procedure.Code) return new(true, null, intervention.Id);
+
+            var before = Procedures.Find(intervention.Procedure)?.Label ?? intervention.Procedure;
+            intervention.Procedure = procedure.Code;
+            intervention.UpdatedAt = DateTimeOffset.UtcNow;
+            var detail = $"Procédure : {before} → {procedure.Label}" + (string.IsNullOrWhiteSpace(request.Reason) ? "" : $" ({request.Reason.Trim()})");
+            intervention.Events.Add(Event(user, "procedure", detail));
+            db.SaveIntervention(intervention);
+            Journal(user, "Changement de procédure", intervention.Number, detail);
+            await NotifyAsync("intervention");
+            return new(true, null, intervention.Id);
+        }
+        finally
+        {
+            _gate.Release();
+        }
+    }
+
     // ===== Ordres de départ =====
 
     /// <summary>Crée une intervention et son premier ODE, ou un départ complémentaire sur une intervention existante.</summary>
@@ -250,7 +295,8 @@ public sealed class OdeService(OdeDatabase db, RealtimeHub hub, ILogger<OdeServi
                     Access = request.Access.Trim(),
                     CallerPhone = request.CallerPhone.Trim(),
                     CallerInfo = request.CallerInfo.Trim(),
-                    Consignes = request.Consignes.Trim()
+                    Consignes = request.Consignes.Trim(),
+                    Motif = request.Motif.Trim()
                 };
                 intervention.Events.Add(Event(user, "creation", $"Intervention créée : {Natures.Find(intervention.NatureCode)?.Display}."));
             }
@@ -672,10 +718,13 @@ public sealed class OdeService(OdeDatabase db, RealtimeHub hub, ILogger<OdeServi
         ("bâtiment", c => c.Building, (c, v) => c.Building = v),
         ("accès", c => c.Access, (c, v) => c.Access = v),
         ("observations", c => c.Observations, (c, v) => c.Observations = v),
+        ("nature présumée", c => c.PresumedNatureCode, (c, v) => c.PresumedNatureCode = v),
+        ("nature définitive", c => c.FinalNatureCode, (c, v) => c.FinalNatureCode = v),
         ("nature", c => c.NatureCode, (c, v) => c.NatureCode = v),
         ("motif", c => c.Reason, (c, v) => c.Reason = v),
         ("priorité", c => c.Priority, (c, v) => c.Priority = v),
         ("risques", c => c.Risks, (c, v) => c.Risks = v),
+        ("consignes", c => c.Instructions, (c, v) => c.Instructions = v),
         ("victimes", c => c.VictimCount.ToString(), (c, v) => c.VictimCount = int.TryParse(v, out var n) ? Math.Max(0, n) : 0)
     ];
 

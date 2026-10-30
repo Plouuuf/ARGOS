@@ -34,6 +34,16 @@ public sealed class PriseAppelViewModel : ViewModelBase, IDisposable
     private string _observations = string.Empty;
     private string? _motif = string.Empty;
     private string _reason = string.Empty;
+    private string _callerName = string.Empty;
+    private string _building = string.Empty;
+    private string _access = string.Empty;
+    private string _victimCount = string.Empty;
+    private string? _priority = string.Empty;
+    private string _risks = string.Empty;
+    private string _instructions = string.Empty;
+    private string? _finalNature = string.Empty;
+    private bool _linkVisible;
+    private InterventionChoice? _linkChoice;
 
     private string _durationText = "00:00:00";
     private string _statusTime = string.Empty;
@@ -62,6 +72,10 @@ public sealed class PriseAppelViewModel : ViewModelBase, IDisposable
         PromptOkCommand = new RelayCommand(() => _ = ConfirmPromptAsync());
         PromptCancelCommand = new RelayCommand(() => PromptVisible = false);
         OpenInterventionCommand = new RelayCommand(OpenIntervention, () => HasIntervention);
+        SansSuiteCommand = new RelayCommand(() => AskClose("SANS SUITE", "Classement sans suite"), () => !IsClosed && !_loading);
+        ShowLinkCommand = new RelayCommand(ShowLink, () => !IsClosed && !_loading);
+        LinkCommand = new RelayCommand(() => _ = LinkAsync());
+        CancelLinkCommand = new RelayCommand(() => LinkVisible = false);
         AboutCommand = new RelayCommand(() => ShowMessage($"ADAGIO - Prise d'appel {Version}. Touches F1 à F9 : qualification de l'appel.", false));
 
         foreach (var nature in Natures.All)
@@ -122,8 +136,32 @@ public sealed class PriseAppelViewModel : ViewModelBase, IDisposable
 
     // ===== Motif =====
 
+    /// <summary>Nature présumée (réception de l'appel).</summary>
     public string? Motif { get => _motif; set => Edit(ref _motif, value); }
     public string Reason { get => _reason; set => Edit(ref _reason, value); }
+
+    // ===== Requérant et précisions =====
+
+    public string CallerName { get => _callerName; set => Edit(ref _callerName, value); }
+    public string Building { get => _building; set => Edit(ref _building, value); }
+    public string Access { get => _access; set => Edit(ref _access, value); }
+    public string VictimCount { get => _victimCount; set => Edit(ref _victimCount, value); }
+
+    // ===== Qualification =====
+
+    public IReadOnlyList<string> Priorities { get; } = CallPriorities.All;
+    public string? Priority { get => _priority; set => Edit(ref _priority, value); }
+    public string Risks { get => _risks; set => Edit(ref _risks, value); }
+    public string Instructions { get => _instructions; set => Edit(ref _instructions, value); }
+    /// <summary>Nature définitive (après qualification) ; vide tant que la nature présumée fait foi.</summary>
+    public string? FinalNature { get => _finalNature; set => Edit(ref _finalNature, value); }
+
+    // ===== Rattachement à une intervention existante =====
+
+    public bool LinkVisible { get => _linkVisible; set => SetProperty(ref _linkVisible, value); }
+    public ObservableCollection<InterventionChoice> LinkChoices { get; } = [];
+    public InterventionChoice? LinkChoice { get => _linkChoice; set => SetProperty(ref _linkChoice, value); }
+    public bool HasLinkChoices => LinkChoices.Count > 0;
 
     // ===== État =====
 
@@ -178,6 +216,10 @@ public sealed class PriseAppelViewModel : ViewModelBase, IDisposable
     public RelayCommand PromptCancelCommand { get; }
     public RelayCommand OpenInterventionCommand { get; }
     public RelayCommand AboutCommand { get; }
+    public RelayCommand SansSuiteCommand { get; }
+    public RelayCommand ShowLinkCommand { get; }
+    public RelayCommand LinkCommand { get; }
+    public RelayCommand CancelLinkCommand { get; }
 
     // ===== Chargement =====
 
@@ -216,8 +258,16 @@ public sealed class PriseAppelViewModel : ViewModelBase, IDisposable
         _cstc = call.Cstc;
         _alertAddress = call.AlertAddress;
         _observations = call.Observations;
-        _motif = Natures.Find(call.NatureCode)?.Display ?? string.Empty;
+        _motif = Natures.Find(string.IsNullOrEmpty(call.PresumedNatureCode) ? call.NatureCode : call.PresumedNatureCode)?.Display ?? string.Empty;
+        _finalNature = Natures.Find(call.FinalNatureCode)?.Display ?? string.Empty;
         _reason = call.Reason;
+        _callerName = call.CallerName;
+        _building = call.Building;
+        _access = call.Access;
+        _victimCount = call.VictimCount > 0 ? call.VictimCount.ToString() : string.Empty;
+        _priority = call.Priority;
+        _risks = call.Risks;
+        _instructions = call.Instructions;
         _loading = false;
 
         RaiseAll();
@@ -281,17 +331,22 @@ public sealed class PriseAppelViewModel : ViewModelBase, IDisposable
         _lastEdit = DateTime.UtcNow;
     }
 
+    private static NatureDefinition? NatureOf(string? text)
+        => Natures.All.FirstOrDefault(n => string.Equals(n.Display, text?.Trim(), StringComparison.OrdinalIgnoreCase))
+           ?? Natures.Find(text?.Split(' ', 2)[0]);
+
     private CallRecord BuildRecord()
     {
-        var nature = Natures.All.FirstOrDefault(n => string.Equals(n.Display, Motif?.Trim(), StringComparison.OrdinalIgnoreCase))
-                     ?? Natures.Find(Motif?.Split(' ', 2)[0]);
+        var presumed = NatureOf(Motif);
+        var final = NatureOf(FinalNature);
+        var nature = final ?? presumed;
         return new CallRecord
         {
             Id = CallId,
             Origin = Origin,
             CallerPhone = CallerPhone,
             ImplicatedPhone = ImplicatedPhone,
-            CallerName = _call.CallerName,
+            CallerName = CallerName,
             LocationMode = Mode,
             LocationNetwork = Network,
             StreetNumber = StreetNumber,
@@ -300,14 +355,17 @@ public sealed class PriseAppelViewModel : ViewModelBase, IDisposable
             Cstc = Cstc,
             AlertAddress = AlertAddress,
             Locality = _call.Locality,
-            Building = _call.Building,
-            Access = _call.Access,
+            Building = Building,
+            Access = Access,
             Observations = Observations,
+            PresumedNatureCode = presumed?.Code ?? string.Empty,
+            FinalNatureCode = final?.Code ?? string.Empty,
             NatureCode = nature?.Code ?? string.Empty,
             Reason = Reason,
-            VictimCount = _call.VictimCount,
-            Priority = _call.Priority,
-            Risks = _call.Risks
+            VictimCount = int.TryParse(VictimCount, out var victims) ? Math.Max(0, victims) : 0,
+            Priority = Priority ?? string.Empty,
+            Risks = Risks,
+            Instructions = Instructions
         };
     }
 
@@ -390,10 +448,47 @@ public sealed class PriseAppelViewModel : ViewModelBase, IDisposable
         }
 
         // Appel clos sans départ : on demande le motif.
-        _pendingProcedure = procedure.Key;
-        PromptTitle = $"{procedure.Key} - {procedure.Label} : appel clos sans départ";
-        PromptText = procedure.Label;
+        AskClose(procedure.Key, $"{procedure.Key} - {procedure.Label} : appel clos sans départ", procedure.Label);
+    }
+
+    private void AskClose(string procedure, string title, string text = "")
+    {
+        if (IsClosed) return;
+        _pendingProcedure = procedure;
+        PromptTitle = title;
+        PromptText = text;
         PromptVisible = true;
+    }
+
+    // ===== Rattachement =====
+
+    private void ShowLink()
+    {
+        LinkChoices.Clear();
+        foreach (var i in (ArgosSession.Current?.Ode.Snapshot.Interventions ?? []).Where(i => i.Active).OrderByDescending(i => i.CreatedAt))
+            LinkChoices.Add(new InterventionChoice(i.Id, $"{i.Number} - {OdeFormat.Nature(i.NatureCode)} - {i.Address}"));
+        LinkChoice = LinkChoices.FirstOrDefault();
+        OnPropertyChanged(nameof(HasLinkChoices));
+        LinkVisible = true;
+    }
+
+    private async Task LinkAsync()
+    {
+        var session = ArgosSession.Current;
+        if (session is null || LinkChoice is not { } choice) return;
+        if (!await SaveAsync(null, false)) return;
+        var result = await session.Api.SendAsync(HttpMethod.Post, $"api/ode/calls/{Uri.EscapeDataString(CallId)}/link",
+            new LinkCallRequest(choice.Id));
+        LinkVisible = false;
+        if (!result.Ok)
+        {
+            ShowMessage(result.Error ?? "Rattachement refusé.", true);
+            return;
+        }
+        _call.Status = CallStatuses.Intervention;
+        _call.InterventionId = choice.Id;
+        RaiseState();
+        ShowMessage($"Appel rattaché à l'intervention {choice.Label.Split(' ')[0]}.", false);
     }
 
     /// <summary>Touche du clavier : F1…F9 déclenchent la procédure correspondante.</summary>
@@ -409,6 +504,11 @@ public sealed class PriseAppelViewModel : ViewModelBase, IDisposable
     {
         var session = ArgosSession.Current;
         if (session is null || _pendingProcedure is null) return;
+        if (string.IsNullOrWhiteSpace(PromptText))
+        {
+            ShowMessage("Indique le motif du classement.", true);
+            return;
+        }
         if (!await SaveAsync(null, false)) return;
 
         var result = await session.Api.SendAsync(HttpMethod.Post,
@@ -481,6 +581,8 @@ public sealed class PriseAppelViewModel : ViewModelBase, IDisposable
         ConfirmLocationCommand.RaiseCanExecuteChanged();
         TransmitCommand.RaiseCanExecuteChanged();
         OpenInterventionCommand.RaiseCanExecuteChanged();
+        SansSuiteCommand.RaiseCanExecuteChanged();
+        ShowLinkCommand.RaiseCanExecuteChanged();
     }
 
     private void RaiseAll()
@@ -489,7 +591,8 @@ public sealed class PriseAppelViewModel : ViewModelBase, IDisposable
                  {
                      nameof(CallerPhone), nameof(ImplicatedPhone), nameof(Origin), nameof(Mode), nameof(Network),
                      nameof(StreetNumber), nameof(Street), nameof(Cstc), nameof(AlertAddress), nameof(Observations),
-                     nameof(Motif), nameof(Reason), nameof(Poste), nameof(StatusOperator)
+                     nameof(Motif), nameof(Reason), nameof(Poste), nameof(StatusOperator), nameof(CallerName), nameof(Building),
+                     nameof(Access), nameof(VictimCount), nameof(Priority), nameof(Risks), nameof(Instructions), nameof(FinalNature)
                  })
             OnPropertyChanged(name);
         RaiseState();
@@ -503,4 +606,9 @@ public sealed class PriseAppelViewModel : ViewModelBase, IDisposable
         if (_dirty)
             _ = SaveAsync(null, false);
     }
+}
+
+public sealed record InterventionChoice(string Id, string Label)
+{
+    public override string ToString() => Label;
 }

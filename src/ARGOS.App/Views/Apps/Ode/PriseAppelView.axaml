@@ -18,7 +18,7 @@
         menu, Informations téléphoniques, Localisation de l'événement, Adresse de l'alerte,
         Motif de l'appel, touches F1 à F9, barre d'état.
     -->
-    <Grid RowDefinitions="Auto,Auto,Auto,Auto,*,58,Auto">
+    <Grid RowDefinitions="Auto,Auto,Auto,Auto,*,Auto,58,Auto">
 
         <!-- ===== Menu ===== -->
         <Menu Grid.Row="0" Classes="adg">
@@ -29,6 +29,8 @@
                 <MenuItem Header="Nouvelle prise d'appel" Command="{Binding NewCallCommand}"/>
                 <MenuItem Header="Enregistrer la fiche" Command="{Binding SaveCommand}"/>
                 <MenuItem Header="Transmettre pour traitement" Command="{Binding TransmitCommand}"/>
+                <MenuItem Header="Rattacher à une intervention en cours…" Command="{Binding ShowLinkCommand}"/>
+                <MenuItem Header="Classer sans suite…" Command="{Binding SansSuiteCommand}"/>
                 <Separator/>
                 <MenuItem Header="Fermer" Command="{Binding CloseCommand}"/>
             </MenuItem>
@@ -114,7 +116,7 @@
 
         <!-- ===== Adresse de l'alerte ===== -->
         <HeaderedContentControl Grid.Row="3" Classes="group" Header="Adresse de l'alerte">
-            <Grid ColumnDefinitions="50,110,8,330,*" RowDefinitions="32,32">
+            <Grid ColumnDefinitions="50,110,8,330,*" RowDefinitions="32,32,32">
                 <TextBlock Classes="lbl" Text="CSTC" FontWeight="Normal"/>
                 <TextBox Grid.Column="1" Classes="adg" Margin="0,4" Text="{Binding Cstc}" IsReadOnly="{Binding IsClosed}"/>
                 <TextBox Grid.Column="3" Grid.ColumnSpan="2" Classes="adg" Margin="0,4"
@@ -123,13 +125,26 @@
                            HorizontalAlignment="Right" Margin="0,0,8,0"/>
                 <TextBox Grid.Row="1" Grid.Column="3" Classes="adg" Margin="0,4"
                          Text="{Binding Observations}" IsReadOnly="{Binding IsClosed}"/>
+                <Grid Grid.Row="1" Grid.Column="4" ColumnDefinitions="Auto,6,*" Margin="10,0,0,0">
+                    <TextBlock Classes="lbl" Text="Bât. / étage / appt"/>
+                    <TextBox Grid.Column="2" Classes="adg" Margin="0,4" Text="{Binding Building}" IsReadOnly="{Binding IsClosed}"/>
+                </Grid>
+                <TextBlock Grid.Row="2" Grid.ColumnSpan="2" Classes="lbl" Text="Requérant :"
+                           HorizontalAlignment="Right" Margin="0,0,8,0"/>
+                <TextBox Grid.Row="2" Grid.Column="3" Classes="adg" Margin="0,4" Watermark="NOM Prénom du requérant"
+                         Text="{Binding CallerName}" IsReadOnly="{Binding IsClosed}"/>
+                <Grid Grid.Row="2" Grid.Column="4" ColumnDefinitions="Auto,6,*" Margin="10,0,0,0">
+                    <TextBlock Classes="lbl" Text="Accès"/>
+                    <TextBox Grid.Column="2" Classes="adg" Margin="0,4" Watermark="Digicode, interphone, portail…"
+                             Text="{Binding Access}" IsReadOnly="{Binding IsClosed}"/>
+                </Grid>
             </Grid>
         </HeaderedContentControl>
 
         <!-- ===== Motif de l'appel ===== -->
         <HeaderedContentControl Grid.Row="4" Classes="group" Header="Motif de l'appel">
             <Grid RowDefinitions="Auto,*" ColumnDefinitions="Auto,*">
-                <TextBlock Classes="lbl" Text="Motif de l'alerte" VerticalAlignment="Top" Margin="0,6,10,0"/>
+                <TextBlock Classes="lbl" Text="Nature présumée" VerticalAlignment="Top" Margin="0,6,10,0"/>
                 <Grid Grid.Column="1" ColumnDefinitions="*,26">
                     <AutoCompleteBox Name="MotifBox" Grid.ColumnSpan="2" Classes="adg big" MinHeight="32"
                                      ItemsSource="{Binding MotifSuggestions}" Text="{Binding Motif}"
@@ -146,8 +161,30 @@
             </Grid>
         </HeaderedContentControl>
 
+        <!-- ===== Qualification ===== -->
+        <HeaderedContentControl Grid.Row="5" Classes="group" Header="Qualification de l'appel">
+            <Grid ColumnDefinitions="Auto,8,*,12,Auto,8,60,12,Auto,8,170" RowDefinitions="32,32">
+                <TextBlock Classes="lbl" Text="Nature définitive"/>
+                <AutoCompleteBox Grid.Column="2" Classes="adg" Margin="0,4" FilterMode="Contains"
+                                 ItemsSource="{Binding MotifSuggestions}" Text="{Binding FinalNature}"
+                                 IsEnabled="{Binding IsEditable}" Watermark="Vide = nature présumée"/>
+                <TextBlock Grid.Column="4" Classes="lbl" Text="Victimes"/>
+                <TextBox Grid.Column="6" Classes="adg" Margin="0,4" Text="{Binding VictimCount}" IsReadOnly="{Binding IsClosed}"/>
+                <TextBlock Grid.Column="8" Classes="lbl" Text="Priorité"/>
+                <ComboBox Grid.Column="10" Classes="adg" Margin="0,4" HorizontalAlignment="Stretch"
+                          ItemsSource="{Binding Priorities}" SelectedItem="{Binding Priority}" IsEnabled="{Binding IsEditable}"/>
+                <TextBlock Grid.Row="1" Classes="lbl" Text="Risques signalés"/>
+                <TextBox Grid.Row="1" Grid.Column="2" Classes="adg" Margin="0,4" Watermark="Gaz, électricité, animal, arme…"
+                         Text="{Binding Risks}" IsReadOnly="{Binding IsClosed}"/>
+                <TextBlock Grid.Row="1" Grid.Column="4" Classes="lbl" Text="Consignes"/>
+                <TextBox Grid.Row="1" Grid.Column="6" Grid.ColumnSpan="5" Classes="adg" Margin="0,4"
+                         Watermark="Consignes opérationnelles (reprises sur l'ODE)"
+                         Text="{Binding Instructions}" IsReadOnly="{Binding IsClosed}"/>
+            </Grid>
+        </HeaderedContentControl>
+
         <!-- ===== Touches F1 à F9 ===== -->
-        <UniformGrid Grid.Row="5" Columns="9" Margin="6,4,6,4">
+        <UniformGrid Grid.Row="6" Columns="9" Margin="6,4,6,4">
             <Button Classes="flat fkey" Background="#FFFFFF" Command="{Binding FKeyCommand}" CommandParameter="F1">
                 <TextBlock TextAlignment="Center" LineHeight="21">F1<LineBreak/>BLANCHE</TextBlock>
             </Button>
@@ -178,7 +215,7 @@
         </UniformGrid>
 
         <!-- ===== Barre d'état ===== -->
-        <Border Grid.Row="6" Background="White" Height="24">
+        <Border Grid.Row="7" Background="White" Height="24">
             <Grid ColumnDefinitions="40,190,90,170,90,*" TextElement.FontSize="12" TextElement.FontWeight="Bold">
                 <TextBlock Grid.Column="1" Text="{Binding StatusDate}" VerticalAlignment="Center"/>
                 <TextBlock Grid.Column="2" Text="{Binding StatusTime}" VerticalAlignment="Center"/>
@@ -189,7 +226,7 @@
         </Border>
 
         <!-- ===== Bandeaux (appel clos, messages) ===== -->
-        <StackPanel Grid.Row="0" Grid.RowSpan="7" VerticalAlignment="Top" HorizontalAlignment="Right"
+        <StackPanel Grid.Row="0" Grid.RowSpan="8" VerticalAlignment="Top" HorizontalAlignment="Right"
                     Margin="0,30,12,0" Spacing="6" MaxWidth="520">
             <Border Background="#2C6FB7" Padding="10,6" IsVisible="{Binding IsClosed}" CornerRadius="2">
                 <StackPanel Orientation="Horizontal" Spacing="10">
@@ -206,7 +243,7 @@
         </StackPanel>
 
         <!-- ===== Main courante de l'appel (Options) ===== -->
-        <Border Grid.Row="1" Grid.RowSpan="5" IsVisible="{Binding LogVisible}" Width="420"
+        <Border Grid.Row="1" Grid.RowSpan="6" IsVisible="{Binding LogVisible}" Width="420"
                 HorizontalAlignment="Right" Margin="0,6,6,0" Background="#E9F0F5"
                 BorderBrush="#5D86A6" BorderThickness="2" BoxShadow="0 4 16 0 #55000000">
             <DockPanel Margin="10">
@@ -241,8 +278,27 @@
             </DockPanel>
         </Border>
 
-        <!-- ===== Demande de motif (F5, F9) ===== -->
-        <Border Grid.RowSpan="7" Background="#66000000" IsVisible="{Binding PromptVisible}">
+        <!-- ===== Rattachement à une intervention en cours ===== -->
+        <Border Grid.RowSpan="8" Background="#66000000" IsVisible="{Binding LinkVisible}">
+            <Border Background="{StaticResource AdagioBack}" BorderBrush="White" BorderThickness="2.5" CornerRadius="6"
+                    Width="620" Padding="18" HorizontalAlignment="Center" VerticalAlignment="Center">
+                <StackPanel Spacing="10">
+                    <TextBlock Text="Rattacher l'appel à une intervention en cours" FontWeight="Bold" FontSize="15"/>
+                    <TextBlock Text="Plusieurs appels pour un même événement : l'appel rejoint l'intervention, sans nouveau départ."
+                               FontSize="12" TextWrapping="Wrap"/>
+                    <ComboBox Classes="adg" HorizontalAlignment="Stretch" ItemsSource="{Binding LinkChoices}"
+                              SelectedItem="{Binding LinkChoice}" IsVisible="{Binding HasLinkChoices}"/>
+                    <TextBlock Text="Aucune intervention en cours." FontWeight="Bold" IsVisible="{Binding !HasLinkChoices}"/>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
+                        <Button Classes="adg" Content="Annuler" Command="{Binding CancelLinkCommand}"/>
+                        <Button Classes="adg primary" Content="Rattacher" Command="{Binding LinkCommand}" IsEnabled="{Binding HasLinkChoices}"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+        </Border>
+
+        <!-- ===== Demande de motif (F5, F9, sans suite) ===== -->
+        <Border Grid.RowSpan="8" Background="#66000000" IsVisible="{Binding PromptVisible}">
             <Border Background="{StaticResource AdagioBack}" BorderBrush="White" BorderThickness="2.5" CornerRadius="6"
                     Width="520" Padding="18" HorizontalAlignment="Center" VerticalAlignment="Center">
                 <StackPanel Spacing="10">

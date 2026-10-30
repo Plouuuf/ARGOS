@@ -142,6 +142,16 @@ public sealed class OdeDatabase
     public List<CallRecord> RecentCalls(int limit)
         => Query<CallRecord>("SELECT data FROM calls ORDER BY received_at DESC LIMIT $l", ("$l", limit));
 
+    /// <summary>Appels reçus sur une période (historique), du plus récent au plus ancien.</summary>
+    public List<CallRecord> CallsBetween(DateTimeOffset from, DateTimeOffset to, int limit)
+        => Query<CallRecord>("SELECT data FROM calls WHERE received_at >= $f AND received_at < $t ORDER BY received_at DESC LIMIT $l",
+            ("$f", Iso(from)), ("$t", Iso(to)), ("$l", limit));
+
+    /// <summary>Interventions créées sur une période (archives), de la plus récente à la plus ancienne.</summary>
+    public List<Intervention> InterventionsBetween(DateTimeOffset from, DateTimeOffset to, int limit)
+        => Query<Intervention>("SELECT data FROM interventions WHERE created_at >= $f AND created_at < $t ORDER BY created_at DESC LIMIT $l",
+            ("$f", Iso(from)), ("$t", Iso(to)), ("$l", limit));
+
     public CallRecord? FindCallBySimcallId(string simcallId)
         => RecentCalls(200).FirstOrDefault(c => c.SimcallCallId == simcallId);
 

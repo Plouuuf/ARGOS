@@ -7,7 +7,16 @@ using Argos.Views.Apps.Efibi;
 namespace Argos.ViewModels.Efibi;
 
 public sealed record EfibiRow(long Id, string ShareCode, string Intervention, string Victim, string Created, string Status,
-    bool Transmitted, RelayCommand OpenCommand);
+    bool Transmitted, RelayCommand OpenCommand)
+{
+    public string Date { get; init; } = string.Empty;
+    public string Time { get; init; } = string.Empty;
+    public DateTimeOffset SortTime { get; init; }
+    public string Author { get; init; } = string.Empty;
+    public string Circumstances { get; init; } = string.Empty;
+    public string StatusColor => EfibiText.StatusColor(Status);
+    public Avalonia.Media.IBrush StatusBrush => Avalonia.Media.SolidColorBrush.Parse(StatusColor);
+}
 
 /// <summary>eFiBi : registre des fiches bilans et recherche avancée (lecture seule).</summary>
 public sealed class EfibiAppViewModel : ViewModelBase
@@ -41,6 +50,7 @@ public sealed class EfibiAppViewModel : ViewModelBase
         PreviousCommand = new RelayCommand(() => _ = LoadAsync(_page - 1), () => _page > 1);
         ToggleAdvancedCommand = new RelayCommand(() => Advanced = !Advanced);
         ResetCommand = new RelayCommand(Reset);
+        SortCommand = new RelayCommand(p => Sort(p as string ?? "date"));
         _ = LoadAsync(1);
     }
 
@@ -74,6 +84,35 @@ public sealed class EfibiAppViewModel : ViewModelBase
     public RelayCommand PreviousCommand { get; }
     public RelayCommand ToggleAdvancedCommand { get; }
     public RelayCommand ResetCommand { get; }
+    public RelayCommand SortCommand { get; }
+
+    // ===== Tri par colonne (comme CORTEX : un clic trie, un second inverse) =====
+
+    private string _sortKey = "date";
+    private bool _sortDescending = true;
+
+    private void Sort(string key)
+    {
+        _sortDescending = _sortKey == key ? !_sortDescending : key == "date";
+        _sortKey = key;
+        ApplySort();
+    }
+
+    private void ApplySort()
+    {
+        Func<EfibiRow, IComparable> selector = _sortKey switch
+        {
+            "intervention" => r => r.Intervention,
+            "author" => r => r.Author,
+            "victim" => r => r.Victim,
+            "circumstances" => r => r.Circumstances,
+            "status" => r => r.Status,
+            _ => r => r.SortTime
+        };
+        var sorted = (_sortDescending ? Items.OrderByDescending(selector) : Items.OrderBy(selector)).ToList();
+        Items.Clear();
+        foreach (var row in sorted) Items.Add(row);
+    }
 
     private void Debounce()
     {
@@ -127,11 +166,20 @@ public sealed class EfibiAppViewModel : ViewModelBase
             foreach (var s in result.Items)
             {
                 var rowId = s.Id;
+                var at = s.TransmittedAt ?? s.StartedAt ?? s.CreatedAt;
                 Items.Add(new EfibiRow(s.Id, s.ShareCode, Or(s.InterventionNumber), Or(s.VictimName),
                     s.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm"), Or(s.TransmissionStatus),
                     s.TransmittedAt is not null || s.TransmissionStatus.StartsWith("Transmis", StringComparison.OrdinalIgnoreCase),
-                    new RelayCommand(() => _desktop.OpenWindow(EfibiWindows.Record(_desktop, rowId)))));
+                    new RelayCommand(() => _desktop.OpenWindow(EfibiWindows.Record(_desktop, rowId))))
+                {
+                    Date = at.ToLocalTime().ToString("dd/MM/yyyy"),
+                    Time = at.ToLocalTime().ToString("HH:mm"),
+                    SortTime = at,
+                    Author = Or(s.Author),
+                    Circumstances = Or(s.Circumstances)
+                });
             }
+            if (_sortKey != "date" || !_sortDescending) ApplySort();
             var keep = Status;
             foreach (var st in result.Statuses.Where(st => !Statuses.Contains(st)))
                 Statuses.Add(st);
@@ -185,6 +233,12 @@ public sealed class EfibiRecordViewModel : ViewModelBase
     public string ShareCode => Or(_record?.Summary.ShareCode);
     public string Status => Or(_record?.Summary.TransmissionStatus);
     public string Author => Or(_record?.Summary.Author);
+    public string CitizenId => Or(_record?.Summary.CitizenId);
+    public string Circumstances => Or(_record?.Summary.Circumstances);
+    public string StatusColor => EfibiText.StatusColor(_record?.Summary.TransmissionStatus);
+    public Avalonia.Media.IBrush StatusBrush => Avalonia.Media.SolidColorBrush.Parse(StatusColor);
+    public string DisplayTimestamp => (_record?.Summary.TransmittedAt ?? _record?.Summary.StartedAt ?? _record?.Summary.CreatedAt) is { } at
+        && at > DateTimeOffset.MinValue ? at.ToLocalTime().ToString("dd/MM/yyyy HH:mm") : EfibiText.NonRenseigne;
     public string Created => _record is null ? EfibiText.NonRenseigne : _record.Summary.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy à HH:mm");
     public string Started => Date(_record?.Summary.StartedAt);
     public string Updated => _record is null ? EfibiText.NonRenseigne : _record.Summary.UpdatedAt.ToLocalTime().ToString("dd/MM/yyyy à HH:mm");
@@ -216,7 +270,8 @@ public sealed class EfibiRecordViewModel : ViewModelBase
         Loading = false;
         foreach (var n in new[] { nameof(HasRecord), nameof(Victim), nameof(Intervention), nameof(ShareCode), nameof(Status), nameof(Author),
                                   nameof(Created), nameof(Started), nameof(Updated), nameof(TransmissionDate), nameof(TransmissionTime),
-                                  nameof(Transmitted), nameof(Destination), nameof(HasDestination), nameof(Sections) })
+                                  nameof(Transmitted), nameof(Destination), nameof(HasDestination), nameof(Sections),
+                                  nameof(CitizenId), nameof(Circumstances), nameof(StatusColor), nameof(StatusBrush), nameof(DisplayTimestamp) })
             OnPropertyChanged(n);
     }
 
@@ -228,7 +283,8 @@ public sealed class EfibiRecordViewModel : ViewModelBase
         Loading = false;
         foreach (var n in new[] { nameof(HasRecord), nameof(Victim), nameof(Intervention), nameof(ShareCode), nameof(Status), nameof(Author),
                                   nameof(Created), nameof(Started), nameof(Updated), nameof(TransmissionDate), nameof(TransmissionTime),
-                                  nameof(Transmitted), nameof(Destination), nameof(HasDestination), nameof(Sections) })
+                                  nameof(Transmitted), nameof(Destination), nameof(HasDestination), nameof(Sections),
+                                  nameof(CitizenId), nameof(Circumstances), nameof(StatusColor), nameof(StatusBrush), nameof(DisplayTimestamp) })
             OnPropertyChanged(n);
     }
 

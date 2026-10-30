@@ -35,4 +35,37 @@ public sealed class EfibiTests
         Assert.Equal("Heure", record.Sections[1].Fields[0].Label);
         Assert.Equal("210-593", record.Metadata["interventionNumber"]);
     }
+
+    [Fact]
+    public void Comme_CORTEX_auteur_circonstances_et_cases_cochees()
+    {
+        const string json = """
+        {"sections":{
+           "circulatoryForm":{"title":"BILAN CIRCULATOIRE","controls":[
+               {"index":0,"label":"FC","type":"number","value":"80","id":"fc"},
+               {"index":1,"label":"Pâleurs","type":"checkbox","value":true,"checked":true},
+               {"index":2,"label":"Sueurs","type":"checkbox","value":false,"checked":false},
+               {"index":3,"label":"< 2 s","type":"radio","value":"inf2","checked":true},
+               {"index":4,"label":"≥ 2 s","type":"radio","value":"sup2","checked":false}],"lists":[],"choices":[]},
+           "circonstancielForm":{"title":"BILAN CIRCONSTANCIEL","controls":[
+               {"index":0,"label":"Chef d'agrès","type":"text","value":"SGT TEST"},
+               {"index":1,"label":"Observations","type":"textarea","value":"Chute de sa hauteur"}],"lists":[],"choices":[]},
+           "regulationForm":{"title":"CONTACT RÉGULATION","controls":[{"index":0,"label":"","type":"text","value":"","id":"regTime"}],
+             "lists":{"regTimeline":[]},"choices":[]}
+         }}
+        """;
+        Assert.Equal("SGT TEST", EfibiPayload.ExtractControl(json, "Chef d'agrès"));
+        Assert.Equal("Chute de sa hauteur", EfibiPayload.ExtractControl(json, "Observations"));
+        var record = new EfibiRecord();
+        EfibiPayload.Parse(json, record);
+        Assert.Equal("BILAN CIRCONSTANCIEL", record.Sections[0].Title);    // même ordre que CORTEX
+        var circ = record.Sections.Single(x => x.Key == "circulatoryForm");
+        Assert.Equal("Oui", circ.Fields.Single(f => f.Label == "Pâleurs").Value);
+        Assert.Equal("Oui", circ.Fields.Single(f => f.Label == "< 2 s").Value);   // radio cochée (champ « checked »)
+        Assert.DoesNotContain(circ.Fields, f => f.Label is "Sueurs" or "≥ 2 s");
+        var reg = record.Sections.Single(x => x.Key == "regulationForm");
+        Assert.Empty(reg.Fields);                                          // champ technique vide masqué
+        Assert.Empty(reg.Lists);                                           // liste vide masquée
+        Assert.Equal("#178447", EfibiText.StatusColor("Transmis"));
+    }
 }

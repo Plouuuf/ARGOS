@@ -6,6 +6,13 @@
              Foreground="#1C2733">
     <!-- eFiBi : registre des fiches bilans (lecture seule). -->
     <UserControl.Styles>
+        <Style Selector="Button.sort">
+            <Setter Property="Background" Value="Transparent"/><Setter Property="Foreground" Value="#173D5A"/><Setter Property="FontSize" Value="10"/>
+            <Setter Property="FontWeight" Value="Bold"/><Setter Property="BorderThickness" Value="0,0,1,0"/><Setter Property="BorderBrush" Value="#C3D1DB"/>
+            <Setter Property="CornerRadius" Value="0"/><Setter Property="HorizontalAlignment" Value="Stretch"/><Setter Property="VerticalAlignment" Value="Stretch"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/><Setter Property="Padding" Value="4,8"/><Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        <Style Selector="Button.sort:pointerover /template/ ContentPresenter#PART_ContentPresenter"><Setter Property="Background" Value="#D2DFE8"/></Style>
         <Style Selector="TextBox.ef">
             <Setter Property="Background" Value="White"/>
             <Setter Property="BorderBrush" Value="#C7D2DE"/>
@@ -59,9 +66,9 @@
         <Style Selector="Button.row">
             <Setter Property="Background" Value="White"/>
             <Setter Property="BorderBrush" Value="#E5EAF0"/>
-            <Setter Property="BorderThickness" Value="0,0,0,1"/>
+            <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="CornerRadius" Value="0"/>
-            <Setter Property="Padding" Value="12,8"/>
+            <Setter Property="Padding" Value="0"/>
             <Setter Property="HorizontalAlignment" Value="Stretch"/>
             <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
             <Setter Property="Foreground" Value="#1C2733"/>
@@ -152,14 +159,14 @@
         <!-- Registre -->
         <Border Margin="18,0" Background="White" BorderBrush="#D5DEE7" BorderThickness="1" CornerRadius="6" ClipToBounds="True">
             <DockPanel>
-                <Border DockPanel.Dock="Top" Background="#F4F7FA" BorderBrush="#D5DEE7" BorderThickness="0,0,0,1" Padding="12,8">
-                    <Grid ColumnDefinitions="80,90,110,*,130,160">
-                        <TextBlock Text="ID" FontSize="11.5" FontWeight="SemiBold" Foreground="#5B6B7B"/>
-                        <TextBlock Grid.Column="1" Text="CODE" FontSize="11.5" FontWeight="SemiBold" Foreground="#5B6B7B"/>
-                        <TextBlock Grid.Column="2" Text="INTERVENTION" FontSize="11.5" FontWeight="SemiBold" Foreground="#5B6B7B"/>
-                        <TextBlock Grid.Column="3" Text="VICTIME" FontSize="11.5" FontWeight="SemiBold" Foreground="#5B6B7B"/>
-                        <TextBlock Grid.Column="4" Text="CRÉÉE LE" FontSize="11.5" FontWeight="SemiBold" Foreground="#5B6B7B"/>
-                        <TextBlock Grid.Column="5" Text="TRANSMISSION" FontSize="11.5" FontWeight="SemiBold" Foreground="#5B6B7B"/>
+                <Border DockPanel.Dock="Top" Background="#E3EBF1" BorderBrush="#9CB2C1" BorderThickness="0,0,0,1">
+                    <Grid ColumnDefinitions="135,105,160,180,*,130">
+                        <Button Classes="sort" Command="{Binding SortCommand}" CommandParameter="intervention" Content="N° INTERVENTION  ▲▼"/>
+                        <Button Grid.Column="1" Classes="sort" Command="{Binding SortCommand}" CommandParameter="date" Content="DATE / HEURE  ▲▼"/>
+                        <Button Grid.Column="2" Classes="sort" Command="{Binding SortCommand}" CommandParameter="author" Content="AUTEUR  ▲▼"/>
+                        <Button Grid.Column="3" Classes="sort" Command="{Binding SortCommand}" CommandParameter="victim" Content="VICTIME  ▲▼"/>
+                        <Button Grid.Column="4" Classes="sort" Command="{Binding SortCommand}" CommandParameter="circumstances" Content="CIRCONSTANCES  ▲▼"/>
+                        <Button Grid.Column="5" Classes="sort" Command="{Binding SortCommand}" CommandParameter="status" Content="STATUT  ▲▼"/>
                     </Grid>
                 </Border>
                 <Panel>
@@ -168,21 +175,26 @@
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
                                     <Button Classes="row" Command="{Binding OpenCommand}">
-                                        <Grid ColumnDefinitions="80,90,110,*,130,160">
-                                            <TextBlock Classes="cell" Text="{Binding Id}" FontWeight="SemiBold"/>
-                                            <TextBlock Grid.Column="1" Classes="cell" Text="{Binding ShareCode}" FontFamily="Menlo, Consolas, monospace"/>
-                                            <TextBlock Grid.Column="2" Classes="cell" Text="{Binding Intervention}"/>
-                                            <TextBlock Grid.Column="3" Classes="cell" Text="{Binding Victim}" FontWeight="SemiBold"/>
-                                            <TextBlock Grid.Column="4" Classes="cell" Text="{Binding Created}"/>
-                                            <Border Grid.Column="5" CornerRadius="10" Padding="8,2" HorizontalAlignment="Left"
-                                                    Background="#FDECEA" IsVisible="{Binding !Transmitted}">
-                                                <TextBlock Text="{Binding Status}" FontSize="11.5" Foreground="#B3261E" FontWeight="SemiBold"/>
-                                            </Border>
-                                            <Border Grid.Column="5" CornerRadius="10" Padding="8,2" HorizontalAlignment="Left"
-                                                    Background="#E3F4E7" IsVisible="{Binding Transmitted}">
-                                                <TextBlock Text="{Binding Status}" FontSize="11.5" Foreground="#1E7B34" FontWeight="SemiBold"/>
-                                            </Border>
-                                        </Grid>
+                                        <Border BorderBrush="#D0DBE2" BorderThickness="0,0,0,1" MinHeight="52">
+                                            <Grid ColumnDefinitions="135,105,160,180,*,130">
+                                                <StackPanel Margin="7,0" VerticalAlignment="Center">
+                                                    <TextBlock Text="{Binding Intervention}" FontWeight="Bold" Foreground="#173D5A" FontSize="13"/>
+                                                    <TextBlock FontSize="10.5" Foreground="#6B7D89"><Run Text="n° "/><Run Text="{Binding Id}"/><Run Text=" · "/><Run Text="{Binding ShareCode}"/></TextBlock>
+                                                </StackPanel>
+                                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                    <TextBlock Text="{Binding Date}" HorizontalAlignment="Center" FontSize="12.5"/>
+                                                    <TextBlock Text="{Binding Time}" HorizontalAlignment="Center" FontWeight="SemiBold" FontSize="12.5"/>
+                                                </StackPanel>
+                                                <TextBlock Grid.Column="2" Text="{Binding Author}" Margin="7,0" VerticalAlignment="Center" FontSize="12.5" TextTrimming="CharacterEllipsis"/>
+                                                <TextBlock Grid.Column="3" Text="{Binding Victim}" Margin="7,0" VerticalAlignment="Center" FontWeight="SemiBold" FontSize="12.5" TextTrimming="CharacterEllipsis"/>
+                                                <TextBlock Grid.Column="4" Text="{Binding Circumstances}" Margin="7,0" VerticalAlignment="Center" FontSize="12.5"
+                                                           TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Circumstances}"/>
+                                                <Border Grid.Column="5" Margin="7,9" Background="{Binding StatusBrush}" MinHeight="26">
+                                                    <TextBlock Text="{Binding Status}" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                               FontWeight="Bold" TextAlignment="Center" TextWrapping="Wrap" FontSize="10.5"/>
+                                                </Border>
+                                            </Grid>
+                                        </Border>
                                     </Button>
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>

@@ -189,6 +189,20 @@ public static class Program
             return user is null ? Results.Unauthorized() : ToResult(await service.CloseWithoutDepartureAsync(user, id, request.Procedure, request.Reason));
         });
 
+        ode.MapGet("/history", async (HttpContext context, DiscordOAuthService oauth, OdeService service, DateTimeOffset? from, DateTimeOffset? to) =>
+        {
+            if (await AuthenticateAsync(context, oauth) is null) return Results.Unauthorized();
+            var end = to ?? DateTimeOffset.UtcNow.AddDays(1);
+            var start = from ?? end.AddDays(-30);
+            return Results.Ok(service.History(start, end));
+        });
+
+        ode.MapPost("/interventions/{id}/procedure", async (string id, ProcedureChangeRequest request, HttpContext context, DiscordOAuthService oauth, OdeService service) =>
+        {
+            var user = await AuthenticateAsync(context, oauth);
+            return user is null ? Results.Unauthorized() : ToResult(await service.ChangeProcedureAsync(user, id, request));
+        });
+
         ode.MapPost("/calls/{id}/link", async (string id, LinkCallRequest request, HttpContext context, DiscordOAuthService oauth, OdeService service) =>
         {
             var user = await AuthenticateAsync(context, oauth);

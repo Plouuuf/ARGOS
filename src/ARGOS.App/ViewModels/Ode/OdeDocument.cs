@@ -38,7 +38,7 @@ public sealed class OdeDocument
             ValidatedAt = OdeFormat.OdeDateTime(order.ValidatedAt),
             Cstc = intervention.Cstc,
             Number = intervention.Number,
-            Nature = OdeFormat.Nature(intervention.NatureCode),
+            Nature = OdeFormat.Nature(intervention.NatureCode) + (string.IsNullOrWhiteSpace(intervention.Motif) ? "" : $" ({intervention.Motif})"),
             Address = address,
             CallerPhone = intervention.CallerPhone,
             CallerInfo = intervention.CallerInfo,

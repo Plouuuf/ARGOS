@@ -12,7 +12,9 @@ public sealed class EfibiSummary
     public string InterventionNumber { get; set; } = string.Empty;
     public string VictimName { get; set; } = string.Empty;
     public string TransmissionStatus { get; set; } = string.Empty;
-    public string Author { get; set; } = string.Empty;          // citizenid du rédacteur (FiveM)
+    public string Author { get; set; } = string.Empty;          // chef d'agrès saisi dans la fiche (sinon identifiant FiveM)
+    public string CitizenId { get; set; } = string.Empty;       // identifiant FiveM du rédacteur
+    public string Circumstances { get; set; } = string.Empty;   // observations du bilan circonstanciel
     public DateTimeOffset? StartedAt { get; set; }
     public DateTimeOffset? TransmittedAt { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
@@ -81,10 +83,25 @@ public static class EfibiText
 {
     public const string NonRenseigne = "Non renseigné";
 
-    /// <summary>Ordre d'affichage des rubriques connues ; les autres suivent.</summary>
+    /// <summary>Ordre d'affichage des rubriques (même ordre que CORTEX) ; les autres suivent.</summary>
     public static readonly IReadOnlyList<string> SectionOrder =
-        ["identityForm", "circonstancielForm", "circulatoryForm", "neuroForm", "lesionnelForm", "accouchementForm",
-         "regulationForm", "transmissionForm"];
+        ["circonstancielForm", "detresseForm", "victimForm", "identityForm", "neuroForm", "circulatoryForm", "respiratoryForm",
+         "lesionnelForm", "regulationForm", "transmissionForm", "accouchementForm"];
+
+    /// <summary>Couleur du statut de transmission (mêmes couleurs que CORTEX).</summary>
+    public static string StatusColor(string? status)
+    {
+        var s = (status ?? string.Empty).Trim().ToUpperInvariant().Replace("É", "E").Replace("È", "E").Replace("À", "A");
+        return s switch
+        {
+            "TRANSMIS" => "#178447",
+            "EN COURS" => "#176FC1",
+            "A TRANSMETTRE" => "#D9822B",
+            "JAMAIS TRANSMIS" => "#737B83",
+            "ERREUR" or "ECHEC" => "#C43B31",
+            _ => "#536B7A"
+        };
+    }
 
     public static string ListName(string key) => key switch
     {

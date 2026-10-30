@@ -97,7 +97,7 @@ public sealed class EfibiService(IOptionsMonitor<EfibiOptions> options, OdeDatab
             }
 
             await using (var cmd = new MySqlCommand(
-                $"SELECT {Columns} FROM `{Table}`{filter} ORDER BY created_at {(q.OldestFirst ? "ASC" : "DESC")}, id DESC LIMIT @limit OFFSET @offset",
+                $"SELECT {Columns}, payload FROM `{Table}`{filter} ORDER BY created_at {(q.OldestFirst ? "ASC" : "DESC")}, id DESC LIMIT @limit OFFSET @offset",
                 connection))
             {
                 cmd.Parameters.AddRange(parameters.Select(p => p.Clone()).ToArray());
@@ -161,11 +161,17 @@ public sealed class EfibiService(IOptionsMonitor<EfibiOptions> options, OdeDatab
             var local = DateTime.SpecifyKind(r.GetDateTime(i), DateTimeKind.Unspecified);
             return new DateTimeOffset(local, TimeZoneInfo.Local.GetUtcOffset(local));
         }
+        var citizen = r.IsDBNull(2) ? string.Empty : r.GetString(2);
+        var payload = r.FieldCount > 10 && !r.IsDBNull(10) ? r.GetString(10) : null;
+        // Comme CORTEX : auteur = chef d'agrès saisi dans la fiche, sinon l'identifiant FiveM ; circonstances = observations.
+        var author = EfibiPayload.ExtractControl(payload, "Chef d'agrès", "Chef d’agres", "Chef d'agres", "Auteur");
         return new EfibiSummary
         {
             Id = Convert.ToInt64(r.GetValue(0)),
             ShareCode = r.IsDBNull(1) ? string.Empty : r.GetString(1),
-            Author = r.IsDBNull(2) ? string.Empty : r.GetString(2),
+            CitizenId = citizen,
+            Author = author.Length > 0 ? author : citizen,
+            Circumstances = EfibiPayload.ExtractControl(payload, "Observations", "Circonstances", "Observations circonstancielles"),
             InterventionNumber = r.IsDBNull(3) ? string.Empty : r.GetString(3),
             VictimName = r.IsDBNull(4) ? string.Empty : r.GetString(4),
             TransmissionStatus = r.IsDBNull(5) ? string.Empty : r.GetString(5),

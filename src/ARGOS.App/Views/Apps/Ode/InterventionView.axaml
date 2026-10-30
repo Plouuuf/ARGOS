@@ -41,6 +41,7 @@
                 <StackPanel Grid.Column="1" Spacing="6" VerticalAlignment="Center">
                     <Button Classes="adg" Content="Ajouter des moyens" Command="{Binding AddMeansCommand}" HorizontalAlignment="Stretch"/>
                     <Button Classes="adg" Content="Rédiger la MCO" Command="{Binding WriteMcoCommand}" HorizontalAlignment="Stretch"/>
+                    <Button Classes="adg" Content="Changer la procédure" Command="{Binding AskProcedureCommand}" HorizontalAlignment="Stretch"/>
                     <Button Classes="adg danger" Content="Clôturer l'intervention" Command="{Binding AskCloseCommand}" HorizontalAlignment="Stretch"/>
                 </StackPanel>
             </Grid>
@@ -160,6 +161,29 @@
                 </DockPanel>
             </HeaderedContentControl>
         </Grid>
+
+        <!-- Changement de procédure -->
+        <Border Grid.RowSpan="2" Background="#66000000" IsVisible="{Binding ChangingProcedure}">
+            <Border Background="{StaticResource AdagioBack}" BorderBrush="White" BorderThickness="2.5" CornerRadius="6"
+                    Width="480" Padding="18" HorizontalAlignment="Center" VerticalAlignment="Center">
+                <StackPanel Spacing="10">
+                    <TextBlock Text="Changer la procédure de l'intervention" FontWeight="Bold" FontSize="15"/>
+                    <TextBlock Text="Réservé à l'auteur de l'intervention et à l'encadrement. Le changement est tracé dans la main courante."
+                               TextWrapping="Wrap" FontSize="12"/>
+                    <ComboBox Classes="adg bold" HorizontalAlignment="Stretch" ItemsSource="{Binding ProcedureChoices}" SelectedItem="{Binding NewProcedure}">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate><TextBlock><Run Text="{Binding Key}"/><Run Text=" - "/><Run Text="{Binding Label}"/></TextBlock></DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                    <TextBox Classes="adg" Text="{Binding ProcedureReason}" Watermark="Motif du changement (facultatif)"/>
+                    <TextBlock Text="{Binding Error}" IsVisible="{Binding HasError}" Foreground="#A00000" FontWeight="Bold" TextWrapping="Wrap"/>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
+                        <Button Classes="adg" Content="Annuler" Command="{Binding CancelProcedureCommand}"/>
+                        <Button Classes="adg primary" Content="Appliquer" Command="{Binding ChangeProcedureCommand}"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+        </Border>
 
         <!-- Confirmation de clôture -->
         <Border Grid.RowSpan="2" Background="#66000000" IsVisible="{Binding ConfirmClose}">

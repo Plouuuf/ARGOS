@@ -38,6 +38,8 @@ public sealed class CreateOdeViewModel : ViewModelBase
     private string _callerPhone = string.Empty;
     private string _callerInfo = string.Empty;
     private string _consignes = string.Empty;
+    private string _motif = string.Empty;
+    private NatureCategory? _category;
     private EnginChoice? _firstEngin;
     private string? _error;
     private bool _busy;
@@ -51,8 +53,7 @@ public sealed class CreateOdeViewModel : ViewModelBase
         InterventionId = interventionId;
         _procedure = Procedures.Find(procedure)?.Code ?? "BLANCHE";
 
-        foreach (var nature in Natures.All)
-            NatureSuggestions.Add(nature.Display);
+        FillNatures();
 
         ValidateCommand = new RelayCommand(() => _ = ValidateAsync(), () => !Busy);
         PreviewCommand = new RelayCommand(() => { Preview = BuildPreview(); PreviewVisible = true; });
@@ -88,7 +89,39 @@ public sealed class CreateOdeViewModel : ViewModelBase
         }
     }
 
-    public string? Nature { get => _nature; set => SetProperty(ref _nature, value); }
+    /// <summary>Catégorie d'intervention (filtre des natures opérationnelles).</summary>
+    public IReadOnlyList<NatureCategory?> Categories { get; } = [null, .. Natures.Categories];
+    public NatureCategory? Category
+    {
+        get => _category;
+        set { if (SetProperty(ref _category, value)) FillNatures(); }
+    }
+
+    private void FillNatures()
+    {
+        NatureSuggestions.Clear();
+        foreach (var nature in _category?.Items ?? Natures.All)
+            NatureSuggestions.Add(nature.Display);
+    }
+
+    /// <summary>Nature opérationnelle ; choisir une nature fixe aussi la catégorie.</summary>
+    public string? Nature
+    {
+        get => _nature;
+        set
+        {
+            if (!SetProperty(ref _nature, value)) return;
+            var found = Natures.All.FirstOrDefault(n => string.Equals(n.Display, value?.Trim(), StringComparison.OrdinalIgnoreCase));
+            if (found is not null && _category?.Code != found.CategoryCode)
+            {
+                _category = Natures.Categories.FirstOrDefault(c => c.Code == found.CategoryCode);
+                OnPropertyChanged(nameof(Category));
+            }
+        }
+    }
+
+    /// <summary>Motif du départ (précision libre : « feu de poubelle contre façade », « personne bloquée ascenseur »…).</summary>
+    public string Motif { get => _motif; set => SetProperty(ref _motif, value); }
     public string Address { get => _address; set => SetProperty(ref _address, value); }
     public string Locality { get => _locality; set => SetProperty(ref _locality, value); }
     public string Building { get => _building; set => SetProperty(ref _building, value); }
@@ -172,6 +205,7 @@ public sealed class CreateOdeViewModel : ViewModelBase
             Secteur = existing.Secteur;
             CallerPhone = existing.CallerPhone;
             CallerInfo = existing.CallerInfo;
+            Motif = existing.Motif;
             OnPropertyChanged(nameof(ExistingNumber));
             OnPropertyChanged(nameof(Heading));
             return;
@@ -190,7 +224,12 @@ public sealed class CreateOdeViewModel : ViewModelBase
         Access = call.Access;
         Cstc = string.IsNullOrWhiteSpace(call.Cstc) ? EnginsCatalog.Creteil : call.Cstc;
         CallerPhone = call.CallerPhone;
-        CallerInfo = string.Join(" ** ", new[] { call.Reason, call.Observations }.Where(s => !string.IsNullOrWhiteSpace(s)));
+        var caller = string.Join(" - ", new[] { call.CallerName, call.VictimCount > 0 ? $"{call.VictimCount} victime(s)" : "" }
+            .Where(s => !string.IsNullOrWhiteSpace(s)));
+        CallerInfo = string.Join(" ** ", new[] { caller, call.Reason, call.Observations }.Where(s => !string.IsNullOrWhiteSpace(s)));
+        Consignes = string.Join(" ** ", new[] { call.Instructions, string.IsNullOrWhiteSpace(call.Risks) ? "" : "RISQUES : " + call.Risks,
+            string.IsNullOrWhiteSpace(call.Priority) ? "" : call.Priority }.Where(s => !string.IsNullOrWhiteSpace(s)));
+        Motif = (call.Reason ?? string.Empty).Split('\n', 2)[0].Trim();
     }
 
     private CreateOdeRequest BuildRequest()
@@ -212,6 +251,7 @@ public sealed class CreateOdeViewModel : ViewModelBase
             CallerPhone = CallerPhone,
             CallerInfo = CallerInfo,
             Consignes = Consignes,
+            Motif = Motif,
             FirstEngin = FirstEngin?.Nom ?? string.Empty,
             ComplementaryEngins = AvailableEngins.Where(e => e.IsSelected && e != FirstEngin).Select(e => e.Nom).ToList()
         };

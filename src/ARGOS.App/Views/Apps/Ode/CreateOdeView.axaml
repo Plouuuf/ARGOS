@@ -36,24 +36,34 @@
             <ScrollViewer>
                 <StackPanel>
                     <HeaderedContentControl Classes="group" Header="Nature et localisation" Margin="6,8,6,2">
-                        <Grid ColumnDefinitions="150,*,12,90,140" RowDefinitions="30,30,30,30,30" IsEnabled="{Binding IsNew}">
-                            <TextBlock Classes="lbl" Text="Motif du départ"/>
-                            <AutoCompleteBox Grid.Column="1" Grid.ColumnSpan="4" Classes="adg" Margin="0,3"
+                        <Grid ColumnDefinitions="150,*,12,90,140" RowDefinitions="30,30,30,30,30,30,30" IsEnabled="{Binding IsNew}">
+                            <TextBlock Classes="lbl" Text="Catégorie"/>
+                            <ComboBox Grid.Column="1" Grid.ColumnSpan="4" Classes="adg" Margin="0,3" HorizontalAlignment="Stretch"
+                                      ItemsSource="{Binding Categories}" SelectedItem="{Binding Category}" PlaceholderText="Toutes les catégories">
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate><TextBlock Text="{Binding Label, FallbackValue='Toutes les catégories'}"/></DataTemplate>
+                                </ComboBox.ItemTemplate>
+                            </ComboBox>
+                            <TextBlock Grid.Row="1" Classes="lbl" Text="Nature opérationnelle"/>
+                            <AutoCompleteBox Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="4" Classes="adg" Margin="0,3" FilterMode="Contains"
                                              ItemsSource="{Binding NatureSuggestions}" Text="{Binding Nature}"
                                              Watermark="Tape un code ou un mot (ex. 117, feu, malaise)"/>
-                            <TextBlock Grid.Row="1" Classes="lbl" Text="Adresse d'intervention"/>
-                            <TextBox Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="4" Classes="adg" Margin="0,3" Text="{Binding Address}"/>
-                            <TextBlock Grid.Row="2" Classes="lbl" Text="Commune / quartier"/>
-                            <TextBox Grid.Row="2" Grid.Column="1" Classes="adg" Margin="0,3" Text="{Binding Locality}"
+                            <TextBlock Grid.Row="2" Classes="lbl" Text="Motif du départ"/>
+                            <TextBox Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="4" Classes="adg" Margin="0,3" Text="{Binding Motif}"
+                                     Watermark="Précision : feu de poubelle contre façade, personne bloquée…"/>
+                            <TextBlock Grid.Row="3" Classes="lbl" Text="Adresse d'intervention"/>
+                            <TextBox Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="4" Classes="adg" Margin="0,3" Text="{Binding Address}"/>
+                            <TextBlock Grid.Row="4" Classes="lbl" Text="Commune / quartier"/>
+                            <TextBox Grid.Row="4" Grid.Column="1" Classes="adg" Margin="0,3" Text="{Binding Locality}"
                                      Watermark="ex. L'ECHAT"/>
-                            <TextBlock Grid.Row="2" Grid.Column="3" Classes="lbl" Text="CSTC"/>
-                            <TextBox Grid.Row="2" Grid.Column="4" Classes="adg" Margin="0,3" Text="{Binding Cstc}"/>
-                            <TextBlock Grid.Row="3" Classes="lbl" Text="Bâtiment, étage, appt."/>
-                            <TextBox Grid.Row="3" Grid.Column="1" Classes="adg" Margin="0,3" Text="{Binding Building}"/>
-                            <TextBlock Grid.Row="3" Grid.Column="3" Classes="lbl" Text="Secteur"/>
-                            <TextBox Grid.Row="3" Grid.Column="4" Classes="adg" Margin="0,3" Text="{Binding Secteur}"/>
-                            <TextBlock Grid.Row="4" Classes="lbl" Text="Accès"/>
-                            <TextBox Grid.Row="4" Grid.Column="1" Grid.ColumnSpan="4" Classes="adg" Margin="0,3" Text="{Binding Access}"
+                            <TextBlock Grid.Row="4" Grid.Column="3" Classes="lbl" Text="CSTC"/>
+                            <TextBox Grid.Row="4" Grid.Column="4" Classes="adg" Margin="0,3" Text="{Binding Cstc}"/>
+                            <TextBlock Grid.Row="5" Classes="lbl" Text="Bâtiment, étage, appt."/>
+                            <TextBox Grid.Row="5" Grid.Column="1" Classes="adg" Margin="0,3" Text="{Binding Building}"/>
+                            <TextBlock Grid.Row="5" Grid.Column="3" Classes="lbl" Text="Secteur"/>
+                            <TextBox Grid.Row="5" Grid.Column="4" Classes="adg" Margin="0,3" Text="{Binding Secteur}"/>
+                            <TextBlock Grid.Row="6" Classes="lbl" Text="Accès"/>
+                            <TextBox Grid.Row="6" Grid.Column="1" Grid.ColumnSpan="4" Classes="adg" Margin="0,3" Text="{Binding Access}"
                                      Watermark="Digicode, portail, accès engins…"/>
                         </Grid>
                     </HeaderedContentControl>
