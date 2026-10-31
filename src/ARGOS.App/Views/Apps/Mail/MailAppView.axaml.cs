@@ -37,6 +37,7 @@ public partial class MailAppView : UserControl
         MailboxGrid.ColumnDefinitions[0].Width = !single ? new GridLength(360) : reading ? new GridLength(0) : new GridLength(1, GridUnitType.Star);
         MailboxGrid.ColumnDefinitions[1].Width = single && !reading ? new GridLength(0) : new GridLength(1, GridUnitType.Star);
         BackToList.IsVisible = single && reading;
+        ReadingPane.IsVisible = !single || reading;
         ReadingScroll.Margin = single && reading ? new Thickness(0, 40, 0, 0) : default;
     }
 

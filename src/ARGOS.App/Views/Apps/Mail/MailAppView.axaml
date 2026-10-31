@@ -133,7 +133,7 @@
                 </Border>
 
                 <!-- Volet de lecture -->
-                <Panel Grid.Column="1">
+                <Panel Name="ReadingPane" Grid.Column="1">
                     <StackPanel IsVisible="{Binding NoSelection}" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="6">
                         <Image Source="avares://ARGOS.App/Assets/Icons/mail.png" Width="64" Height="64" Opacity="0.35"/>
                         <TextBlock Text="Sélectionnez un élément à lire" FontSize="15" Foreground="#605E5C" HorizontalAlignment="Center"/>

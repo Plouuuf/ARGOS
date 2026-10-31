@@ -27,6 +27,7 @@ public partial class MobileHomeView : UserControl
     private ScrollViewer? _pan;
     private Border? _host;
     private double _minWidth;
+    private double _baseWidth;
     private Grid? _sidebarGrid;
     private Control? _sidebar;
     private Border? _backdrop;
@@ -69,7 +70,9 @@ public partial class MobileHomeView : UserControl
         }
 
         var content = page.CreateContent();
-        _minWidth = 0;
+        // Fenêtre de saisie (prise d'appel, fiche…) : mise en page fixe, gardée lisible et glissée horizontalement.
+        _baseWidth = _vm.Apps.Any(a => a.Id == page.Key) ? 0 : Math.Min(page.Width, MaxContentWidth);
+        _minWidth = _baseWidth;
         _host = new Border { Child = content, HorizontalAlignment = HorizontalAlignment.Left };
         _pan = new ScrollViewer
         {
@@ -121,7 +124,7 @@ public partial class MobileHomeView : UserControl
             if (fixedWidth < 300) continue;
             need = Math.Max(need, fixedWidth + stars * 90 + 48);
         }
-        _minWidth = Math.Min(need, MaxContentWidth);
+        _minWidth = Math.Max(_baseWidth, Math.Min(need, MaxContentWidth));
         FitHost();
     }
 
