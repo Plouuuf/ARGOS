@@ -85,13 +85,17 @@
         <!-- ===================== Application en plein écran ===================== -->
         <Grid RowDefinitions="52,*" IsVisible="{Binding IsMobileAppOpen}" Background="White">
             <Border Background="#F2F2F2" BorderBrush="#E0E0E0" BorderThickness="0,0,0,1">
-                <Grid ColumnDefinitions="Auto,Auto,*">
+                <Grid ColumnDefinitions="Auto,Auto,*,Auto">
                     <Button Classes="flat" Width="52" Height="52" Command="{Binding MobileBackCommand}">
                         <PathIcon Data="{StaticResource IconArrowLeft}" Width="20" Height="20" Foreground="#1F1F1F"/>
                     </Button>
                     <Image Grid.Column="1" Source="{Binding MobileApp.Icon}" Width="24" Height="24" Margin="0,0,10,0"/>
                     <TextBlock Grid.Column="2" Text="{Binding MobileApp.Title}" FontSize="17" FontWeight="SemiBold"
-                               Foreground="#1F1F1F" VerticalAlignment="Center"/>
+                               Foreground="#1F1F1F" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                    <!-- Mode téléphone : menu de l'application en tiroir -->
+                    <Button Name="MenuButton" Grid.Column="3" Classes="flat" Width="52" Height="52" IsVisible="False">
+                        <TextBlock Text="☰" FontSize="22" Foreground="#1F1F1F" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Button>
                 </Grid>
             </Border>
             <ContentControl Name="MobileBody" Grid.Row="1"/>

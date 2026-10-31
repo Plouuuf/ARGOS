@@ -53,6 +53,44 @@ public class Screenshots
         Reason = "Feu de structure ** Une personne bloquée au 1er étage, fumées visibles depuis la rue."
     };
 
+    /// <summary>Mode téléphone : chaque application en plein écran, menu latéral en tiroir (☰).</summary>
+    [AvaloniaFact]
+    public void Mode_telephone()
+    {
+        Directory.CreateDirectory(Folder);
+        var user = new ArgosUserDto("1", "[1CL+15] SANTOS D.", null,
+            [AccessLevels.Operateur, AccessLevels.Encadrement, AccessLevels.RhAdmin]);
+        var vm = new DesktopViewModel(user, null, () => { }, () => { }) { IsCompactLayout = true };
+        var view = new MobileHomeView { DataContext = vm };
+        var window = new Window { Width = 390, Height = 844, Content = view };
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+
+        void Shot(string name)
+        {
+            Dispatcher.UIThread.RunJobs();
+            window.CaptureRenderedFrame()!.Save(Path.Combine(Folder, name + ".png"));
+        }
+
+        foreach (var id in new[] { ArgosApps.AdagioOde, ArgosApps.AdagioRemise, ArgosApps.Sigtao, ArgosApps.Mco, ArgosApps.Mail, ArgosApps.Efibi })
+        {
+            var app = vm.Apps.FirstOrDefault(a => a.Id == id);
+            if (app is null) continue;
+            vm.OpenApp(app);
+            Shot("telephone-" + id);
+            var menu = view.FindControl<Button>("MenuButton")!;
+            if (menu.IsVisible)
+            {
+                menu.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+                Shot("telephone-" + id + "-menu");
+                menu.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+            }
+            vm.MobileBackCommand.Execute(null);
+        }
+        window.Content = null;
+        window.Close();
+    }
+
     [AvaloniaFact]
     public void Prise_d_appel()
     {
