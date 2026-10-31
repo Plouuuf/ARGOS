@@ -1,0 +1,97 @@
+  Determining projects to restore...
+/home/runner/work/ARGOS/ARGOS/src/ARGOS.Server/ARGOS.Server.csproj : warning NU1902: Package 'MySqlConnector' 2.4.0 has a known moderate severity vulnerability, https://github.com/advisories/GHSA-473q-m89c-ghf8 [/home/runner/work/ARGOS/ARGOS/tests/ARGOS.Server.Tests/ARGOS.Server.Tests.csproj]
+  Restored /home/runner/work/ARGOS/ARGOS/tests/ARGOS.Server.Tests/ARGOS.Server.Tests.csproj (in 853 ms).
+  2 of 3 projects are up-to-date for restore.
+/home/runner/work/ARGOS/ARGOS/src/ARGOS.Server/ARGOS.Server.csproj : warning NU1902: Package 'MySqlConnector' 2.4.0 has a known moderate severity vulnerability, https://github.com/advisories/GHSA-473q-m89c-ghf8
+  ARGOS.Shared -> /home/runner/work/ARGOS/ARGOS/src/ARGOS.Shared/bin/Release/net9.0/ARGOS.Shared.dll
+  ARGOS.Server -> /home/runner/work/ARGOS/ARGOS/src/ARGOS.Server/bin/Release/net9.0/ARGOS.Server.dll
+  ARGOS.Server.Tests -> /home/runner/work/ARGOS/ARGOS/tests/ARGOS.Server.Tests/bin/Release/net9.0/ARGOS.Server.Tests.dll
+Test run for /home/runner/work/ARGOS/ARGOS/tests/ARGOS.Server.Tests/bin/Release/net9.0/ARGOS.Server.Tests.dll (.NETCoreApp,Version=v9.0)
+VSTest version 17.14.1 (x64)
+
+Starting test execution, please wait...
+A total of 1 test files matched the specified pattern.
+[xUnit.net 00:00:00.00] xUnit.net VSTest Adapter v2.8.2+699d445a1a (64-bit .NET 9.0.22)
+[xUnit.net 00:00:00.08]   Discovering: ARGOS.Server.Tests
+[xUnit.net 00:00:00.12]   Discovered:  ARGOS.Server.Tests
+[xUnit.net 00:00:00.12]   Starting:    ARGOS.Server.Tests
+  Passed Argos.Server.Tests.RosterImportTests.Lit_le_tableau_d_effectif [66 ms]
+  Passed Argos.Server.Tests.FilesServiceTests.Dossiers_fichiers_et_corbeille [343 ms]
+  Passed Argos.Server.Tests.IliasServiceTests.Formation_questionnaire_et_droits [286 ms]
+  Passed Argos.Server.Tests.FilesServiceTests.Noms_valides [30 ms]
+  Passed Argos.Server.Tests.MailServiceTests.Repondre_a_tous [40 ms]
+  Passed Argos.Server.Tests.SigtaoServiceTests.Droits_par_role_dossiers_import_et_compte_rendu [59 ms]
+  Passed Argos.Server.Tests.McoServiceTests.Cycle_complet_d_une_MCO [433 ms]
+  Passed Argos.Server.Tests.MailServiceTests.Envoi_copies_cci_et_corbeille [60 ms]
+  Passed Argos.Server.Tests.VdmsMapTests.LocaliseUnePositionGta [21 ms]
+  Passed Argos.Server.Tests.VdmsMapTests.RetrouveUneVoie(saisie: "Avenue Bosquet") [< 1 ms]
+  Passed Argos.Server.Tests.VdmsMapTests.RetrouveUneVoie(saisie: "AVENUE BOSQUET - L’ECHAT") [< 1 ms]
+  Passed Argos.Server.Tests.VdmsMapTests.RetrouveUneVoie(saisie: "avenue bosquet") [< 1 ms]
+  Passed Argos.Server.Tests.VdmsMapTests.RetrouveUneVoie(saisie: "AVENUE BOSQUET - L'ÉCHAT") [< 1 ms]
+  Passed Argos.Server.Tests.VdmsMapTests.PlanCharge [< 1 ms]
+  Passed Argos.Server.Tests.VdmsMapTests.RechercheSansAccents [< 1 ms]
+  Passed Argos.Server.Tests.MailServiceTests.Adresses [27 ms]
+  Passed Argos.Server.Tests.SigtaoServiceTests.Inscription_personnelle_dans_un_autre_centre [61 ms]
+  Passed Argos.Server.Tests.OdeServiceTests.Decroche_SIMCALL_cree_une_seule_fiche [59 ms]
+  Passed Argos.Server.Tests.SigtaoServiceTests.Brouillon_ModifiableParSonRedacteurPuisTransmis [44 ms]
+  Passed Argos.Server.Tests.PrinterServiceTests.File_impression_conservation_et_droits [118 ms]
+  Passed Argos.Server.Tests.EfibiTests.Lit_les_rubriques_du_formulaire [9 ms]
+  Passed Argos.Server.Tests.EfibiTests.Comme_CORTEX_auteur_circonstances_et_cases_cochees [1 ms]
+  Passed Argos.Server.Tests.RemiseServiceTests.Engin_engage_ne_peut_pas_passer_indisponible [121 ms]
+  Passed Argos.Server.Tests.OdeServiceTests.Appel_sans_suite_reste_dans_l_historique [100 ms]
+  Passed Argos.Server.Tests.SigtaoServiceTests.Feuille_de_garde_valide_arme_les_engins [127 ms]
+  Passed Argos.Server.Tests.RemiseServiceTests.Parc_initial_de_la_feuille_GDM [99 ms]
+  Passed Argos.Server.Tests.OdeServiceTests.Appel_puis_ODE_puis_cloture [122 ms]
+  Passed Argos.Server.Tests.RemiseServiceTests.Verification_avec_manquant_ouvre_une_anomalie [75 ms]
+  Passed Argos.Server.Tests.RemiseServiceTests.Mouvements_de_stock [49 ms]
+  Passed Argos.Server.Tests.RemiseServiceTests.Anomalie_totale_bloque_l_ODE_puis_remise_en_service [63 ms]
+[xUnit.net 00:00:01.11]   Finished:    ARGOS.Server.Tests
+  Passed Argos.Server.Tests.RemiseServiceTests.Creation_renommage_et_engagement_d_un_nouvel_engin [75 ms]
+
+Test Run Successful.
+Total tests: 31
+     Passed: 31
+ Total time: 1.6271 Seconds
+  Determining projects to restore...
+  Restored /home/runner/work/ARGOS/ARGOS/tests/ARGOS.Tests/ARGOS.Tests.csproj (in 586 ms).
+  2 of 3 projects are up-to-date for restore.
+  ARGOS.Shared -> /home/runner/work/ARGOS/ARGOS/src/ARGOS.Shared/bin/Release/net9.0/ARGOS.Shared.dll
+  ARGOS.App -> /home/runner/work/ARGOS/ARGOS/src/ARGOS.App/bin/Release/net9.0/ARGOS.App.dll
+  ARGOS.Tests -> /home/runner/work/ARGOS/ARGOS/tests/ARGOS.Tests/bin/Release/net9.0/ARGOS.Tests.dll
+Test run for /home/runner/work/ARGOS/ARGOS/tests/ARGOS.Tests/bin/Release/net9.0/ARGOS.Tests.dll (.NETCoreApp,Version=v9.0)
+VSTest version 17.14.1 (x64)
+
+Starting test execution, please wait...
+A total of 1 test files matched the specified pattern.
+[xUnit.net 00:00:00.00] xUnit.net VSTest Adapter v2.8.2+699d445a1a (64-bit .NET 9.0.22)
+[xUnit.net 00:00:00.05]   Discovering: ARGOS.Tests
+[xUnit.net 00:00:00.07]   Discovered:  ARGOS.Tests
+[xUnit.net 00:00:00.08]   Starting:    ARGOS.Tests
+  Passed Argos.Tests.McoScreenshots.Application_MCO [1 s]
+  Passed Argos.Tests.MailScreenshots.Application_Messagerie [412 ms]
+  Passed Argos.Tests.ScreenTests.Fenetres_ADAGIO_ODE_se_chargent_sans_session [952 ms]
+  Passed Argos.Tests.IliasScreenshots.Application_ILIAS [774 ms]
+  Passed Argos.Tests.EfibiScreenshots.Fiche_eFiBi [146 ms]
+  Passed Argos.Tests.AccessoiresTests.Captures_accessoires [303 ms]
+  Passed Argos.Tests.AccessoiresTests.Calculatrice_comme_Windows [1 ms]
+  Passed Argos.Tests.AccessoiresTests.BlocNotes_decode_les_anciens_fichiers [1 ms]
+  Passed Argos.Tests.ScreenTests.Fenetre_principale_se_charge [177 ms]
+  Passed Argos.Tests.RemiseScreenshots.Application_REMISE [2 s]
+  Passed Argos.Tests.Screenshots.Ecran_de_connexion [715 ms]
+  Passed Argos.Tests.SigtaoScreenshots.Application_SIGTAO [2 s]
+  Passed Argos.Tests.ScreenTests.Feuille_ODE_reprend_le_modele [36 ms]
+  Passed Argos.Tests.Screenshots.Feuille_ODE [47 ms]
+  Passed Argos.Tests.ScreenTests.Natures_et_engins [< 1 ms]
+  Passed Argos.Tests.Screenshots.Prise_d_appel [882 ms]
+  Passed Argos.Tests.ScreenTests.Bureau_fenetres_menu_et_notifications [734 ms]
+  Passed Argos.Tests.Screenshots.Application_ODE_et_bureau [1 s]
+  Passed Argos.Tests.ScreenTests.Prise_d_appel_touches_F_sans_session [275 ms]
+  Passed Argos.Tests.ScreenTests.Interface_telephone [52 ms]
+[xUnit.net 00:00:14.52]   Finished:    ARGOS.Tests
+  Passed Argos.Tests.ScreenTests.Ecran_de_connexion_se_charge [47 ms]
+  Passed Argos.Tests.ScreenTests.Ecrans_de_bienvenue_et_verrouillage [14 ms]
+
+Test Run Successful.
+Total tests: 22
+     Passed: 22
+ Total time: 14.8861 Seconds
