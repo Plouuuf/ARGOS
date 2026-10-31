@@ -15,12 +15,13 @@ namespace Argos.Views;
 /// Interface téléphone : écran d'accueil avec les applications, chacune ouverte en plein écran.
 /// Mode téléphone des applications prévues pour le bureau :
 /// - le menu latéral (première colonne fixe de 150 à 300 px) devient un tiroir ouvert par le bouton ☰ ;
-/// - le contenu garde une largeur minimale lisible (tableaux) et se fait glisser horizontalement si l'écran est plus étroit.
+/// - un tableau à colonnes fixes plus large que l'écran garde sa largeur et se fait glisser horizontalement ;
+///   le reste (tableaux de bord, tuiles, fiches) s'adapte à la largeur de l'écran.
 /// </summary>
 public partial class MobileHomeView : UserControl
 {
-    // Largeur minimale du contenu : au-delà, les tableaux à colonnes fixes seraient tronqués.
-    private const double MaxContentWidth = 860;
+    // Largeur maximale imposée par un tableau (au-delà, on accepte de tronquer).
+    private const double MaxContentWidth = 980;
 
     private DesktopViewModel? _vm;
     private ScrollViewer? _pan;
@@ -68,7 +69,7 @@ public partial class MobileHomeView : UserControl
         }
 
         var content = page.CreateContent();
-        _minWidth = Math.Min(page.Width, MaxContentWidth);
+        _minWidth = 0;
         _host = new Border { Child = content, HorizontalAlignment = HorizontalAlignment.Left };
         _pan = new ScrollViewer
         {
@@ -84,9 +85,44 @@ public partial class MobileHomeView : UserControl
         {
             content.Loaded -= OnLoaded;
             FindSidebar(content);
-            FitHost();
+            MeasureTables();
         }
         content.Loaded += OnLoaded;
+        // Changement de rubrique, d'onglet ou de filtre : la largeur utile peut changer.
+        content.AddHandler(Button.ClickEvent, (_, _) => ScheduleMeasure(), RoutingStrategies.Bubble, handledEventsToo: true);
+    }
+
+    private bool _measureScheduled;
+
+    private void ScheduleMeasure()
+    {
+        if (_measureScheduled) return;
+        _measureScheduled = true;
+        Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+        {
+            _measureScheduled = false;
+            MeasureTables();
+        }, Avalonia.Threading.DispatcherPriority.Background);
+    }
+
+    /// <summary>
+    /// Largeur minimale = la plus large ligne de tableau visible (somme de ses colonnes fixes) ;
+    /// sans tableau large, le contenu prend simplement la largeur de l'écran.
+    /// </summary>
+    private void MeasureTables()
+    {
+        if (_host?.Child is not Control root) return;
+        double need = 0;
+        foreach (var g in root.GetSelfAndVisualDescendants().OfType<Grid>())
+        {
+            if (g.ColumnDefinitions.Count < 3 || !g.IsEffectivelyVisible || ReferenceEquals(g, _sidebarGrid)) continue;
+            var fixedWidth = g.ColumnDefinitions.Where(c => c.Width.IsAbsolute).Sum(c => c.Width.Value);
+            var stars = g.ColumnDefinitions.Count(c => c.Width.IsStar);
+            if (fixedWidth < 300) continue;
+            need = Math.Max(need, fixedWidth + stars * 90 + 48);
+        }
+        _minWidth = Math.Min(need, MaxContentWidth);
+        FitHost();
     }
 
     /// <summary>Largeur du contenu : celle de l'écran, sans descendre sous le minimum lisible de l'application.</summary>
@@ -95,9 +131,7 @@ public partial class MobileHomeView : UserControl
         if (_pan is null || _host is null) return;
         var viewport = _pan.Bounds.Width;
         if (viewport <= 0) return;
-        var sidebar = _sidebarGrid is null ? 0 : _sidebarColumn.Value;
-        var min = Math.Max(0, _minWidth - sidebar);
-        _host.Width = Math.Max(viewport, min);
+        _host.Width = Math.Max(viewport, _minWidth);
         _host.Height = _pan.Bounds.Height;
     }
 

@@ -72,7 +72,7 @@ public class Screenshots
             window.CaptureRenderedFrame()!.Save(Path.Combine(Folder, name + ".png"));
         }
 
-        foreach (var id in new[] { ArgosApps.AdagioOde, ArgosApps.AdagioRemise, ArgosApps.Sigtao, ArgosApps.Mco, ArgosApps.Mail, ArgosApps.Efibi })
+        foreach (var id in new[] { ArgosApps.AdagioOde, ArgosApps.AdagioRemise, ArgosApps.Sigtao, ArgosApps.Mco, ArgosApps.Mail, ArgosApps.Efibi, ArgosApps.Ilias, ArgosApps.Explorateur, ArgosApps.Parametres })
         {
             var app = vm.Apps.FirstOrDefault(a => a.Id == id);
             if (app is null) continue;

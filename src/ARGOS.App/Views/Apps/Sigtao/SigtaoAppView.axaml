@@ -36,8 +36,9 @@
             <Border Height="3" Background="#C8102E"/>
         </StackPanel>
 
+        <Grid ColumnDefinitions="210,*">
         <!-- ===== Menu ===== -->
-        <Border DockPanel.Dock="Left" Width="210" Background="#F8F9FB" BorderBrush="#D8DEE6" BorderThickness="0,0,1,0">
+        <Border Background="#F8F9FB" BorderBrush="#D8DEE6" BorderThickness="0,0,1,0">
             <DockPanel>
                 <StackPanel DockPanel.Dock="Bottom" Margin="14,10,14,14" Spacing="6">
                     <Button Classes="sg" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Content="Nouveau compte-rendu"
@@ -62,7 +63,7 @@
             </DockPanel>
         </Border>
 
-        <Grid RowDefinitions="Auto,*">
+        <Grid Grid.Column="1" RowDefinitions="Auto,*">
             <Border Classes="msg" Classes.error="{Binding MessageIsError}" BorderThickness="0,0,0,2" Padding="16,8" IsVisible="{Binding HasMessage}">
                 <TextBlock Text="{Binding Message}" FontSize="12.5" FontWeight="SemiBold" TextWrapping="Wrap"/>
             </Border>
@@ -480,6 +481,7 @@
                     </DockPanel>
                 </Border>
             </DockPanel>
+        </Grid>
         </Grid>
     </DockPanel>
 </UserControl>
