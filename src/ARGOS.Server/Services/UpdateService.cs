@@ -70,7 +70,8 @@ public sealed class UpdateService(IConfiguration configuration, RealtimeHub hub,
             {
                 try
                 {
-                    await CheckAsync(options, stoppingToken);
+                    // Garde-fou : une vérification bloquée ne doit jamais empêcher les suivantes.
+                    await CheckAsync(options, stoppingToken).WaitAsync(TimeSpan.FromMinutes(15), stoppingToken);
                 }
                 catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
                 {
@@ -78,7 +79,6 @@ public sealed class UpdateService(IConfiguration configuration, RealtimeHub hub,
                 }
                 catch (Exception ex)
                 {
-                    logger.LogWarning("Vérification des mises à jour impossible : {Message}", ex.Message);
                     Trace("ERREUR : " + ex);
                 }
             }
@@ -102,9 +102,8 @@ public sealed class UpdateService(IConfiguration configuration, RealtimeHub hub,
         using var response = await _http.SendAsync(Request(options, $"https://api.github.com/repos/{options.Repository}/releases/latest", false), ct);
         if (!response.IsSuccessStatusCode)
         {
-            Trace($"GitHub a répondu {(int)response.StatusCode} sur releases/latest ({options.Repository}).");
-            logger.LogWarning("GitHub ({Status}) : aucune version publiée lisible{Hint}.", (int)response.StatusCode,
-                string.IsNullOrWhiteSpace(options.GitHubToken) ? " (dépôt privé ? renseigner Update:GitHubToken)" : string.Empty);
+            Trace($"GitHub a répondu {(int)response.StatusCode} sur releases/latest ({options.Repository})" +
+                  (string.IsNullOrWhiteSpace(options.GitHubToken) ? " (dépôt privé ? renseigner Update:GitHubToken)." : "."));
             return;
         }
         using var doc = JsonDocument.Parse(await response.Content.ReadAsStringAsync(ct));
@@ -138,7 +137,7 @@ public sealed class UpdateService(IConfiguration configuration, RealtimeHub hub,
             foreach (var old in Directory.GetDirectories(Dir, UpdatePackages.TagPrefix + "*"))
                 if (!string.Equals(Path.GetFileName(old), UpdatePackages.TagPrefix + build, StringComparison.Ordinal))
                     try { Directory.Delete(old, true); } catch { /* fichier en cours d'envoi : supprimé la prochaine fois */ }
-            logger.LogInformation("Postes : version {Version} (build {Build}) disponible.", version, build);
+            Trace($"Postes : {version} (build {build}) disponible.");
         }
 
         Trace($"Dernière version : {tag} ; serveur en service : build {BuildInfo.Number} ; postes : build {Current().Build} ; " +
@@ -152,23 +151,27 @@ public sealed class UpdateService(IConfiguration configuration, RealtimeHub hub,
             var zip = Path.Combine(Dir, $"serveur-{build}.zip");
             await DownloadAsync(options, serverUrl, zip, ct);
             File.WriteAllText(Path.Combine(Dir, "tentative.txt"), build.ToString());
+            Trace($"Paquet serveur build {build} téléchargé : lancement de l'installation (dossier {AppContext.BaseDirectory}).");
             foreach (var old in Directory.GetFiles(Dir, "serveur-*.zip").Where(f => !f.EndsWith($"serveur-{build}.zip", StringComparison.Ordinal)))
                 try { File.Delete(old); } catch { /* anciens paquets */ }
-            logger.LogWarning("Installation du serveur ARGOS build {Build} : redémarrage.", build);
-            Trace($"Installation du serveur build {build} lancée (dossier {AppContext.BaseDirectory}).");
-            // L'annonce aux postes ne doit jamais empêcher l'installation (c'est ce qui bloquait les builds 43 à 62).
-            try
-            {
-                await hub.BroadcastAsync(new RealtimeMessage(RealtimeTypes.Notify, Title: "Mise à jour d'ARGOS",
-                    Text: "Le serveur redémarre pour se mettre à jour : reconnexion automatique dans quelques secondes."), ct);
-            }
-            catch (Exception ex)
-            {
-                Trace("Annonce aux postes impossible (sans gravité) : " + ex.Message);
-            }
+            // Rien ne doit pouvoir bloquer avant le lancement du script : ni la journalisation Windows
+            // (c'est là que les builds 43 à 65 restaient figées), ni l'annonce aux postes.
             try
             {
                 InstallServer(zip);
+                Trace("Script d'installation lancé.");
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        await hub.BroadcastAsync(new RealtimeMessage(RealtimeTypes.Notify, Title: "Mise à jour d'ARGOS",
+                            Text: "Le serveur redémarre pour se mettre à jour : reconnexion automatique dans quelques secondes."));
+                    }
+                    catch
+                    {
+                        // Annonce facultative.
+                    }
+                });
             }
             catch (Exception ex)
             {
@@ -187,6 +190,7 @@ public sealed class UpdateService(IConfiguration configuration, RealtimeHub hub,
             Directory.CreateDirectory(Dir);
             var file = Path.Combine(Dir, "verification.log");
             if (File.Exists(file) && new FileInfo(file).Length > 300_000) File.Delete(file);
+            if (!File.Exists(file)) File.WriteAllText(file, string.Empty, new System.Text.UTF8Encoding(true));
             File.AppendAllText(file, $"{DateTime.Now:yyyy-MM-dd HH:mm:ss} {text}{Environment.NewLine}");
         }
         catch
@@ -273,7 +277,6 @@ public sealed class UpdateService(IConfiguration configuration, RealtimeHub hub,
         if (process is { ExitCode: not 0 })
         {
             var error = process.StandardError.ReadToEnd();
-            logger.LogWarning("{File} {Args} : {Error}", file, args, error);
             Trace($"{file} {args} a échoué (code {process.ExitCode}) : {error.Trim()}");
         }
         else Trace($"{file} {args.Split(' ').FirstOrDefault()} : OK");
