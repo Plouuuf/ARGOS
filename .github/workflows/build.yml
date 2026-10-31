@@ -259,6 +259,19 @@ jobs:
             exit 1
           }
 
+      - name: Paquet simulateur (aperçu dans le Simulator de Xcode)
+        run: |
+          APP=$(find src/ARGOS.iOS/bin/Release -type d -name "*.app" -path "*iossimulator-arm64*" | head -1)
+          [ -n "$APP" ] || { echo "::warning::Application simulateur introuvable."; exit 0; }
+          mkdir -p artifacts
+          ditto -c -k --sequesterRsrc --keepParent "$APP" artifacts/ARGOS-iOS-simulateur.zip
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ARGOS-iOS-simulateur
+          path: artifacts/ARGOS-iOS-simulateur.zip
+          if-no-files-found: warn
+
       - name: Certificat et profil de distribution
         if: steps.gate.outputs.enabled == 'true'
         run: |
