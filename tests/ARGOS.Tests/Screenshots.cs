@@ -87,6 +87,11 @@ public class Screenshots
             }
             vm.MobileBackCommand.Execute(null);
         }
+
+        // Fenêtres secondaires en plein écran : prise d'appel et feuille de garde.
+        vm.OpenWindow(OdeWindows.PriseAppel(vm, "20261029-0001"));
+        Shot("telephone-prise-appel");
+        vm.MobileBackCommand.Execute(null);
         window.Content = null;
         window.Close();
     }

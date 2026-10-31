@@ -208,6 +208,13 @@ public sealed class MailAppViewModel : ViewModelBase, IDisposable
         Build();
     }
 
+    /// <summary>Téléphone : retour de la lecture à la liste des messages.</summary>
+    public void CloseReading()
+    {
+        _selectedId = null;
+        Build();
+    }
+
     public void Select(string id)
     {
         _selectedId = id;

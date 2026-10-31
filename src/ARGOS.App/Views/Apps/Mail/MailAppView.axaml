@@ -90,7 +90,7 @@
             </Border>
 
             <!-- Courrier -->
-            <Grid Grid.Column="1" ColumnDefinitions="360,*" IsVisible="{Binding ShowMailbox}">
+            <Grid Name="MailboxGrid" Grid.Column="1" ColumnDefinitions="360,*" IsVisible="{Binding ShowMailbox}">
                 <Border BorderBrush="#EDEBE9" BorderThickness="0,0,1,0">
                     <DockPanel>
                         <TextBlock DockPanel.Dock="Top" Text="{Binding FolderTitle}" FontSize="17" FontWeight="SemiBold" Margin="14,12,14,8"/>
@@ -139,7 +139,9 @@
                         <TextBlock Text="Sélectionnez un élément à lire" FontSize="15" Foreground="#605E5C" HorizontalAlignment="Center"/>
                         <TextBlock Text="Rien n'est sélectionné" Classes="muted" HorizontalAlignment="Center"/>
                     </StackPanel>
-                    <ScrollViewer IsVisible="{Binding HasSelection}">
+                    <Button Name="BackToList" Content="◀  Boîte de réception" IsVisible="False" Background="Transparent" Foreground="#0F6CBD"
+                            FontSize="14" Padding="12,10" HorizontalAlignment="Left" VerticalAlignment="Top" ZIndex="5"/>
+                    <ScrollViewer Name="ReadingScroll" IsVisible="{Binding HasSelection}">
                         <StackPanel Margin="24,16">
                             <TextBlock Text="{Binding ReadSubject}" FontSize="20" FontWeight="SemiBold" TextWrapping="Wrap"/>
                             <TextBlock Text="! Importance haute" Foreground="#A4262C" FontWeight="SemiBold" FontSize="12" Margin="0,4,0,0" IsVisible="{Binding ReadHigh}"/>
