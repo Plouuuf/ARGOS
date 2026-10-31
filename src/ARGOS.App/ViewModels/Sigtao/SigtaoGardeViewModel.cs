@@ -400,7 +400,7 @@ public sealed partial class SigtaoAppViewModel
 
     private static int CentreRank(string centre) => centre switch
     {
-        EnginsCatalog.Creteil => 0, EnginsCatalog.MaisonsAlfort => 1, EnginsCatalog.Mass => 2, EnginsCatalog.Specialites => 3, _ => 4
+        EnginsCatalog.Creteil => 0, EnginsCatalog.MaisonsAlfort => 1, EnginsCatalog.Mass => 2, _ => 3
     };
 
     private List<FleetEngin> FleetOf(string centre)

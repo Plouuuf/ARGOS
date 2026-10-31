@@ -31,8 +31,6 @@ public static class EnginsCatalog
     public const string Creteil = "CRET";
     public const string MaisonsAlfort = "MALF";
     public const string Mass = "MASS";
-    /// <summary>Engins de spécialité sans centre précisé sur la feuille CDG SPE (centre modifiable dans REMISE).</summary>
-    public const string Specialites = "SPE";
 
     public static readonly IReadOnlyList<EnginDefinition> All =
     [
@@ -53,23 +51,14 @@ public static class EnginsCatalog
         new(Mass, "VLI 05", "VLI", "Véhicule léger infirmier", "VLI_1_MASS"),
         new(Mass, "VLR DSM 274", "VLR DSM", "Directeur des secours médicaux", "VLRDSM_1_MASS"),
         new(Mass, "CRAC 12", "CRAC", "Ravitaillement en air comprimé", "CRAC_1_MASS"),
-        new(Mass, "CMO 1", "CMO", "PC médical", "CMO_1_MASS"),
-
-        // Feuille CDG SPE (spécialités) - ajoutés aux parcs existants une seule fois (voir SpecialitesAjout).
-        new(Mass, "AR 63", "AR", "Ambulance de réanimation", "AR_2_MASS"),
-        new(Mass, "AR 54", "AR", "Ambulance de réanimation", "AR_3_MASS"),
-        new(Mass, "VLI 02", "VLI", "Véhicule léger infirmier", "VLI_2_MASS"),
-        new(Mass, "VLR OPCM 875", "VLR OPCM", "Officier PC médical", "SPVL_2_MASS"),
-        new(Specialites, "CSP 3", "CSP", "Groupe SIA-SIS", "CSP_1_SPE"),
-        new(Specialites, "CSL 24", "CSL", "Groupe SIA-SIS", "CSL_1_SPE"),
-        new(Specialites, "CESD 1", "CESD", "Groupe SIA-SIS", "CESD_1_SPE"),
-        new(Specialites, "VIMP 1", "VIMP", "Groupe RSMU - GRIMP", "VIMP_1_SPE"),
-        new(Specialites, "VEII 1", "VEII", "Communication", "VEII_1_SPE")
+        new(Mass, "CMO 1", "CMO", "PC médical", "CMO_1_MASS")
     ];
 
-    /// <summary>Indicatifs ajoutés avec la feuille CDG SPE, à créer une fois dans les parcs déjà en service.</summary>
-    public static readonly IReadOnlyList<string> SpecialitesAjout =
-        ["AR 63", "AR 54", "VLI 02", "VLR OPCM 875", "CSP 3", "CSL 24", "CESD 1", "VIMP 1", "VEII 1"];
+    /// <summary>Engins de spécialité (feuille CDG SPE) ajoutés par la build 62 puis retirés : supprimés une fois des parcs.</summary>
+    public static readonly IReadOnlyList<string> SpecialitesRetirees =
+    [
+        "AR 63 MASS", "AR 54 MASS", "VLI 02 MASS", "VLR OPCM 875 MASS", "CSP 3 SPE", "CSL 24 SPE", "CESD 1 SPE", "VIMP 1 SPE", "VEII 1 SPE"
+    ];
 
     /// <summary>Retrouve un engin par son nom complet (« VSAV 947 CRET ») ou son indicatif.</summary>
     public static EnginDefinition? Find(string? name)

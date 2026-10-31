@@ -560,19 +560,10 @@ public sealed class OdeService(OdeDatabase db, RealtimeHub hub, ILogger<OdeServi
                 foreach (var item in RemiseSeed.Items(now))
                     db.SaveDoc(OdeDatabase.RemiseTables.Items, item.Id, now, item);
         }
-        // Engins de la feuille CDG SPE : ajoutés une seule fois (supprimables ensuite sans qu'ils reviennent).
-        if (db.NextCounter("parc-specialites") == 1)
-        {
-            var now = DateTimeOffset.UtcNow;
-            var existing = db.Docs<FleetEngin>(OdeDatabase.RemiseTables.Engins);
-            var ordre = existing.Count == 0 ? 0 : existing.Max(e => e.Ordre);
-            foreach (var engin in RemiseSeed.Engins(now).Where(e => EnginsCatalog.SpecialitesAjout.Contains(e.Indicatif)))
-            {
-                if (existing.Any(e => string.Equals(e.Nom, engin.Nom, StringComparison.OrdinalIgnoreCase))) continue;
-                engin.Ordre = ordre += 10;
-                db.SaveDoc(OdeDatabase.RemiseTables.Engins, engin.Nom, now, engin);
-            }
-        }
+        // Engins de spécialité (feuille CDG SPE) ajoutés par la build 62 : retirés une seule fois.
+        if (db.NextCounter("parc-specialites-retrait") == 1)
+            foreach (var nom in EnginsCatalog.SpecialitesRetirees)
+                db.DeleteDoc(OdeDatabase.RemiseTables.Engins, nom);
         return db.Docs<FleetEngin>(OdeDatabase.RemiseTables.Engins).OrderBy(f => f.Ordre).ThenBy(f => f.Nom).ToList();
     }
 
