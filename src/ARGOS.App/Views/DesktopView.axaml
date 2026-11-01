@@ -61,6 +61,15 @@
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
 
+            <!-- Informations de session, coin inférieur droit (noir 15 %). -->
+            <Border HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,12,12" Padding="14,8"
+                    Background="#26000000" IsVisible="{Binding HasSessionInfo}">
+                <StackPanel>
+                    <TextBlock Text="{Binding SessionName}" Foreground="White" FontSize="13.5" FontWeight="SemiBold" HorizontalAlignment="Right"/>
+                    <TextBlock Text="{Binding SessionEmail}" Foreground="#E6FFFFFF" FontSize="12" HorizontalAlignment="Right"/>
+                </StackPanel>
+            </Border>
+
             <!-- Fenêtres ouvertes (gérées par le code de la vue). -->
             <Canvas Name="WindowLayer"/>
 
@@ -466,5 +475,24 @@
                 </StackPanel>
             </Grid>
         </Border>
+        <!-- ===================== Première connexion : Prénom / NOM ===================== -->
+        <Grid Grid.RowSpan="3" Background="#B3000000" IsVisible="{Binding NeedsIdentity}" ZIndex="200">
+            <Border Background="White" Width="420" HorizontalAlignment="Center" VerticalAlignment="Center"
+                    Padding="26,22" BoxShadow="0 10 40 0 #80000000">
+                <StackPanel Spacing="10">
+                    <Image Source="avares://ARGOS.App/Assets/Icons/sigtao.png" Width="44" Height="44" HorizontalAlignment="Left"/>
+                    <TextBlock Text="Bienvenue dans ARGOS" FontSize="21" FontWeight="SemiBold" Foreground="#1F1F1F"/>
+                    <TextBlock Text="Pour ta première connexion, indique ton identité. Elle sert à ton adresse de messagerie BSPP et à tes documents."
+                               FontSize="13" Foreground="#605E5C" TextWrapping="Wrap"/>
+                    <TextBlock Text="Prénom" FontSize="12.5" FontWeight="SemiBold" Foreground="#323130" Margin="0,6,0,0"/>
+                    <TextBox Text="{Binding IdentityPrenom}" Watermark="Jean" FontSize="15" CornerRadius="0" Padding="10,8"/>
+                    <TextBlock Text="NOM" FontSize="12.5" FontWeight="SemiBold" Foreground="#323130"/>
+                    <TextBox Text="{Binding IdentityNom}" Watermark="DUPONT" FontSize="15" CornerRadius="0" Padding="10,8"/>
+                    <TextBlock Text="{Binding IdentityError}" IsVisible="{Binding HasIdentityError}" Foreground="#A4262C" FontSize="12.5" TextWrapping="Wrap"/>
+                    <Button Content="Valider" Command="{Binding SaveIdentityCommand}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                            Background="#0078D7" Foreground="White" FontSize="15" FontWeight="SemiBold" Padding="0,10" CornerRadius="0" Margin="0,8,0,0"/>
+                </StackPanel>
+            </Border>
+        </Grid>
     </Grid>
 </UserControl>

@@ -69,3 +69,32 @@ public sealed record TokenValidationRequest(string Token);
 
 /// <summary>Réponse à POST /auth/discord/validate.</summary>
 public sealed record TokenValidationResponse(bool Valid, bool Reauthenticate, string? Error, ArgosUserDto? User);
+
+/// <summary>Identité saisie à la première connexion : « Prénom » et « NOM », adresse BSPP qui en découle.</summary>
+public sealed class UserIdentity
+{
+    public string Prenom { get; set; } = string.Empty;
+    public string Nom { get; set; } = string.Empty;
+    /// <summary>Adresse de messagerie BSPP (calculée par le serveur).</summary>
+    public string Email { get; set; } = string.Empty;
+    /// <summary>Vrai quand prénom et nom sont renseignés.</summary>
+    public bool Complete => Prenom.Length > 0 && Nom.Length > 0;
+    public string FullName => $"{Prenom} {Nom}".Trim();
+
+    /// <summary>« jean-pierre » → « Jean-Pierre » (initiale de chaque partie en majuscule).</summary>
+    public static string FormatPrenom(string? value)
+    {
+        var text = (value ?? string.Empty).Trim();
+        if (text.Length == 0) return text;
+        var fr = System.Globalization.CultureInfo.GetCultureInfo("fr-FR");
+        var chars = text.ToLower(fr).ToCharArray();
+        for (var i = 0; i < chars.Length; i++)
+            if (i == 0 || chars[i - 1] is ' ' or '-' or '\'')
+                chars[i] = char.ToUpper(chars[i], fr);
+        return new string(chars);
+    }
+
+    /// <summary>« dupont » → « DUPONT ».</summary>
+    public static string FormatNom(string? value)
+        => (value ?? string.Empty).Trim().ToUpper(System.Globalization.CultureInfo.GetCultureInfo("fr-FR"));
+}

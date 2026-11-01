@@ -22,8 +22,13 @@ public sealed class MailService(OdeDatabase db, RealtimeHub hub)
     {
         var existing = db.GetDoc<MailProfile>(RemiseTables.MailProfiles, user.UserId);
         var record = db.Docs<MilitaryRecord>(RemiseTables.Military).FirstOrDefault(r => r.DiscordUserId == user.UserId);
+        var identity = db.GetDoc<UserIdentity>(RemiseTables.Identities, user.UserId);
         var address = record is null ? string.Empty : RecordAddress(record);
-        var name = record is null || string.IsNullOrWhiteSpace(record.Nom) ? user.DisplayName : record.FullName;
+        var name = record is not null && !string.IsNullOrWhiteSpace(record.Nom) ? record.FullName
+            : identity is { Complete: true } ? identity.FullName : user.DisplayName;
+        // Sans dossier SIGTAO : prenom.nom@pompiersparis.fr d'après l'identité saisie à la première connexion.
+        if (address.Length == 0 && identity is { Complete: true })
+            address = FreeAddress(MailAddresses.Build(identity.Prenom, identity.Nom), user.UserId);
         if (address.Length == 0)
             address = existing?.Address is { Length: > 0 } a ? a : FreeAddress(MailAddresses.Build(null, user.DisplayName), user.UserId);
 
@@ -35,6 +40,39 @@ public sealed class MailService(OdeDatabase db, RealtimeHub hub)
             db.SaveDoc(RemiseTables.MailProfiles, user.UserId, DateTimeOffset.UtcNow, profile);
         }
         return profile;
+    }
+
+    // ===== Identité de première connexion =====
+
+    public UserIdentity Identity(ArgosUserDto user)
+    {
+        var identity = db.GetDoc<UserIdentity>(RemiseTables.Identities, user.UserId) ?? new UserIdentity();
+        identity.Email = Profile(user).Address;
+        return identity;
+    }
+
+    /// <summary>Enregistre « Prénom NOM » ; complète un dossier SIGTAO relié encore sans nom.</summary>
+    public async Task<OdeResult> SaveIdentityAsync(ArgosUserDto user, UserIdentity request)
+    {
+        var prenom = UserIdentity.FormatPrenom(request.Prenom);
+        var nom = UserIdentity.FormatNom(request.Nom);
+        if (prenom.Length == 0 || nom.Length == 0) return new(false, "Prénom et NOM obligatoires.");
+        if (prenom.Length > 40 || nom.Length > 40) return new(false, "Prénom ou NOM trop long.");
+        var identity = new UserIdentity { Prenom = prenom, Nom = nom };
+        db.SaveDoc(RemiseTables.Identities, user.UserId, DateTimeOffset.UtcNow, identity);
+        foreach (var r in db.Docs<MilitaryRecord>(RemiseTables.Military).Where(r => r.DiscordUserId == user.UserId))
+        {
+            var changed = false;
+            if (string.IsNullOrWhiteSpace(r.Prenom)) { r.Prenom = prenom; changed = true; }
+            if (string.IsNullOrWhiteSpace(r.Nom)) { r.Nom = nom; changed = true; }
+            if (!changed) continue;
+            r.UpdatedAt = DateTimeOffset.UtcNow;
+            r.UpdatedBy = "ARGOS";
+            db.SaveDoc(RemiseTables.Military, r.Id, r.UpdatedAt, r);
+        }
+        Profile(user);
+        await hub.BroadcastAsync(new RealtimeMessage(RealtimeTypes.MailChanged));
+        return new(true);
     }
 
     private static string RecordAddress(MilitaryRecord r)

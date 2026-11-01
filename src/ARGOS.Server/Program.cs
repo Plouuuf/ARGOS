@@ -509,6 +509,18 @@ public static class Program
 
         // ===== Messagerie =====
 
+        // ===== Identité (première connexion) =====
+        app.MapGet("/api/me/identity", async (HttpContext context, DiscordOAuthService oauth, MailService service) =>
+        {
+            var user = await AuthenticateAsync(context, oauth);
+            return user is null ? Results.Unauthorized() : Results.Ok(service.Identity(user));
+        });
+        app.MapPost("/api/me/identity", async (UserIdentity request, HttpContext context, DiscordOAuthService oauth, MailService service) =>
+        {
+            var user = await AuthenticateAsync(context, oauth);
+            return user is null ? Results.Unauthorized() : ToResult(await service.SaveIdentityAsync(user, request));
+        });
+
         var mail = app.MapGroup("/api/mail").AddEndpointFilter(AppWriteFilter(ArgosApps.Mail));
 
         mail.MapGet("/state", async (HttpContext context, DiscordOAuthService oauth, MailService service) =>

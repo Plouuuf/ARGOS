@@ -73,6 +73,7 @@ public sealed class OdeDatabase
             CREATE TABLE IF NOT EXISTS user_files (id TEXT PRIMARY KEY, at TEXT NOT NULL, data TEXT NOT NULL);
             CREATE TABLE IF NOT EXISTS print_jobs (id TEXT PRIMARY KEY, at TEXT NOT NULL, data TEXT NOT NULL);
             CREATE TABLE IF NOT EXISTS sigtao_gardes (id TEXT PRIMARY KEY, at TEXT NOT NULL, data TEXT NOT NULL);
+            CREATE TABLE IF NOT EXISTS user_identities (id TEXT PRIMARY KEY, at TEXT NOT NULL, data TEXT NOT NULL);
             -- Les mouvements de stock ne peuvent être ni modifiés ni effacés.
             CREATE TRIGGER IF NOT EXISTS movements_no_update BEFORE UPDATE ON remise_movements
                 BEGIN SELECT RAISE(ABORT, 'mouvements en lecture seule'); END;
@@ -228,6 +229,7 @@ public sealed class OdeDatabase
         public const string Files = "user_files";
         public const string PrintJobs = "print_jobs";
         public const string Gardes = "sigtao_gardes";
+        public const string Identities = "user_identities";
     }
 
     public void SaveDoc(string table, string id, DateTimeOffset at, object document)

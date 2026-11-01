@@ -73,6 +73,7 @@ public sealed partial class DesktopViewModel : ViewModelBase
         });
 
         UpdateClock(DateTime.Now);
+        InitIdentity();
         WindowsSettings.Changed += OnWindowsSettingsChanged;
         Windows.CollectionChanged += (_, _) => OnPropertyChanged(nameof(HasWindows));
     }

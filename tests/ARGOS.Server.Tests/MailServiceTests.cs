@@ -96,6 +96,20 @@ public sealed class MailServiceTests : IDisposable
         Assert.Equal("RE: Garde", MailCompose.ReplySubject("RE: Garde"));
     }
 
+    [Fact]
+    public async Task Identite_de_premiere_connexion_donne_l_adresse_BSPP()
+    {
+        Assert.False(_mail.Identity(Santos).Complete);
+        Assert.False((await _mail.SaveIdentityAsync(Santos, new UserIdentity { Prenom = "  ", Nom = "x" })).Ok);
+        Assert.True((await _mail.SaveIdentityAsync(Santos, new UserIdentity { Prenom = "jean-pierre", Nom = "dupont" })).Ok);
+        var identity = _mail.Identity(Santos);
+        Assert.Equal("Jean-Pierre", identity.Prenom);
+        Assert.Equal("DUPONT", identity.Nom);
+        Assert.Equal("Jean-Pierre DUPONT", identity.FullName);
+        Assert.StartsWith("jean-pierre.dupont@", identity.Email.Replace("jeanpierre", "jean-pierre"));
+        Assert.Equal("Jean-Pierre DUPONT", _mail.Profile(Santos).Name);
+    }
+
     public void Dispose()
     {
         try { Directory.Delete(_dir, true); } catch { }
