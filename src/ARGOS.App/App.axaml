@@ -11,6 +11,7 @@
         <StyleInclude Source="avares://ARGOS.App/Styles/Ilias.axaml" />
         <StyleInclude Source="avares://ARGOS.App/Styles/Mail.axaml" />
         <StyleInclude Source="avares://ARGOS.App/Styles/Accessoires.axaml" />
+        <StyleInclude Source="avares://ARGOS.App/Styles/Mobile.axaml" />
     </Application.Styles>
 
     <Application.Resources>

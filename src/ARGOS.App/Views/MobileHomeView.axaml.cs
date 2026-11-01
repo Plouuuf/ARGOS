@@ -23,6 +23,7 @@ public partial class MobileHomeView : UserControl
     // Largeur maximale imposée par un tableau (au-delà, on accepte de tronquer).
     private const double MaxContentWidth = 980;
 
+    private static readonly IBrush DefaultAccent = new SolidColorBrush(Color.Parse("#007AFF"));
     private DesktopViewModel? _vm;
     private ScrollViewer? _pan;
     private Border? _host;
@@ -70,6 +71,18 @@ public partial class MobileHomeView : UserControl
         }
 
         var content = page.CreateContent();
+        // Vue iPhone dédiée : affichée telle quelle, barre de navigation aux couleurs de l'application.
+        var accent = Argos.Views.Mobile.MobilePage.GetAccent(content);
+        BackLabel.Foreground = accent ?? DefaultAccent;
+        BackIcon.Foreground = accent ?? DefaultAccent;
+        if (Argos.Views.Mobile.MobilePage.GetIsNative(content))
+        {
+            _pan = null;
+            _host = null;
+            MobileBody.Content = content;
+            return;
+        }
+
         // Fenêtre de saisie (prise d'appel, fiche…) : mise en page fixe, gardée lisible et glissée horizontalement.
         _baseWidth = _vm.Apps.Any(a => a.Id == page.Key) ? 0 : Math.Min(page.Width, MaxContentWidth);
         _minWidth = _baseWidth;

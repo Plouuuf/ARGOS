@@ -83,17 +83,25 @@
         </Grid>
 
         <!-- ===================== Application en plein écran ===================== -->
-        <Grid RowDefinitions="52,*" IsVisible="{Binding IsMobileAppOpen}" Background="White">
-            <Border Background="#F2F2F2" BorderBrush="#E0E0E0" BorderThickness="0,0,0,1">
-                <Grid ColumnDefinitions="Auto,Auto,*,Auto">
-                    <Button Classes="flat" Width="52" Height="52" Command="{Binding MobileBackCommand}">
-                        <PathIcon Data="{StaticResource IconArrowLeft}" Width="20" Height="20" Foreground="#1F1F1F"/>
+        <!-- Barre de navigation façon iOS : Retour à gauche (couleur de l'application), titre centré. -->
+        <Grid RowDefinitions="48,*" IsVisible="{Binding IsMobileAppOpen}" Background="#F2F2F7">
+            <Border Background="#F9F9F9" BorderBrush="#D1D1D6" BorderThickness="0,0,0,0.5">
+                <Grid ColumnDefinitions="*,Auto,*">
+                    <Button Classes="flat" Padding="6,0,10,0" HorizontalAlignment="Left" VerticalAlignment="Stretch"
+                            Command="{Binding MobileBackCommand}">
+                        <StackPanel Orientation="Horizontal" Spacing="2" VerticalAlignment="Center">
+                            <TextBlock Name="BackIcon" Text="‹" FontSize="34" Margin="0,-6,0,0" Foreground="#007AFF" VerticalAlignment="Center"/>
+                            <TextBlock Name="BackLabel" Text="Retour" FontSize="17" Foreground="#007AFF" VerticalAlignment="Center"/>
+                        </StackPanel>
                     </Button>
-                    <Image Grid.Column="1" Source="{Binding MobileApp.Icon}" Width="24" Height="24" Margin="0,0,10,0"/>
-                    <TextBlock Grid.Column="2" Text="{Binding MobileApp.Title}" FontSize="17" FontWeight="SemiBold"
-                               Foreground="#1F1F1F" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
-                    <!-- Mode téléphone : menu de l'application en tiroir -->
-                    <Button Name="MenuButton" Grid.Column="3" Classes="flat" Width="52" Height="52" IsVisible="False">
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="7" VerticalAlignment="Center">
+                        <Image Source="{Binding MobileApp.Icon}" Width="22" Height="22"/>
+                        <TextBlock Text="{Binding MobileApp.Title}" FontSize="17" FontWeight="SemiBold" Foreground="Black"
+                                   VerticalAlignment="Center" TextTrimming="CharacterEllipsis" MaxWidth="200"/>
+                    </StackPanel>
+                    <!-- Vues bureau sans version iPhone : menu de l'application en tiroir -->
+                    <Button Name="MenuButton" Grid.Column="2" Classes="flat" Width="48" Height="48" IsVisible="False"
+                            HorizontalAlignment="Right">
                         <TextBlock Text="☰" FontSize="22" Foreground="#1F1F1F" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                     </Button>
                 </Grid>

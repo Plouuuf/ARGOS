@@ -26,7 +26,17 @@ namespace Argos.Views.Apps;
 /// </summary>
 public static class AppContentFactory
 {
-    public static Control Create(AppTileViewModel app, DesktopViewModel desktop) => app.Id switch
+    public static Control Create(AppTileViewModel app, DesktopViewModel desktop)
+        => desktop.IsCompactLayout && CreateMobile(app, desktop) is { } mobile ? mobile : CreateDesktop(app, desktop);
+
+    /// <summary>Version iPhone dédiée (Views/Mobile), quand elle existe ; sinon la vue bureau est adaptée automatiquement.</summary>
+    private static Control? CreateMobile(AppTileViewModel app, DesktopViewModel desktop) => app.Id switch
+    {
+        ArgosApps.AdagioOde => new Argos.Views.Mobile.Ode.OdeMobileView { DataContext = new OdeAppViewModel(desktop) },
+        _ => null
+    };
+
+    private static Control CreateDesktop(AppTileViewModel app, DesktopViewModel desktop) => app.Id switch
     {
         ArgosApps.AdagioOde => new OdeAppView { DataContext = new OdeAppViewModel(desktop) },
         ArgosApps.Efibi => new EfibiAppView { DataContext = new EfibiAppViewModel(desktop) },

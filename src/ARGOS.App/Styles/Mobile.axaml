@@ -1,0 +1,339 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <!--
+        Composants iPhone (mode téléphone) : à utiliser dans un contrôle racine portant la classe « ios ».
+        Chaque application fixe sa couleur d'accent avec la ressource AppAccent (rouge ADAGIO, marine SIGTAO…).
+
+        Classes disponibles :
+          TextBlock : large (grand titre), section (titre de groupe), footnote, title, subtitle, value, chevron, big (chiffre), caption
+          Border    : group (liste arrondie blanche), row (ligne non cliquable d'un groupe), tile (tuile), searchbar, badge, tabbar, banner
+          Button    : row (ligne cliquable d'un groupe), tab (onglet de la barre du bas), primary, secondary, plain, destructive, seg
+          TextBox / ComboBox : field (champ sans bordure dans une ligne de groupe)
+    -->
+    <Styles.Resources>
+        <SolidColorBrush x:Key="AppAccent" Color="#007AFF"/>
+        <SolidColorBrush x:Key="IosBack" Color="#F2F2F7"/>
+        <SolidColorBrush x:Key="IosSeparator" Color="#E5E5EA"/>
+        <SolidColorBrush x:Key="IosSecondary" Color="#8E8E93"/>
+        <SolidColorBrush x:Key="IosPressed" Color="#E5E5EA"/>
+        <SolidColorBrush x:Key="IosGreen" Color="#34C759"/>
+        <SolidColorBrush x:Key="IosRed" Color="#FF3B30"/>
+        <SolidColorBrush x:Key="IosOrange" Color="#FF9500"/>
+        <FontFamily x:Key="IosFont">SF Pro Text, -apple-system, Helvetica Neue, Segoe UI, Roboto, Arial</FontFamily>
+
+        <!-- Icônes d'onglets (24 × 24) -->
+        <StreamGeometry x:Key="TabHome">M10,20V14H14V20H19V12H22L12,3L2,12H5V20H10Z</StreamGeometry>
+        <StreamGeometry x:Key="TabPhone">M6.62,10.79C8.06,13.62 10.38,15.94 13.21,17.38L15.41,15.18C15.69,14.9 16.08,14.82 16.43,14.93C17.55,15.3 18.75,15.5 20,15.5A1,1 0 0,1 21,16.5V20A1,1 0 0,1 20,21A17,17 0 0,1 3,4A1,1 0 0,1 4,3H7.5A1,1 0 0,1 8.5,4C8.5,5.25 8.7,6.45 9.07,7.57C9.18,7.92 9.1,8.31 8.82,8.59L6.62,10.79Z</StreamGeometry>
+        <StreamGeometry x:Key="TabList">M3,4H7V8H3V4M9,5V7H21V5H9M3,10H7V14H3V10M9,11V13H21V11H9M3,16H7V20H3V16M9,17V19H21V17H9</StreamGeometry>
+        <StreamGeometry x:Key="TabClock">M12,2A10,10 0 1,0 22,12A10,10 0 0,0 12,2M16.2,16.2L11,13V7H12.5V12.2L17,14.9L16.2,16.2Z</StreamGeometry>
+        <StreamGeometry x:Key="TabChart">M22,21H2V3H4V19H6V10H10V19H12V6H16V19H18V14H22V21Z</StreamGeometry>
+        <StreamGeometry x:Key="TabTruck">M18,18.5A1.5,1.5 0 0,1 16.5,17A1.5,1.5 0 0,1 18,15.5A1.5,1.5 0 0,1 19.5,17A1.5,1.5 0 0,1 18,18.5M19.5,9.5L21.46,12H17V9.5M6,18.5A1.5,1.5 0 0,1 4.5,17A1.5,1.5 0 0,1 6,15.5A1.5,1.5 0 0,1 7.5,17A1.5,1.5 0 0,1 6,18.5M20,8H17V4H3C1.89,4 1,4.89 1,6V17H3A3,3 0 0,0 6,20A3,3 0 0,0 9,17H15A3,3 0 0,0 18,20A3,3 0 0,0 21,17H23V12L20,8Z</StreamGeometry>
+        <StreamGeometry x:Key="TabDocument">M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z</StreamGeometry>
+        <StreamGeometry x:Key="TabCalendar">M19,19H5V8H19M16,1V3H8V1H6V3H5C3.89,3 3,3.89 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V5C21,3.89 20.1,3 19,3H18V1M17,12H12V17H17V12Z</StreamGeometry>
+        <StreamGeometry x:Key="TabMore">M16,12A2,2 0 0,1 18,10A2,2 0 0,1 20,12A2,2 0 0,1 18,14A2,2 0 0,1 16,12M10,12A2,2 0 0,1 12,10A2,2 0 0,1 14,12A2,2 0 0,1 12,14A2,2 0 0,1 10,12M4,12A2,2 0 0,1 6,10A2,2 0 0,1 8,12A2,2 0 0,1 6,14A2,2 0 0,1 4,12Z</StreamGeometry>
+        <StreamGeometry x:Key="TabWrench">M22.7,19L13.6,9.9C14.5,7.6 14,4.9 12.1,3C10.1,1 7.1,0.6 4.7,1.7L9,6L6,9L1.6,4.7C0.4,7.1 0.9,10.1 2.9,12.1C4.8,14 7.5,14.5 9.8,13.6L18.9,22.7C19.3,23.1 19.9,23.1 20.3,22.7L22.6,20.4C23.1,20 23.1,19.3 22.7,19Z</StreamGeometry>
+        <StreamGeometry x:Key="TabPeople">M16,13C15.71,13 15.38,13 15.03,13.05C16.19,13.89 17,15 17,16.5V19H23V16.5C23,14.17 18.33,13 16,13M8,13C5.67,13 1,14.17 1,16.5V19H15V16.5C15,14.17 10.33,13 8,13M8,11A3,3 0 0,0 11,8A3,3 0 0,0 8,5A3,3 0 0,0 5,8A3,3 0 0,0 8,11M16,11A3,3 0 0,0 19,8A3,3 0 0,0 16,5A3,3 0 0,0 13,8A3,3 0 0,0 16,11Z</StreamGeometry>
+        <StreamGeometry x:Key="TabMail">M20,8L12,13L4,8V6L12,11L20,6M20,4H4C2.89,4 2,4.89 2,6V18A2,2 0 0,0 4,20H20A2,2 0 0,0 22,18V6C22,4.89 21.1,4 20,4Z</StreamGeometry>
+        <StreamGeometry x:Key="TabSend">M2,21L23,12L2,3V10L17,12L2,14V21Z</StreamGeometry>
+        <StreamGeometry x:Key="TabBook">M18,22A2,2 0 0,0 20,20V4C20,2.89 19.1,2 18,2H12V9L9.5,7.5L7,9V2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18Z</StreamGeometry>
+        <StreamGeometry x:Key="TabShield">M12,1L3,5V11C3,16.55 6.84,21.74 12,23C17.16,21.74 21,16.55 21,11V5L12,1Z</StreamGeometry>
+        <StreamGeometry x:Key="TabCheck">M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z</StreamGeometry>
+        <StreamGeometry x:Key="TabPlus">M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z</StreamGeometry>
+        <StreamGeometry x:Key="TabSearch">M9.5,3A6.5,6.5 0 0,1 16,9.5C16,11.11 15.41,12.59 14.44,13.73L14.71,14H15.5L20.5,19L19,20.5L14,15.5V14.71L13.73,14.44C12.59,15.41 11.11,16 9.5,16A6.5,6.5 0 0,1 3,9.5A6.5,6.5 0 0,1 9.5,3M9.5,5C7,5 5,7 5,9.5C5,12 7,14 9.5,14C12,14 14,12 14,9.5C14,7 12,5 9.5,5Z</StreamGeometry>
+        <StreamGeometry x:Key="TabFolder">M10,4H4C2.89,4 2,4.89 2,6V18A2,2 0 0,0 4,20H20A2,2 0 0,0 22,18V8C22,6.89 21.1,6 20,6H12L10,4Z</StreamGeometry>
+        <StreamGeometry x:Key="TabPerson">M12,4A4,4 0 0,1 16,8A4,4 0 0,1 12,12A4,4 0 0,1 8,8A4,4 0 0,1 12,4M12,14C16.42,14 20,15.79 20,18V20H4V18C4,15.79 7.58,14 12,14Z</StreamGeometry>
+    </Styles.Resources>
+
+    <!-- Racine -->
+    <Style Selector="UserControl.ios">
+        <Setter Property="Background" Value="{StaticResource IosBack}"/>
+        <Setter Property="FontFamily" Value="{StaticResource IosFont}"/>
+        <Setter Property="Foreground" Value="Black"/>
+    </Style>
+
+    <!-- Textes -->
+    <Style Selector=".ios TextBlock.large">
+        <Setter Property="FontSize" Value="30"/>
+        <Setter Property="FontWeight" Value="Bold"/>
+        <Setter Property="Margin" Value="16,10,16,6"/>
+        <Setter Property="TextWrapping" Value="Wrap"/>
+    </Style>
+    <Style Selector=".ios TextBlock.section">
+        <Setter Property="FontSize" Value="13"/>
+        <Setter Property="Foreground" Value="{StaticResource IosSecondary}"/>
+        <Setter Property="Margin" Value="32,22,16,7"/>
+    </Style>
+    <Style Selector=".ios TextBlock.footnote">
+        <Setter Property="FontSize" Value="13"/>
+        <Setter Property="Foreground" Value="{StaticResource IosSecondary}"/>
+        <Setter Property="Margin" Value="32,7,16,0"/>
+        <Setter Property="TextWrapping" Value="Wrap"/>
+    </Style>
+    <Style Selector=".ios TextBlock.title">
+        <Setter Property="FontSize" Value="16"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+    </Style>
+    <Style Selector=".ios TextBlock.subtitle">
+        <Setter Property="FontSize" Value="14"/>
+        <Setter Property="Foreground" Value="#3C3C43"/>
+        <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+    </Style>
+    <Style Selector=".ios TextBlock.caption">
+        <Setter Property="FontSize" Value="12.5"/>
+        <Setter Property="Foreground" Value="{StaticResource IosSecondary}"/>
+        <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+    </Style>
+    <Style Selector=".ios TextBlock.value">
+        <Setter Property="FontSize" Value="15"/>
+        <Setter Property="Foreground" Value="{StaticResource IosSecondary}"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+    </Style>
+    <Style Selector=".ios TextBlock.chevron">
+        <Setter Property="Text" Value="›"/>
+        <Setter Property="FontSize" Value="24"/>
+        <Setter Property="Foreground" Value="#C4C4C7"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="Margin" Value="8,0,0,2"/>
+    </Style>
+    <Style Selector=".ios TextBlock.big">
+        <Setter Property="FontSize" Value="30"/>
+        <Setter Property="FontWeight" Value="Bold"/>
+    </Style>
+    <Style Selector=".ios TextBlock.label">
+        <Setter Property="FontSize" Value="15"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+    </Style>
+
+    <!-- Groupes et lignes -->
+    <Style Selector=".ios Border.group">
+        <Setter Property="Background" Value="White"/>
+        <Setter Property="CornerRadius" Value="12"/>
+        <Setter Property="Margin" Value="16,0"/>
+        <Setter Property="ClipToBounds" Value="True"/>
+    </Style>
+    <Style Selector=".ios Border.row">
+        <Setter Property="Background" Value="White"/>
+        <Setter Property="Padding" Value="16,11"/>
+        <Setter Property="BorderBrush" Value="{StaticResource IosSeparator}"/>
+        <Setter Property="BorderThickness" Value="0,0,0,0.5"/>
+        <Setter Property="MinHeight" Value="46"/>
+    </Style>
+    <Style Selector=".ios Button.row">
+        <Setter Property="Background" Value="White"/>
+        <Setter Property="Padding" Value="16,11"/>
+        <Setter Property="CornerRadius" Value="0"/>
+        <Setter Property="BorderBrush" Value="{StaticResource IosSeparator}"/>
+        <Setter Property="BorderThickness" Value="0,0,0,0.5"/>
+        <Setter Property="HorizontalAlignment" Value="Stretch"/>
+        <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+        <Setter Property="VerticalContentAlignment" Value="Center"/>
+        <Setter Property="MinHeight" Value="46"/>
+        <Setter Property="Foreground" Value="Black"/>
+    </Style>
+    <Style Selector=".ios Button.row:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="White"/>
+        <Setter Property="BorderBrush" Value="{StaticResource IosSeparator}"/>
+    </Style>
+    <Style Selector=".ios Button.row:pressed /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{StaticResource IosPressed}"/>
+    </Style>
+    <Style Selector=".ios Button.row.selected TextBlock.title">
+        <Setter Property="Foreground" Value="{DynamicResource AppAccent}"/>
+    </Style>
+
+    <!-- Tuiles -->
+    <Style Selector=".ios Border.tile">
+        <Setter Property="Background" Value="White"/>
+        <Setter Property="CornerRadius" Value="14"/>
+        <Setter Property="Padding" Value="14,10"/>
+        <Setter Property="Margin" Value="5"/>
+    </Style>
+
+    <!-- Recherche, bandeaux, pastilles -->
+    <Style Selector=".ios Border.searchbar">
+        <Setter Property="Background" Value="#E3E3E8"/>
+        <Setter Property="CornerRadius" Value="10"/>
+        <Setter Property="Padding" Value="10,0"/>
+        <Setter Property="Margin" Value="16,6,16,8"/>
+        <Setter Property="Height" Value="38"/>
+    </Style>
+    <Style Selector=".ios Border.banner">
+        <Setter Property="Background" Value="{StaticResource IosRed}"/>
+        <Setter Property="CornerRadius" Value="12"/>
+        <Setter Property="Padding" Value="14,10"/>
+        <Setter Property="Margin" Value="16,8,16,0"/>
+    </Style>
+    <Style Selector=".ios Border.banner TextBlock">
+        <Setter Property="Foreground" Value="White"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="TextWrapping" Value="Wrap"/>
+    </Style>
+    <Style Selector=".ios Border.badge">
+        <Setter Property="CornerRadius" Value="9"/>
+        <Setter Property="Padding" Value="8,2"/>
+        <Setter Property="Background" Value="{DynamicResource AppAccent}"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+    </Style>
+    <Style Selector=".ios Border.badge TextBlock">
+        <Setter Property="Foreground" Value="White"/>
+        <Setter Property="FontSize" Value="12"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+    </Style>
+
+    <!-- Barre d'onglets -->
+    <Style Selector=".ios Border.tabbar">
+        <Setter Property="Background" Value="#F7F7F7"/>
+        <Setter Property="BorderBrush" Value="#D1D1D6"/>
+        <Setter Property="BorderThickness" Value="0,0.5,0,0"/>
+        <Setter Property="Padding" Value="0,5,0,4"/>
+    </Style>
+    <Style Selector=".ios Button.tab">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="Foreground" Value="{StaticResource IosSecondary}"/>
+        <Setter Property="Padding" Value="0,2"/>
+        <Setter Property="HorizontalAlignment" Value="Stretch"/>
+        <Setter Property="HorizontalContentAlignment" Value="Center"/>
+        <Setter Property="BorderThickness" Value="0"/>
+    </Style>
+    <Style Selector=".ios Button.tab:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="Transparent"/>
+    </Style>
+    <Style Selector=".ios Button.tab:pressed /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="Transparent"/>
+    </Style>
+    <Style Selector=".ios Button.tab.selected">
+        <Setter Property="Foreground" Value="{DynamicResource AppAccent}"/>
+    </Style>
+    <Style Selector=".ios Button.tab PathIcon">
+        <Setter Property="Width" Value="24"/>
+        <Setter Property="Height" Value="24"/>
+        <Setter Property="HorizontalAlignment" Value="Center"/>
+    </Style>
+    <Style Selector=".ios Button.tab TextBlock">
+        <Setter Property="FontSize" Value="10.5"/>
+        <Setter Property="FontWeight" Value="Medium"/>
+        <Setter Property="HorizontalAlignment" Value="Center"/>
+        <Setter Property="Margin" Value="0,2,0,0"/>
+    </Style>
+
+    <!-- Boutons -->
+    <Style Selector=".ios Button.primary, .ios Button.secondary, .ios Button.destructive">
+        <Setter Property="CornerRadius" Value="12"/>
+        <Setter Property="MinHeight" Value="48"/>
+        <Setter Property="HorizontalAlignment" Value="Stretch"/>
+        <Setter Property="HorizontalContentAlignment" Value="Center"/>
+        <Setter Property="VerticalContentAlignment" Value="Center"/>
+        <Setter Property="FontSize" Value="16.5"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="Margin" Value="16,6"/>
+        <Setter Property="BorderThickness" Value="0"/>
+    </Style>
+    <Style Selector=".ios Button.primary">
+        <Setter Property="Background" Value="{DynamicResource AppAccent}"/>
+        <Setter Property="Foreground" Value="White"/>
+    </Style>
+    <Style Selector=".ios Button.primary:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource AppAccent}"/>
+        <Setter Property="Foreground" Value="White"/>
+    </Style>
+    <Style Selector=".ios Button.primary:pressed /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Opacity" Value="0.75"/>
+    </Style>
+    <Style Selector=".ios Button.secondary">
+        <Setter Property="Background" Value="White"/>
+        <Setter Property="Foreground" Value="{DynamicResource AppAccent}"/>
+    </Style>
+    <Style Selector=".ios Button.secondary:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="White"/>
+        <Setter Property="Foreground" Value="{DynamicResource AppAccent}"/>
+    </Style>
+    <Style Selector=".ios Button.destructive">
+        <Setter Property="Background" Value="White"/>
+        <Setter Property="Foreground" Value="{StaticResource IosRed}"/>
+    </Style>
+    <Style Selector=".ios Button.destructive:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="White"/>
+        <Setter Property="Foreground" Value="{StaticResource IosRed}"/>
+    </Style>
+    <Style Selector=".ios Button:disabled /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Opacity" Value="0.4"/>
+    </Style>
+    <Style Selector=".ios Button.plain">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="Foreground" Value="{DynamicResource AppAccent}"/>
+        <Setter Property="FontSize" Value="16"/>
+        <Setter Property="Padding" Value="8,6"/>
+        <Setter Property="BorderThickness" Value="0"/>
+    </Style>
+    <Style Selector=".ios Button.plain:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="Foreground" Value="{DynamicResource AppAccent}"/>
+    </Style>
+
+    <!-- Contrôle segmenté -->
+    <Style Selector=".ios Border.segments">
+        <Setter Property="Background" Value="#E3E3E8"/>
+        <Setter Property="CornerRadius" Value="9"/>
+        <Setter Property="Padding" Value="2"/>
+        <Setter Property="Margin" Value="16,6"/>
+    </Style>
+    <Style Selector=".ios Button.seg">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="Foreground" Value="Black"/>
+        <Setter Property="CornerRadius" Value="7"/>
+        <Setter Property="FontSize" Value="13.5"/>
+        <Setter Property="FontWeight" Value="Medium"/>
+        <Setter Property="HorizontalAlignment" Value="Stretch"/>
+        <Setter Property="HorizontalContentAlignment" Value="Center"/>
+        <Setter Property="Padding" Value="4,6"/>
+        <Setter Property="BorderThickness" Value="0"/>
+    </Style>
+    <Style Selector=".ios Button.seg.selected">
+        <Setter Property="Background" Value="White"/>
+    </Style>
+    <Style Selector=".ios Button.seg:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="Transparent"/>
+    </Style>
+    <Style Selector=".ios Button.seg.selected:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="White"/>
+    </Style>
+
+    <!-- Champs sans bordure dans les lignes -->
+    <Style Selector=".ios TextBox.field">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="Padding" Value="0,4"/>
+        <Setter Property="FontSize" Value="15.5"/>
+        <Setter Property="MinHeight" Value="28"/>
+        <Setter Property="VerticalContentAlignment" Value="Center"/>
+    </Style>
+    <Style Selector=".ios TextBox.field:pointerover /template/ Border#PART_BorderElement">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="BorderThickness" Value="0"/>
+    </Style>
+    <Style Selector=".ios TextBox.field:focus /template/ Border#PART_BorderElement">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="BorderThickness" Value="0"/>
+    </Style>
+    <Style Selector=".ios TextBox.field /template/ Border#PART_BorderElement">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="BorderThickness" Value="0"/>
+    </Style>
+    <Style Selector=".ios ComboBox.field">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="FontSize" Value="15.5"/>
+        <Setter Property="HorizontalAlignment" Value="Stretch"/>
+        <Setter Property="Padding" Value="0,4"/>
+        <Setter Property="Foreground" Value="{DynamicResource AppAccent}"/>
+    </Style>
+    <Style Selector=".ios ComboBox.field:pointerover /template/ Border#Background">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="BorderThickness" Value="0"/>
+    </Style>
+    <Style Selector=".ios CheckBox, .ios ToggleSwitch">
+        <Setter Property="FontSize" Value="15.5"/>
+    </Style>
+</Styles>
