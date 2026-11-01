@@ -1,0 +1,184 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:m="using:Argos.Views.Mobile"
+             x:Class="Argos.Views.Mobile.Mail.MailComposeMobileView"
+             Classes="ios"
+             m:MobilePage.IsNative="True"
+             m:MobilePage.Accent="#0078D4">
+    <!-- Rédaction d'un message sur iPhone (même modèle que la version bureau : MailComposeViewModel). -->
+    <UserControl.Resources>
+        <SolidColorBrush x:Key="AppAccent" Color="#0078D4"/>
+        <StreamGeometry x:Key="ComposeIconClip">M16.5,6V17.5A4,4 0 0,1 12.5,21.5A4,4 0 0,1 8.5,17.5V5A2.5,2.5 0 0,1 11,2.5A2.5,2.5 0 0,1 13.5,5V15.5A1,1 0 0,1 12.5,16.5A1,1 0 0,1 11.5,15.5V6H10V15.5A2.5,2.5 0 0,0 12.5,18A2.5,2.5 0 0,0 15,15.5V5A4,4 0 0,0 11,1A4,4 0 0,0 7,5V17.5A5.5,5.5 0 0,0 12.5,23A5.5,5.5 0 0,0 18,17.5V6H16.5Z</StreamGeometry>
+    </UserControl.Resources>
+    <UserControl.Styles>
+        <Style Selector=".ios TextBlock.status.err">
+            <Setter Property="Foreground" Value="{StaticResource IosRed}"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+        </Style>
+        <Style Selector=".ios Button.fmt">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{DynamicResource AppAccent}"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="FontSize" Value="17"/>
+            <Setter Property="Padding" Value="0,6"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+        </Style>
+        <Style Selector=".ios Button.fmt:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{DynamicResource AppAccent}"/>
+        </Style>
+        <Style Selector=".ios ToggleButton.fmt">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{DynamicResource AppAccent}"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="Padding" Value="0,6"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="CornerRadius" Value="8"/>
+        </Style>
+        <Style Selector=".ios ToggleButton.fmt:checked /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource AppAccent}"/>
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+        <Style Selector=".ios ToggleButton.fmt:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Foreground" Value="{DynamicResource AppAccent}"/>
+        </Style>
+        <Style Selector=".ios ToggleButton.fmt:checked:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource AppAccent}"/>
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+    </UserControl.Styles>
+
+    <Grid RowDefinitions="Auto,*,Auto">
+        <!-- Barre d'actions -->
+        <Grid ColumnDefinitions="Auto,*,Auto" Margin="8,4,12,4">
+            <Button Classes="plain" Foreground="{StaticResource IosRed}" Content="Ignorer" Command="{Binding DiscardCommand}"/>
+            <Button Grid.Column="1" Classes="plain" HorizontalAlignment="Center" Content="Brouillon" Command="{Binding SaveCommand}"/>
+            <Button Grid.Column="2" Classes="primary" Margin="0" MinHeight="36" Padding="18,0" FontSize="15.5" HorizontalAlignment="Right"
+                    Content="Envoyer" Command="{Binding SendCommand}"/>
+        </Grid>
+
+        <ScrollViewer Grid.Row="1">
+            <StackPanel Margin="0,0,0,24">
+                <TextBlock Classes="large" Text="{Binding WindowSubject}"/>
+                <TextBlock Classes="footnote status" Classes.err="{Binding StatusIsError}" Margin="16,-4,16,6" Text="{Binding Status}"
+                           IsVisible="{Binding Status, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+
+                <!-- En-têtes -->
+                <Border Classes="group">
+                    <StackPanel>
+                        <Border Classes="row">
+                            <Grid ColumnDefinitions="64,*,Auto">
+                                <TextBlock Classes="label" Foreground="{StaticResource IosSecondary}" Text="À :"/>
+                                <TextBox Grid.Column="1" Classes="field" Text="{Binding To}" Watermark="Adresses séparées par « ; »"/>
+                                <Button Grid.Column="2" Classes="plain" FontSize="14.5" Padding="8,2" Content="Cci" Command="{Binding ToggleBccCommand}"/>
+                            </Grid>
+                        </Border>
+                        <Border Classes="row">
+                            <Grid ColumnDefinitions="64,*">
+                                <TextBlock Classes="label" Foreground="{StaticResource IosSecondary}" Text="Cc :"/>
+                                <TextBox Grid.Column="1" Classes="field" Text="{Binding Cc}"/>
+                            </Grid>
+                        </Border>
+                        <Border Classes="row" IsVisible="{Binding ShowBcc}">
+                            <Grid ColumnDefinitions="64,*">
+                                <TextBlock Classes="label" Foreground="{StaticResource IosSecondary}" Text="Cci :"/>
+                                <TextBox Grid.Column="1" Classes="field" Text="{Binding Bcc}" Watermark="Destinataires invisibles des autres"/>
+                            </Grid>
+                        </Border>
+                        <Border Classes="row">
+                            <Grid ColumnDefinitions="64,*">
+                                <TextBlock Classes="label" Foreground="{StaticResource IosSecondary}" Text="De :"/>
+                                <TextBlock Grid.Column="1" Classes="value" Foreground="Black" Text="{Binding From}"/>
+                            </Grid>
+                        </Border>
+                        <Border Classes="row">
+                            <Grid ColumnDefinitions="64,*">
+                                <TextBlock Classes="label" Foreground="{StaticResource IosSecondary}" Text="Objet :"/>
+                                <TextBox Grid.Column="1" Classes="field" Text="{Binding Subject}" Watermark="Ajouter un objet"/>
+                            </Grid>
+                        </Border>
+                        <Border Classes="row">
+                            <Grid ColumnDefinitions="*,Auto">
+                                <TextBlock Classes="label" Text="Importance"/>
+                                <ComboBox Grid.Column="1" Classes="field" MinWidth="130" HorizontalContentAlignment="Right"
+                                          ItemsSource="{Binding Importances}" SelectedItem="{Binding Importance}"/>
+                            </Grid>
+                        </Border>
+                    </StackPanel>
+                </Border>
+
+                <!-- Annuaire -->
+                <TextBlock Classes="section" Text="ANNUAIRE"/>
+                <Border Classes="group">
+                    <StackPanel>
+                        <Border Classes="row">
+                            <AutoCompleteBox ItemsSource="{Binding Suggestions}" SelectedItem="{Binding Pick}" FilterMode="Contains"
+                                             Watermark="Rechercher un nom, une adresse…" MinHeight="30" MaxDropDownHeight="260"
+                                             Background="Transparent" BorderThickness="0" FontSize="15.5"/>
+                        </Border>
+                        <UniformGrid Columns="3">
+                            <Button Classes="plain" HorizontalAlignment="Center" Content="+ À" Command="{Binding AddToCommand}"/>
+                            <Button Classes="plain" HorizontalAlignment="Center" Content="+ Cc" Command="{Binding AddCcCommand}"/>
+                            <Button Classes="plain" HorizontalAlignment="Center" Content="+ Cci" Command="{Binding AddBccCommand}"/>
+                        </UniformGrid>
+                    </StackPanel>
+                </Border>
+
+                <!-- Pièces jointes -->
+                <StackPanel IsVisible="{Binding HasAttachments}">
+                    <TextBlock Classes="section" Text="PIÈCES JOINTES"/>
+                    <Border Classes="group">
+                        <ItemsControl ItemsSource="{Binding Attachments}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Classes="row" Padding="16,8,8,8">
+                                        <Grid ColumnDefinitions="Auto,*,Auto">
+                                            <PathIcon Data="{StaticResource ComposeIconClip}" Width="18" Height="18" Foreground="{StaticResource IosSecondary}" Margin="0,0,10,0"/>
+                                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                <TextBlock Classes="title" FontSize="15" Text="{Binding Name}"/>
+                                                <TextBlock Classes="caption" Text="{Binding Size}"/>
+                                            </StackPanel>
+                                            <Button Grid.Column="2" Classes="plain" FontSize="14.5" Foreground="{StaticResource IosRed}" Content="Retirer" Command="{Binding RemoveCommand}"/>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </Border>
+                    <TextBlock Classes="footnote" Text="{Binding AttachmentsLabel}"/>
+                </StackPanel>
+
+                <!-- Corps du message -->
+                <TextBlock Classes="section" Text="MESSAGE"/>
+                <Border Background="White" CornerRadius="12" Margin="16,0" Padding="14,10">
+                    <Panel>
+                        <TextBox Name="BodyBox" Classes="field" Text="{Binding Body}" AcceptsReturn="True" TextWrapping="Wrap"
+                                 MinHeight="360" VerticalContentAlignment="Top" FontSize="15.5"
+                                 IsVisible="{Binding !#PreviewToggle.IsChecked}"/>
+                        <SelectableTextBlock Name="Preview" FontSize="15.5" TextWrapping="Wrap" LineHeight="23" MinHeight="360"
+                                             IsVisible="{Binding #PreviewToggle.IsChecked}"/>
+                    </Panel>
+                </Border>
+                <TextBlock Classes="footnote" Text="Mise en forme : **gras**, *italique*, __souligné__, « - » pour une puce, [texte](https://adresse) pour un lien."/>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- Barre de mise en forme -->
+        <Border Grid.Row="2" Classes="tabbar">
+            <Grid ColumnDefinitions="*,*,*,*,*,*,1.8*" Margin="6,0">
+                <Button Name="BoldButton" Classes="fmt" Content="G" FontWeight="Bold" ToolTip.Tip="Gras"/>
+                <Button Name="ItalicButton" Grid.Column="1" Classes="fmt" Content="I" FontStyle="Italic" ToolTip.Tip="Italique"/>
+                <Button Name="UnderlineButton" Grid.Column="2" Classes="fmt" ToolTip.Tip="Souligné"><TextBlock Text="S" TextDecorations="Underline"/></Button>
+                <Button Name="ListButton" Grid.Column="3" Classes="fmt" Content="•" FontSize="22" ToolTip.Tip="Liste à puces"/>
+                <Button Name="LinkButton" Grid.Column="4" Classes="fmt" Content="🔗" ToolTip.Tip="Insérer un lien : [texte](https://adresse)"/>
+                <Button Name="AttachButton" Grid.Column="5" Classes="fmt" ToolTip.Tip="Joindre un fichier">
+                    <PathIcon Data="{StaticResource ComposeIconClip}" Width="22" Height="22"/>
+                </Button>
+                <ToggleButton Name="PreviewToggle" Grid.Column="6" Classes="fmt" IsChecked="False" Content="Aperçu"/>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>

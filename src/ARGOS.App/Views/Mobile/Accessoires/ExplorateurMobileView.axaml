@@ -1,0 +1,256 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:m="using:Argos.Views.Mobile"
+             x:Class="Argos.Views.Mobile.Accessoires.ExplorateurMobileView"
+             Classes="ios"
+             m:MobilePage.IsNative="True"
+             m:MobilePage.Accent="#0078D7">
+    <!-- Explorateur sur iPhone, façon app Fichiers (même modèle que la version bureau : ExplorateurViewModel). -->
+    <UserControl.Resources>
+        <SolidColorBrush x:Key="AppAccent" Color="#0078D7"/>
+    </UserControl.Resources>
+    <UserControl.Styles>
+        <Style Selector=".ios Border.banner.ok">
+            <Setter Property="Background" Value="{StaticResource IosGreen}"/>
+        </Style>
+    </UserControl.Styles>
+
+    <Grid RowDefinitions="Auto,*,Auto">
+        <Border Classes="banner" Classes.ok="{Binding !MessageIsError}" IsVisible="{Binding HasMessage}">
+            <TextBlock Text="{Binding Message}"/>
+        </Border>
+
+        <ScrollViewer Grid.Row="1">
+            <StackPanel Margin="0,0,0,24">
+                <!-- Navigation -->
+                <Grid ColumnDefinitions="Auto,Auto,*" Margin="8,4,8,0">
+                    <Button Classes="plain" Content="‹ Précédent" Command="{Binding BackCommand}"/>
+                    <Button Grid.Column="1" Classes="plain" Content="Dossier parent" Command="{Binding UpCommand}"/>
+                </Grid>
+                <TextBlock Classes="large" Text="{Binding PathText}"/>
+                <Border Classes="searchbar">
+                    <Grid ColumnDefinitions="Auto,*">
+                        <PathIcon Data="{StaticResource TabSearch}" Width="16" Height="16" Foreground="{StaticResource IosSecondary}" Margin="0,0,8,0"/>
+                        <TextBox Grid.Column="1" Classes="field" Text="{Binding Search}" Watermark="Rechercher dans le dossier"/>
+                    </Grid>
+                </Border>
+
+                <!-- Ce PC : emplacements et stockage -->
+                <StackPanel IsVisible="{Binding ShowThisPc}">
+                    <TextBlock Classes="section" Text="EMPLACEMENTS"/>
+                    <Border Classes="group">
+                        <ItemsControl ItemsSource="{Binding SpecialFolders}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Button Classes="row" Command="{Binding SelectCommand}">
+                                        <Grid ColumnDefinitions="Auto,*,Auto">
+                                            <PathIcon Data="{StaticResource TabFolder}" Width="24" Height="24" Foreground="{DynamicResource AppAccent}" Margin="0,0,12,0"/>
+                                            <TextBlock Grid.Column="1" Classes="label" Text="{Binding Name}"/>
+                                            <TextBlock Grid.Column="2" Classes="chevron"/>
+                                        </Grid>
+                                    </Button>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </Border>
+                    <TextBlock Classes="section" Text="STOCKAGE"/>
+                    <Border Classes="group">
+                        <Border Classes="row">
+                            <StackPanel Spacing="6">
+                                <Grid ColumnDefinitions="Auto,*">
+                                    <PathIcon Data="{StaticResource IconWindows}" Width="20" Height="20" Foreground="{DynamicResource AppAccent}" Margin="0,0,12,0"/>
+                                    <TextBlock Grid.Column="1" Classes="label" Text="Disque ARGOS (C:)"/>
+                                </Grid>
+                                <ProgressBar MinWidth="0" Minimum="0" Maximum="1" Value="{Binding QuotaRatio}" Height="6" CornerRadius="3"
+                                             Foreground="{DynamicResource AppAccent}" Background="#E5E5EA"/>
+                                <TextBlock Classes="caption" Text="{Binding QuotaText}"/>
+                            </StackPanel>
+                        </Border>
+                    </Border>
+                    <TextBlock Classes="section" Text="AUTRES ÉLÉMENTS"/>
+                </StackPanel>
+                <TextBlock Classes="section" Text="CONTENU" IsVisible="{Binding !ShowThisPc}"/>
+
+                <!-- Contenu du dossier : toucher un dossier l'ouvre, toucher un fichier le sélectionne -->
+                <Border Classes="group">
+                    <StackPanel>
+                        <ItemsControl ItemsSource="{Binding Items}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Panel>
+                                        <!-- Dossier -->
+                                        <Grid ColumnDefinitions="*,Auto" IsVisible="{Binding IsFolder}">
+                                            <Button Classes="row" Classes.selected="{Binding Selected}" Command="{Binding OpenCommand}">
+                                                <Grid ColumnDefinitions="Auto,*,Auto">
+                                                    <PathIcon Data="{StaticResource TabFolder}" Width="30" Height="30" Foreground="{DynamicResource AppAccent}" Margin="0,0,12,0"/>
+                                                    <StackPanel Grid.Column="1" Spacing="1" VerticalAlignment="Center">
+                                                        <TextBlock Classes="title" Text="{Binding Name}"/>
+                                                        <TextBlock Classes="caption" Text="{Binding Modified}"/>
+                                                    </StackPanel>
+                                                    <TextBlock Grid.Column="2" Classes="chevron"/>
+                                                </Grid>
+                                            </Button>
+                                            <Button Grid.Column="1" Classes="row" Padding="12,0" MinHeight="0" VerticalAlignment="Stretch"
+                                                    Command="{Binding SelectCommand}" ToolTip.Tip="Sélectionner">
+                                                <TextBlock Text="•••" FontSize="13" FontWeight="Bold" Foreground="{DynamicResource AppAccent}" VerticalAlignment="Center"/>
+                                            </Button>
+                                        </Grid>
+                                        <!-- Fichier -->
+                                        <Button Classes="row" Classes.selected="{Binding Selected}" Command="{Binding SelectCommand}" IsVisible="{Binding !IsFolder}">
+                                            <Grid ColumnDefinitions="Auto,*,Auto">
+                                                <Path Data="{StaticResource W10File}" Stroke="#8E8E93" StrokeThickness="1.4" Fill="White" Stretch="Uniform"
+                                                      Width="24" Height="30" Margin="3,0,15,0"/>
+                                                <StackPanel Grid.Column="1" Spacing="1" VerticalAlignment="Center">
+                                                    <TextBlock Classes="title" Text="{Binding Name}"/>
+                                                    <TextBlock Classes="caption">
+                                                        <Run Text="{Binding Modified}"/><Run Text="  ·  "/><Run Text="{Binding Size}"/>
+                                                    </TextBlock>
+                                                    <TextBlock Classes="caption" Text="{Binding Type}"/>
+                                                </StackPanel>
+                                                <PathIcon Grid.Column="2" Data="{StaticResource TabCheck}" Width="18" Height="18" Foreground="{DynamicResource AppAccent}"
+                                                          IsVisible="{Binding Selected}" Margin="8,0,0,0"/>
+                                            </Grid>
+                                        </Button>
+                                    </Panel>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <Border Classes="row" IsVisible="{Binding !HasItems}">
+                            <TextBlock Classes="value" Text="Ce dossier est vide."/>
+                        </Border>
+                    </StackPanel>
+                </Border>
+                <TextBlock Classes="footnote" Text="{Binding StatusText}"/>
+
+                <!-- Renommer -->
+                <StackPanel IsVisible="{Binding IsRenaming}">
+                    <TextBlock Classes="section" Text="RENOMMER"/>
+                    <Border Classes="group">
+                        <Border Classes="row">
+                            <TextBox Name="RenameBox" Classes="field" Text="{Binding RenameText}" Watermark="Nouveau nom"/>
+                        </Border>
+                    </Border>
+                    <Grid ColumnDefinitions="*,*" Margin="0,6,0,0">
+                        <Button Classes="primary" Margin="16,6,6,6" Content="OK" Command="{Binding ConfirmRenameCommand}"/>
+                        <Button Grid.Column="1" Classes="secondary" Margin="6,6,16,6" Content="Annuler" Command="{Binding CancelRenameCommand}"/>
+                    </Grid>
+                </StackPanel>
+
+                <!-- Élément sélectionné -->
+                <StackPanel IsVisible="{Binding Selected, Converter={x:Static ObjectConverters.IsNotNull}}">
+                    <TextBlock Classes="section">
+                        <Run Text="SÉLECTION : "/><Run Text="{Binding Selected.Name}"/>
+                    </TextBlock>
+                    <Border Classes="group">
+                        <StackPanel>
+                            <Button Classes="row" Command="{Binding OpenCommand}">
+                                <Grid ColumnDefinitions="*,Auto"><TextBlock Classes="label" Text="Ouvrir"/><TextBlock Grid.Column="1" Classes="chevron"/></Grid>
+                            </Button>
+                            <Button Classes="row" Command="{Binding RenameCommand}">
+                                <TextBlock Classes="label" Text="Renommer"/>
+                            </Button>
+                            <Button Classes="row" Command="{Binding CopyCommand}">
+                                <TextBlock Classes="label" Text="Copier"/>
+                            </Button>
+                            <Button Classes="row" Command="{Binding CutCommand}">
+                                <TextBlock Classes="label" Text="Couper"/>
+                            </Button>
+                            <Button Name="DownloadButton" Classes="row">
+                                <TextBlock Classes="label" Text="Télécharger sur l'appareil…"/>
+                            </Button>
+                            <Button Classes="row" Command="{Binding PropertiesCommand}">
+                                <TextBlock Classes="label" Text="Propriétés"/>
+                            </Button>
+                            <Border Classes="row">
+                                <Grid ColumnDefinitions="Auto,*,Auto">
+                                    <TextBlock Classes="label" Text="Déplacer vers"/>
+                                    <ComboBox Grid.Column="1" Classes="field" Margin="8,0" HorizontalContentAlignment="Right"
+                                              ItemsSource="{Binding MoveTargets}" SelectedItem="{Binding MoveTarget}">
+                                        <ComboBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding Name}" Margin="{Binding Indent}"/></DataTemplate></ComboBox.ItemTemplate>
+                                    </ComboBox>
+                                    <Button Grid.Column="2" Classes="plain" Padding="4,2" Content="Déplacer" Command="{Binding MoveCommand}"/>
+                                </Grid>
+                            </Border>
+                            <Button Classes="row" Command="{Binding DeleteCommand}">
+                                <TextBlock Classes="label" Foreground="{StaticResource IosRed}" Text="Supprimer"/>
+                            </Button>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Propriétés -->
+                    <StackPanel IsVisible="{Binding ShowProperties}">
+                        <TextBlock Classes="section" Text="PROPRIÉTÉS"/>
+                        <Border Classes="group">
+                            <ItemsControl ItemsSource="{Binding Properties}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Classes="row">
+                                            <TextBlock FontSize="14" Text="{Binding}" TextWrapping="Wrap"/>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </Border>
+                    </StackPanel>
+                </StackPanel>
+
+                <!-- Dossier courant -->
+                <TextBlock Classes="section" Text="CE DOSSIER"/>
+                <Border Classes="group">
+                    <StackPanel>
+                        <Button Classes="row" Command="{Binding NewFolderCommand}">
+                            <Grid ColumnDefinitions="Auto,*">
+                                <PathIcon Data="{StaticResource TabFolder}" Width="20" Height="20" Foreground="{DynamicResource AppAccent}" Margin="0,0,12,0"/>
+                                <TextBlock Grid.Column="1" Classes="label" Text="Nouveau dossier"/>
+                            </Grid>
+                        </Button>
+                        <Button Classes="row" Command="{Binding NewTextCommand}">
+                            <Grid ColumnDefinitions="Auto,*">
+                                <PathIcon Data="{StaticResource TabDocument}" Width="20" Height="20" Foreground="{DynamicResource AppAccent}" Margin="0,0,12,0"/>
+                                <TextBlock Grid.Column="1" Classes="label" Text="Nouveau document texte"/>
+                            </Grid>
+                        </Button>
+                        <Button Name="ImportButton" Classes="row">
+                            <Grid ColumnDefinitions="Auto,*">
+                                <PathIcon Data="{StaticResource TabPlus}" Width="20" Height="20" Foreground="{DynamicResource AppAccent}" Margin="0,0,12,0"/>
+                                <TextBlock Grid.Column="1" Classes="label" Text="Importer depuis l'appareil…"/>
+                            </Grid>
+                        </Button>
+                        <Button Classes="row" Command="{Binding PasteCommand}">
+                            <Grid ColumnDefinitions="Auto,*,Auto">
+                                <PathIcon Data="{StaticResource TabDocument}" Width="20" Height="20" Foreground="{DynamicResource AppAccent}" Margin="0,0,12,0"/>
+                                <TextBlock Grid.Column="1" Classes="label" Text="Coller"/>
+                                <TextBlock Grid.Column="2" Classes="value" FontSize="13" MaxWidth="170" Text="{Binding ClipboardText}"/>
+                            </Grid>
+                        </Button>
+                        <Button Classes="row" Command="{Binding OpenTrashCommand}">
+                            <Grid ColumnDefinitions="Auto,*,Auto">
+                                <Image Source="avares://ARGOS.App/Assets/Icons/corbeille.png" Width="20" Height="20" Margin="0,0,12,0"/>
+                                <TextBlock Grid.Column="1" Classes="label" Text="Corbeille"/>
+                                <TextBlock Grid.Column="2" Classes="chevron"/>
+                            </Grid>
+                        </Button>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- Barre du bas -->
+        <Border Grid.Row="2" Classes="tabbar">
+            <UniformGrid Columns="4">
+                <Button Classes="tab" Command="{Binding RootCommand}">
+                    <StackPanel><PathIcon Data="{StaticResource TabHome}"/><TextBlock Text="Ce PC"/></StackPanel>
+                </Button>
+                <Button Classes="tab" Command="{Binding NewFolderCommand}">
+                    <StackPanel><PathIcon Data="{StaticResource TabFolder}"/><TextBlock Text="Nouveau dossier"/></StackPanel>
+                </Button>
+                <Button Name="ImportTab" Classes="tab">
+                    <StackPanel><PathIcon Data="{StaticResource TabPlus}"/><TextBlock Text="Importer"/></StackPanel>
+                </Button>
+                <Button Classes="tab" Command="{Binding RefreshCommand}">
+                    <StackPanel><PathIcon Data="{StaticResource TabClock}"/><TextBlock Text="Actualiser"/></StackPanel>
+                </Button>
+            </UniformGrid>
+        </Border>
+    </Grid>
+</UserControl>

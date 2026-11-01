@@ -1,6 +1,7 @@
 using Argos.Services;
 using Argos.ViewModels;
 using Argos.ViewModels.Mail;
+using Argos.Views.Mobile.Mail;
 
 namespace Argos.Views.Apps.Mail;
 
@@ -13,6 +14,11 @@ public static class MailWindows
     {
         var key = "mail-compose:" + (init.DraftId ?? Guid.NewGuid().ToString("N")[..8]);
         return new WindowSpec(key, string.IsNullOrWhiteSpace(init.Subject) ? "Nouveau message" : init.Subject, Icon,
-            () => new MailComposeView { DataContext = new MailComposeViewModel(desktop, key, init) }, 900, 720);
+            () =>
+            {
+                var vm = new MailComposeViewModel(desktop, key, init);
+                if (desktop.IsCompactLayout) return new MailComposeMobileView { DataContext = vm };
+                return new MailComposeView { DataContext = vm };
+            }, 900, 720);
     }
 }

@@ -1,0 +1,769 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:m="using:Argos.Views.Mobile"
+             x:Class="Argos.Views.Mobile.Sigtao.SigtaoMobileView"
+             Classes="ios"
+             m:MobilePage.IsNative="True"
+             m:MobilePage.Accent="#13294B">
+    <!-- SIGTAO sur iPhone (même modèle que la version bureau : SigtaoAppViewModel). -->
+    <UserControl.Resources>
+        <SolidColorBrush x:Key="AppAccent" Color="#13294B"/>
+    </UserControl.Resources>
+
+    <Grid RowDefinitions="Auto,*,Auto">
+        <!-- Message (erreur en rouge, confirmation en vert) -->
+        <Panel IsVisible="{Binding HasMessage}">
+            <Border Classes="banner" IsVisible="{Binding MessageIsError}">
+                <TextBlock Text="{Binding Message}"/>
+            </Border>
+            <Border Classes="banner" Background="#34C759" IsVisible="{Binding !MessageIsError}">
+                <TextBlock Text="{Binding Message}"/>
+            </Border>
+        </Panel>
+
+        <!-- ===== Accueil (tableau de bord) ===== -->
+        <ScrollViewer Grid.Row="1" IsVisible="{Binding IsAccueil}">
+            <StackPanel Margin="0,0,0,24">
+                <TextBlock Classes="large" Text="SIGTAO"/>
+                <Border Height="3" Background="#C8102E" CornerRadius="2" Margin="16,0,16,4" Width="48" HorizontalAlignment="Left"/>
+                <TextBlock Classes="footnote" Margin="16,2,16,0" Text="BSPP · 2e Groupement · 17e Compagnie"/>
+                <TextBlock Classes="footnote" Margin="16,0,16,4" Text="{Binding Today}"/>
+
+                <Grid ColumnDefinitions="*,*" Margin="0,4,0,0">
+                    <Button Classes="primary" Margin="16,6,6,6" Content="Nouveau CR" Command="{Binding NewReportCommand}"/>
+                    <Button Grid.Column="1" Classes="secondary" Margin="6,6,16,6" Content="Actualiser" Command="{Binding RefreshCommand}"/>
+                </Grid>
+
+                <TextBlock Classes="section" Text="MON DOSSIER"/>
+                <Border Classes="group">
+                    <StackPanel>
+                        <Border Classes="row">
+                            <Grid ColumnDefinitions="Auto,*">
+                                <Border Width="64" Height="64" CornerRadius="32" Background="#E3E8EF" ClipToBounds="True" VerticalAlignment="Top">
+                                    <Panel>
+                                        <Image Source="{Binding MePhoto}" Stretch="UniformToFill" IsVisible="{Binding HasMePhoto}"/>
+                                        <PathIcon Data="{StaticResource TabPerson}" Width="30" Height="30" Foreground="#8E8E93"
+                                                  IsVisible="{Binding !HasMePhoto}"/>
+                                    </Panel>
+                                </Border>
+                                <StackPanel Grid.Column="1" Spacing="2" Margin="14,0,0,0">
+                                    <TextBlock Classes="title" Text="{Binding MeName}"/>
+                                    <StackPanel Orientation="Horizontal" Spacing="6">
+                                        <Image Source="{Binding MeGradeIcon}" Width="20" Height="20"/>
+                                        <TextBlock Classes="subtitle" Text="{Binding MeGrade}" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                    <TextBlock Classes="caption" Text="{Binding MeNid}"/>
+                                    <TextBlock Classes="caption" Text="{Binding MeUnit}" TextWrapping="Wrap" TextTrimming="None"/>
+                                    <TextBlock Classes="caption" Text="{Binding MeFonction, StringFormat='Fonction : {0}'}" TextWrapping="Wrap" TextTrimming="None"/>
+                                    <TextBlock Classes="caption" Text="{Binding MeService, StringFormat='Temps de service : {0}'}" IsVisible="{Binding HasMe}"/>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+                        <Button Classes="row" Command="{Binding MyDossierCommand}" IsVisible="{Binding HasMe}">
+                            <Grid ColumnDefinitions="Auto,*,Auto">
+                                <PathIcon Data="{StaticResource TabFolder}" Width="20" Height="20" Foreground="{DynamicResource AppAccent}" Margin="0,0,12,0"/>
+                                <TextBlock Grid.Column="1" Classes="label" Text="Consulter mon dossier"/>
+                                <TextBlock Grid.Column="2" Classes="chevron"/>
+                            </Grid>
+                        </Button>
+                    </StackPanel>
+                </Border>
+
+                <TextBlock Classes="section" Text="NOTIFICATIONS ADMINISTRATIVES"/>
+                <Border Classes="group">
+                    <StackPanel>
+                        <ItemsControl ItemsSource="{Binding Notices}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Classes="row">
+                                        <Grid ColumnDefinitions="4,12,*">
+                                            <Border Background="#13294B" CornerRadius="2"/>
+                                            <Border Background="#C8102E" CornerRadius="2" IsVisible="{Binding Important}"/>
+                                            <StackPanel Grid.Column="2" Spacing="2">
+                                                <TextBlock Classes="title" FontSize="15" Text="{Binding Title}"/>
+                                                <TextBlock Classes="subtitle" Text="{Binding Text}" TextWrapping="Wrap" TextTrimming="None"/>
+                                            </StackPanel>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <Border Classes="row" IsVisible="{Binding !Notices.Count}">
+                            <TextBlock Classes="value" Text="Aucune notification."/>
+                        </Border>
+                    </StackPanel>
+                </Border>
+
+                <TextBlock Classes="section" Text="MES ACCÈS (RÔLES DISCORD)"/>
+                <Border Classes="group">
+                    <Border Classes="row">
+                        <TextBlock Text="{Binding MeHabilitations}" FontSize="15" FontWeight="SemiBold" Foreground="{DynamicResource AppAccent}"
+                                   TextWrapping="Wrap" VerticalAlignment="Center"/>
+                    </Border>
+                </Border>
+
+                <TextBlock Classes="section" Text="ACCÈS RAPIDES"/>
+                <Border Classes="group">
+                    <StackPanel>
+                        <Button Classes="row" Command="{Binding NewReportCommand}">
+                            <Grid ColumnDefinitions="Auto,*,Auto">
+                                <PathIcon Data="{StaticResource TabDocument}" Width="20" Height="20" Foreground="{DynamicResource AppAccent}" Margin="0,0,12,0"/>
+                                <TextBlock Grid.Column="1" Classes="label" Text="Rédiger un compte-rendu"/>
+                                <TextBlock Grid.Column="2" Classes="chevron"/>
+                            </Grid>
+                        </Button>
+                        <Button Classes="row" Command="{Binding NavigateCommand}" CommandParameter="Annuaire">
+                            <Grid ColumnDefinitions="Auto,*,Auto">
+                                <PathIcon Data="{StaticResource TabBook}" Width="20" Height="20" Foreground="{DynamicResource AppAccent}" Margin="0,0,12,0"/>
+                                <TextBlock Grid.Column="1" Classes="label" Text="Annuaire"/>
+                                <TextBlock Grid.Column="2" Classes="chevron"/>
+                            </Grid>
+                        </Button>
+                        <Button Classes="row" Command="{Binding NavigateCommand}" CommandParameter="Compagnie">
+                            <Grid ColumnDefinitions="Auto,*,Auto">
+                                <PathIcon Data="{StaticResource TabPeople}" Width="20" Height="20" Foreground="{DynamicResource AppAccent}" Margin="0,0,12,0"/>
+                                <TextBlock Grid.Column="1" Classes="label" Text="Effectif de la compagnie"/>
+                                <TextBlock Grid.Column="2" Classes="chevron"/>
+                            </Grid>
+                        </Button>
+                        <Button Classes="row" Command="{Binding NewMilitaryCommand}" IsVisible="{Binding Rights.ManageCompany}">
+                            <Grid ColumnDefinitions="Auto,*,Auto">
+                                <PathIcon Data="{StaticResource TabPlus}" Width="20" Height="20" Foreground="{DynamicResource AppAccent}" Margin="0,0,12,0"/>
+                                <TextBlock Grid.Column="1" Classes="label" Text="Nouveau dossier militaire"/>
+                                <TextBlock Grid.Column="2" Classes="chevron"/>
+                            </Grid>
+                        </Button>
+                    </StackPanel>
+                </Border>
+
+                <TextBlock Classes="section" Text="DERNIERS COMPTES-RENDUS"/>
+                <Border Classes="group">
+                    <StackPanel>
+                        <ItemsControl ItemsSource="{Binding LatestReports}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Button Classes="row" Command="{Binding OpenCommand}">
+                                        <Grid ColumnDefinitions="*,Auto">
+                                            <StackPanel Spacing="2">
+                                                <Grid ColumnDefinitions="*,Auto">
+                                                    <TextBlock Classes="title" Text="{Binding Objet}"/>
+                                                    <TextBlock Grid.Column="1" Classes="caption" Text="{Binding Date}" Margin="8,0,0,0"/>
+                                                </Grid>
+                                                <TextBlock Classes="subtitle" Text="{Binding Author}"/>
+                                                <TextBlock FontSize="12.5" FontWeight="SemiBold" Foreground="{DynamicResource AppAccent}">
+                                                    <Run Text="{Binding NumDoc}"/><Run Text="  ·  "/><Run Text="{Binding Mention}"/>
+                                                </TextBlock>
+                                            </StackPanel>
+                                            <TextBlock Grid.Column="1" Classes="chevron"/>
+                                        </Grid>
+                                    </Button>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <Border Classes="row" IsVisible="{Binding !LatestReports.Count}">
+                            <TextBlock Classes="value" Text="Aucun compte-rendu."/>
+                        </Border>
+                    </StackPanel>
+                </Border>
+
+                <TextBlock Classes="section" Text="PLUS"/>
+                <Border Classes="group">
+                    <StackPanel>
+                        <Button Classes="row" Command="{Binding NavigateCommand}" CommandParameter="Compagnie">
+                            <Grid ColumnDefinitions="Auto,*,Auto">
+                                <PathIcon Data="{StaticResource TabPeople}" Width="20" Height="20" Foreground="{DynamicResource AppAccent}" Margin="0,0,12,0"/>
+                                <TextBlock Grid.Column="1" Classes="label" Text="Gestion de la compagnie"/>
+                                <TextBlock Grid.Column="2" Classes="chevron"/>
+                            </Grid>
+                        </Button>
+                        <Button Classes="row" Command="{Binding NavigateCommand}" CommandParameter="Annuaire">
+                            <Grid ColumnDefinitions="Auto,*,Auto">
+                                <PathIcon Data="{StaticResource TabBook}" Width="20" Height="20" Foreground="{DynamicResource AppAccent}" Margin="0,0,12,0"/>
+                                <TextBlock Grid.Column="1" Classes="label" Text="Annuaire"/>
+                                <TextBlock Grid.Column="2" Classes="chevron"/>
+                            </Grid>
+                        </Button>
+                        <Button Classes="row" Command="{Binding NavigateCommand}" CommandParameter="Historique" IsVisible="{Binding CanSeeHistory}">
+                            <Grid ColumnDefinitions="Auto,*,Auto">
+                                <PathIcon Data="{StaticResource TabClock}" Width="20" Height="20" Foreground="{DynamicResource AppAccent}" Margin="0,0,12,0"/>
+                                <TextBlock Grid.Column="1" Classes="label" Text="Historique administratif"/>
+                                <TextBlock Grid.Column="2" Classes="chevron"/>
+                            </Grid>
+                        </Button>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- ===== Comptes-rendus ===== -->
+        <ScrollViewer Grid.Row="1" IsVisible="{Binding IsComptesRendus}">
+            <StackPanel Margin="0,0,0,24">
+                <TextBlock Classes="large" Text="Comptes-rendus"/>
+                <TextBlock Classes="footnote" Margin="16,-4,16,4" Text="{Binding ReportsScope}"/>
+                <Button Classes="primary" Content="Nouveau compte-rendu" Command="{Binding NewReportCommand}"/>
+                <Border Classes="searchbar">
+                    <Grid ColumnDefinitions="Auto,*">
+                        <PathIcon Data="{StaticResource TabSearch}" Width="16" Height="16" Foreground="#8E8E93"/>
+                        <TextBox Grid.Column="1" Classes="field" Text="{Binding ReportSearch}" Watermark="Auteur, objet, référence, date (jj/mm/aaaa)" Margin="6,0,0,0"/>
+                    </Grid>
+                </Border>
+                <Border Classes="group">
+                    <StackPanel>
+                        <ItemsControl ItemsSource="{Binding Reports}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Button Classes="row" Command="{Binding OpenCommand}">
+                                        <Grid ColumnDefinitions="*,Auto">
+                                            <StackPanel Spacing="2">
+                                                <Grid ColumnDefinitions="*,Auto">
+                                                    <TextBlock Classes="title" Text="{Binding Objet}"/>
+                                                    <TextBlock Grid.Column="1" Classes="caption" Text="{Binding Date}" Margin="8,0,0,0"/>
+                                                </Grid>
+                                                <TextBlock Classes="subtitle">
+                                                    <Run Text="{Binding Author}"/><Run Text="  →  "/><Run Text="{Binding Destinataire}"/>
+                                                </TextBlock>
+                                                <Grid ColumnDefinitions="*,Auto">
+                                                    <TextBlock FontSize="12.5" FontWeight="SemiBold" Foreground="{DynamicResource AppAccent}" TextTrimming="CharacterEllipsis">
+                                                        <Run Text="{Binding NumDoc}"/><Run Text="  ·  "/><Run Text="{Binding Mention}"/>
+                                                    </TextBlock>
+                                                    <TextBlock Grid.Column="1" Classes="caption" Margin="8,0,0,0" IsVisible="{Binding HasAttachments}"
+                                                               Text="{Binding Attachments, StringFormat='{}{0} PJ'}"/>
+                                                </Grid>
+                                            </StackPanel>
+                                            <TextBlock Grid.Column="1" Classes="chevron"/>
+                                        </Grid>
+                                    </Button>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <Border Classes="row" IsVisible="{Binding !Reports.Count}">
+                            <TextBlock Classes="value" Text="Aucun compte-rendu."/>
+                        </Border>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- ===== Feuille de garde ===== -->
+        <ScrollViewer Grid.Row="1" IsVisible="{Binding IsGarde}">
+            <StackPanel Margin="0,0,0,24">
+                <TextBlock Classes="large" Text="Feuille de garde"/>
+                <TextBlock Classes="footnote" Margin="16,-4,16,4" Text="{Binding GardeStatus}"/>
+
+                <!-- Navigation de date -->
+                <Grid ColumnDefinitions="Auto,*,Auto" Margin="8,6,8,0">
+                    <Button Classes="plain" Content="‹" FontSize="26" Padding="12,0" Command="{Binding GardePrevCommand}"/>
+                    <TextBlock Grid.Column="1" Text="{Binding GardeDateText}" FontSize="17" FontWeight="SemiBold" HorizontalAlignment="Center"
+                               VerticalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap"/>
+                    <Button Grid.Column="2" Classes="plain" Content="›" FontSize="26" Padding="12,0" Command="{Binding GardeNextCommand}"/>
+                </Grid>
+                <Border Classes="group" Margin="16,8,16,0">
+                    <StackPanel>
+                        <Border Classes="row">
+                            <Grid ColumnDefinitions="Auto,*,Auto">
+                                <TextBlock Classes="label" Text="Date"/>
+                                <CalendarDatePicker Grid.Column="1" SelectedDate="{Binding GardeDateSelected}" SelectedDateFormat="Custom" CustomDateFormatString="dd/MM/yyyy"
+                                                    Watermark="jj/mm/aaaa" HorizontalAlignment="Right" BorderThickness="0" Background="Transparent"/>
+                                <Button Grid.Column="2" Classes="plain" FontSize="15" Content="Aujourd'hui" Command="{Binding GardeTodayCommand}"/>
+                            </Grid>
+                        </Border>
+                        <Border Classes="row">
+                            <Grid ColumnDefinitions="Auto,*">
+                                <TextBlock Classes="label" Text="Horaires"/>
+                                <TextBox Grid.Column="1" Classes="field" Text="{Binding GardeHoraires}" IsReadOnly="{Binding IsGardeReadOnly}"
+                                         HorizontalContentAlignment="Right" Margin="12,0,0,0"/>
+                            </Grid>
+                        </Border>
+                        <Border Classes="row">
+                            <Grid ColumnDefinitions="Auto,*">
+                                <TextBlock Classes="label" Text="Centres"/>
+                                <TextBlock Grid.Column="1" Classes="value" Text="Tous les CS" HorizontalAlignment="Right"/>
+                            </Grid>
+                        </Border>
+                        <Border Classes="row">
+                            <TextBlock Text="{Binding GardeEffectif}" FontSize="14.5" FontWeight="SemiBold" Foreground="{DynamicResource AppAccent}"
+                                       TextWrapping="Wrap" VerticalAlignment="Center"/>
+                        </Border>
+                    </StackPanel>
+                </Border>
+                <TextBlock Classes="footnote" IsVisible="{Binding IsGardeReadOnly}"
+                           Text="La feuille est préparée et validée par l'encadrement. Tu peux t'inscrire toi-même sur un poste libre de n'importe quel engin, tous centres confondus (bouton « Moi »), ou en renfort."/>
+
+                <Button Classes="primary" Content="M'inscrire en renfort" Command="{Binding GardeSelfReserveCommand}" IsVisible="{Binding CanSelfReserve}" Margin="16,12,16,0"/>
+                <Button Classes="destructive" Content="Me retirer de cette garde" Command="{Binding GardeSelfRemoveCommand}" IsVisible="{Binding IAmOnGarde}" Margin="16,12,16,0"/>
+
+                <!-- Engins par groupe -->
+                <ItemsControl ItemsSource="{Binding GardeGroups}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel>
+                                <TextBlock Classes="section" Text="{Binding Title}"/>
+                                <ItemsControl ItemsSource="{Binding Engins}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border Classes="group" Margin="16,0,16,12">
+                                                <StackPanel>
+                                                    <Border Background="{Binding HeaderBrush}" Padding="16,10">
+                                                        <Grid ColumnDefinitions="*,Auto">
+                                                            <StackPanel>
+                                                                <TextBlock Text="{Binding Engin}" Foreground="White" FontWeight="Bold" FontSize="16"/>
+                                                                <TextBlock Text="{Binding ArmeText}" Foreground="#DDE6F2" FontSize="12.5" TextWrapping="Wrap"/>
+                                                            </StackPanel>
+                                                            <CheckBox Grid.Column="1" IsChecked="{Binding Arme}" IsEnabled="{Binding IsEditable}" Foreground="White"
+                                                                      Content="Armé" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                                                        </Grid>
+                                                    </Border>
+                                                    <Border Classes="row" MinHeight="0" Padding="16,7">
+                                                        <TextBlock Classes="caption" Text="{Binding Libelle}" TextWrapping="Wrap" TextTrimming="None"/>
+                                                    </Border>
+                                                    <Border Classes="row" Background="#FDE7E9" IsVisible="{Binding HasAvailabilityWarning}">
+                                                        <TextBlock Text="{Binding Availability, StringFormat='REMISE : {0}'}" FontSize="13" Foreground="#A4262C"
+                                                                   TextWrapping="Wrap" VerticalAlignment="Center"/>
+                                                    </Border>
+                                                    <ItemsControl ItemsSource="{Binding Slots}" IsVisible="{Binding Arme}">
+                                                        <ItemsControl.ItemTemplate>
+                                                            <DataTemplate>
+                                                                <Border Classes="row" Padding="16,6">
+                                                                    <Grid ColumnDefinitions="Auto,*,Auto">
+                                                                        <TextBlock Classes="label" Text="{Binding Poste}" FontWeight="SemiBold" MaxWidth="120"
+                                                                                   TextTrimming="CharacterEllipsis"/>
+                                                                        <ComboBox Grid.Column="1" Classes="field" ItemsSource="{Binding Options}" SelectedItem="{Binding Selected}"
+                                                                                  IsEnabled="{Binding IsEditable}" HorizontalContentAlignment="Right" Margin="10,0,0,0"/>
+                                                                        <Button Grid.Column="2" Classes="plain" FontSize="15" Content="Moi" Margin="4,0,0,0"
+                                                                                Command="{Binding SelfCommand}" IsVisible="{Binding CanSelf}"/>
+                                                                    </Grid>
+                                                                </Border>
+                                                            </DataTemplate>
+                                                        </ItemsControl.ItemTemplate>
+                                                    </ItemsControl>
+                                                    <Border Classes="row" IsVisible="{Binding !Arme}">
+                                                        <TextBlock Text="Engin non armé : il passera indisponible dans ADAGIO REMISE à la validation."
+                                                                   FontSize="13" Foreground="#A4262C" TextWrapping="Wrap" VerticalAlignment="Center"/>
+                                                    </Border>
+                                                </StackPanel>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <!-- Piquets complémentaires -->
+                <TextBlock Classes="section" Text="PIQUETS COMPLÉMENTAIRES"/>
+                <Border Classes="group">
+                    <ItemsControl ItemsSource="{Binding GardeService}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Classes="row" Padding="16,6">
+                                    <Grid ColumnDefinitions="Auto,*,Auto">
+                                        <TextBlock Classes="label" Text="{Binding Poste}" FontWeight="SemiBold" MaxWidth="140" TextTrimming="CharacterEllipsis"/>
+                                        <ComboBox Grid.Column="1" Classes="field" ItemsSource="{Binding Options}" SelectedItem="{Binding Selected}"
+                                                  IsEnabled="{Binding IsEditable}" HorizontalContentAlignment="Right" Margin="10,0,0,0"/>
+                                        <Button Grid.Column="2" Classes="plain" FontSize="15" Content="Moi" Margin="4,0,0,0"
+                                                Command="{Binding SelfCommand}" IsVisible="{Binding CanSelf}"/>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </Border>
+
+                <!-- Renforts -->
+                <TextBlock Classes="section" Text="RENFORTS / RÉSERVE"/>
+                <Border Classes="group">
+                    <StackPanel>
+                        <Border Classes="row" IsVisible="{Binding !HasGardeReserve}">
+                            <TextBlock Classes="value" Text="Aucun renfort."/>
+                        </Border>
+                        <ItemsControl ItemsSource="{Binding GardeReserve}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Classes="row" Padding="16,6">
+                                        <Grid ColumnDefinitions="*,Auto">
+                                            <ComboBox Classes="field" ItemsSource="{Binding Options}" SelectedItem="{Binding Selected}"
+                                                      IsEnabled="{Binding IsEditable}"/>
+                                            <Button Grid.Column="1" Classes="plain" FontSize="15" Foreground="#FF3B30" Content="Retirer" Margin="4,0,0,0"
+                                                    Command="{Binding RemoveCommand}" IsVisible="{Binding CanRemove}"/>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <Button Classes="row" Command="{Binding GardeAddReserveCommand}" IsVisible="{Binding !IsGardeReadOnly}">
+                            <Grid ColumnDefinitions="Auto,*">
+                                <PathIcon Data="{StaticResource TabPlus}" Width="20" Height="20" Foreground="{DynamicResource AppAccent}" Margin="0,0,12,0"/>
+                                <TextBlock Grid.Column="1" Classes="label" Text="Ajouter un renfort" Foreground="{DynamicResource AppAccent}"/>
+                            </Grid>
+                        </Button>
+                    </StackPanel>
+                </Border>
+
+                <!-- Consignes -->
+                <TextBlock Classes="section" Text="CONSIGNES"/>
+                <Border Classes="group">
+                    <StackPanel>
+                        <ItemsControl ItemsSource="{Binding GardeConsignes}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Classes="row">
+                                        <StackPanel Spacing="2">
+                                            <TextBlock Classes="caption" Text="{Binding Label}" FontWeight="SemiBold"/>
+                                            <TextBox Classes="field" Text="{Binding Texte}" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="44"
+                                                     VerticalContentAlignment="Top" IsReadOnly="{Binding IsReadOnly}"/>
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <Border Classes="row">
+                            <StackPanel Spacing="2">
+                                <TextBlock Classes="caption" Text="AUTRES :" FontWeight="SemiBold"/>
+                                <TextBox Classes="field" Text="{Binding GardeObservations}" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="60"
+                                         VerticalContentAlignment="Top" IsReadOnly="{Binding IsGardeReadOnly}" Watermark="Matériel, absents, permissions…"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </Border>
+
+                <!-- Actions -->
+                <StackPanel Margin="0,16,0,0">
+                    <Button Classes="primary" Content="Valider et armer les engins" Command="{Binding GardeValidateCommand}" IsVisible="{Binding !IsGardeReadOnly}"/>
+                    <TextBlock Classes="footnote" Margin="32,0,16,4" IsVisible="{Binding !IsGardeReadOnly}"
+                               Text="Chaque engin reçoit son équipage dans ADAGIO REMISE ; un engin non armé devient indisponible."/>
+                    <Button Classes="secondary" Content="Enregistrer" Command="{Binding GardeSaveCommand}" IsVisible="{Binding !IsGardeReadOnly}"/>
+                    <Button Classes="secondary" Content="Reprendre la garde précédente" Command="{Binding GardeCopyCommand}" IsVisible="{Binding !IsGardeReadOnly}"/>
+                    <Button Classes="secondary" Content="Imprimer" Command="{Binding GardePrintCommand}"/>
+                </StackPanel>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- ===== Planning de garde ===== -->
+        <ScrollViewer Grid.Row="1" IsVisible="{Binding IsPlanning}">
+            <StackPanel Margin="0,0,0,24">
+                <TextBlock Classes="large" Text="Planning de garde"/>
+                <Border Classes="segments">
+                    <UniformGrid Columns="2">
+                        <Button Classes="seg" Classes.selected="{Binding IsPlanningWeek}" Content="Semaine" Command="{Binding PlanningWeekCommand}"/>
+                        <Button Classes="seg" Classes.selected="{Binding IsPlanningMonth}" Content="Mois" Command="{Binding PlanningMonthCommand}"/>
+                    </UniformGrid>
+                </Border>
+                <Grid ColumnDefinitions="Auto,*,Auto" Margin="8,4,8,0">
+                    <Button Classes="plain" Content="‹" FontSize="26" Padding="12,0" Command="{Binding PlanningPrevCommand}"/>
+                    <TextBlock Grid.Column="1" Text="{Binding PlanningTitle}" FontSize="16" FontWeight="SemiBold" HorizontalAlignment="Center"
+                               VerticalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap"/>
+                    <Button Grid.Column="2" Classes="plain" Content="›" FontSize="26" Padding="12,0" Command="{Binding PlanningNextCommand}"/>
+                </Grid>
+                <Button Classes="plain" FontSize="15" Content="Aujourd'hui" HorizontalAlignment="Center" Command="{Binding PlanningTodayCommand}"/>
+                <WrapPanel Margin="32,4,16,0">
+                    <Border Background="#DCE8F7" Width="12" Height="12" CornerRadius="3" Margin="0,0,5,0" VerticalAlignment="Center"/>
+                    <TextBlock Classes="caption" Text="Engin (garde validée)" Margin="0,0,12,0"/>
+                    <Border Background="#E3D7F2" Width="12" Height="12" CornerRadius="3" Margin="0,0,5,0" VerticalAlignment="Center"/>
+                    <TextBlock Classes="caption" Text="Service / renfort" Margin="0,0,12,0"/>
+                    <Border Background="#FFF4CE" Width="12" Height="12" CornerRadius="3" Margin="0,0,5,0" VerticalAlignment="Center"/>
+                    <TextBlock Classes="caption" Text="Garde en préparation"/>
+                </WrapPanel>
+                <TextBlock Classes="footnote" Text="{Binding PlanningSummary}"/>
+
+                <!-- Semaine : une section par jour avec les personnels et leurs postes -->
+                <ItemsControl Name="PlanningWeekList" IsVisible="{Binding IsPlanningWeek}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel>
+                                <TextBlock Classes="section" Text="{Binding Header}"/>
+                                <Border Classes="group">
+                                    <StackPanel>
+                                        <Button Classes="row" Command="{Binding OpenCommand}">
+                                            <Grid ColumnDefinitions="Auto,*,Auto">
+                                                <Border Background="{Binding DayBackground}" CornerRadius="8" Width="46" Padding="0,4" VerticalAlignment="Center">
+                                                    <StackPanel>
+                                                        <TextBlock Text="{Binding Top}" FontSize="10.5" Foreground="#4A5868" HorizontalAlignment="Center"/>
+                                                        <TextBlock Text="{Binding Bottom}" FontSize="13" FontWeight="Bold" Foreground="#13294B" HorizontalAlignment="Center"/>
+                                                    </StackPanel>
+                                                </Border>
+                                                <StackPanel Grid.Column="1" Margin="12,0,0,0" VerticalAlignment="Center" Spacing="1">
+                                                    <TextBlock Classes="title" Text="Feuille de garde"/>
+                                                    <TextBlock Classes="caption" Text="{Binding EffectifTip}" Foreground="{Binding EffectifForeground}"/>
+                                                </StackPanel>
+                                                <TextBlock Grid.Column="2" Classes="chevron"/>
+                                            </Grid>
+                                        </Button>
+                                        <ItemsControl ItemsSource="{Binding Entries}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <Border Classes="row">
+                                                        <Grid ColumnDefinitions="Auto,*,Auto">
+                                                            <Border Background="{Binding Background}" Width="10" Height="10" CornerRadius="5" VerticalAlignment="Center"
+                                                                    BorderBrush="#9AA6B4" BorderThickness="0.5" Margin="0,0,10,0"/>
+                                                            <TextBlock Grid.Column="1" FontSize="15" VerticalAlignment="Center" TextTrimming="CharacterEllipsis">
+                                                                <Run Text="{Binding Grade}" FontWeight="SemiBold" Foreground="#4A5868"/><Run Text=" "/><Run Text="{Binding Name}"/>
+                                                            </TextBlock>
+                                                            <TextBlock Grid.Column="2" Text="{Binding Poste}" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource AppAccent}"
+                                                                       VerticalAlignment="Center" TextAlignment="Right" TextWrapping="Wrap" MaxWidth="170" Margin="8,0,0,0"/>
+                                                        </Grid>
+                                                    </Border>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                        <Border Classes="row" IsVisible="{Binding !HasEntries}">
+                                            <TextBlock Classes="value" Text="Personne de garde."/>
+                                        </Border>
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <!-- Mois : liste compacte, une ligne par jour -->
+                <StackPanel IsVisible="{Binding IsPlanningMonth}">
+                    <TextBlock Classes="section" Text="JOURS DU MOIS"/>
+                    <Border Classes="group">
+                        <ItemsControl Name="PlanningMonthList">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Button Classes="row" Command="{Binding OpenCommand}" Padding="12,7">
+                                        <Grid ColumnDefinitions="Auto,*,Auto,Auto">
+                                            <Border Background="{Binding DayBackground}" CornerRadius="8" Width="40" Padding="0,3" VerticalAlignment="Center">
+                                                <StackPanel>
+                                                    <TextBlock Text="{Binding Top}" FontSize="10" Foreground="#4A5868" HorizontalAlignment="Center"/>
+                                                    <TextBlock Text="{Binding Bottom}" FontSize="14" FontWeight="Bold" Foreground="#13294B" HorizontalAlignment="Center"/>
+                                                </StackPanel>
+                                            </Border>
+                                            <StackPanel Grid.Column="1" Margin="12,0,0,0" VerticalAlignment="Center" Spacing="1">
+                                                <TextBlock Classes="subtitle" Text="{Binding Compact}" TextWrapping="Wrap" TextTrimming="None" MaxHeight="40"/>
+                                                <TextBlock Classes="caption" Text="{Binding EffectifTip}" Foreground="{Binding EffectifForeground}"/>
+                                            </StackPanel>
+                                            <TextBlock Grid.Column="2" Text="{Binding Effectif}" FontSize="17" FontWeight="Bold" Foreground="{Binding EffectifForeground}"
+                                                       VerticalAlignment="Center" Margin="8,0,0,0"/>
+                                            <TextBlock Grid.Column="3" Classes="chevron"/>
+                                        </Grid>
+                                    </Button>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </Border>
+                </StackPanel>
+                <TextBlock Classes="footnote" Text="Aucun militaire en activité." IsVisible="{Binding !PlanningRows.Count}"/>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- ===== Annuaire ===== -->
+        <ScrollViewer Grid.Row="1" IsVisible="{Binding IsAnnuaire}">
+            <StackPanel Margin="0,0,0,24">
+                <TextBlock Classes="large" Text="Annuaire"/>
+                <Border Classes="searchbar">
+                    <Grid ColumnDefinitions="Auto,*">
+                        <PathIcon Data="{StaticResource TabSearch}" Width="16" Height="16" Foreground="#8E8E93"/>
+                        <TextBox Grid.Column="1" Classes="field" Text="{Binding DirectorySearch}" Watermark="Nom, prénom, grade ou NID" Margin="6,0,0,0"/>
+                    </Grid>
+                </Border>
+                <Border Classes="group">
+                    <StackPanel>
+                        <ItemsControl ItemsSource="{Binding Directory}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Button Classes="row" Command="{Binding OpenCommand}">
+                                        <Grid ColumnDefinitions="Auto,*,Auto,Auto">
+                                            <Border Width="48" Height="48" CornerRadius="24" Background="#C9D4E3" ClipToBounds="True" VerticalAlignment="Top">
+                                                <Panel>
+                                                    <Image Source="{Binding Photo}" Stretch="UniformToFill" IsVisible="{Binding HasPhoto}"/>
+                                                    <TextBlock Text="{Binding Initials}" FontSize="17" FontWeight="Bold" Foreground="#13294B"
+                                                               HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding !HasPhoto}"/>
+                                                </Panel>
+                                            </Border>
+                                            <StackPanel Grid.Column="1" Spacing="1" Margin="12,0,0,0">
+                                                <TextBlock Classes="title">
+                                                    <Run Text="{Binding Nom}"/><Run Text=" "/><Run Text="{Binding Prenom}"/>
+                                                </TextBlock>
+                                                <StackPanel Orientation="Horizontal" Spacing="5">
+                                                    <Image Source="{Binding GradeIcon}" Width="18" Height="18"/>
+                                                    <TextBlock Classes="subtitle" Text="{Binding Grade}" VerticalAlignment="Center"/>
+                                                </StackPanel>
+                                                <TextBlock Classes="caption" Text="{Binding Fonction}"/>
+                                                <TextBlock Classes="caption">
+                                                    <Run Text="{Binding Unite}"/><Run Text=" · CS "/><Run Text="{Binding Affectation}"/>
+                                                </TextBlock>
+                                                <TextBlock Text="{Binding Email}" FontSize="12.5" Foreground="{DynamicResource AppAccent}" TextTrimming="CharacterEllipsis"/>
+                                                <TextBlock Classes="caption" Text="{Binding Telephone}"/>
+                                            </StackPanel>
+                                            <Button Grid.Column="2" Classes="plain" Command="{Binding WriteCommand}" IsVisible="{Binding CanWrite}"
+                                                    VerticalAlignment="Center" Margin="6,0,0,0">
+                                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                                    <PathIcon Data="{StaticResource TabMail}" Width="16" Height="16"/>
+                                                    <TextBlock Text="Écrire" FontSize="15" VerticalAlignment="Center"/>
+                                                </StackPanel>
+                                            </Button>
+                                            <TextBlock Grid.Column="3" Classes="chevron"/>
+                                        </Grid>
+                                    </Button>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <Border Classes="row" IsVisible="{Binding !Directory.Count}">
+                            <TextBlock Classes="value" Text="Aucun militaire."/>
+                        </Border>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- ===== Gestion de la compagnie ===== -->
+        <ScrollViewer Grid.Row="1" IsVisible="{Binding IsCompagnie}">
+            <StackPanel Margin="0,0,0,24">
+                <Button Classes="plain" Content="‹ Accueil" HorizontalAlignment="Left" Margin="8,6,0,0" Command="{Binding NavigateCommand}" CommandParameter="Accueil"/>
+                <TextBlock Classes="large" Text="Gestion de la compagnie"/>
+                <StackPanel IsVisible="{Binding Rights.ManageCompany}">
+                    <Button Classes="primary" Content="Nouveau dossier militaire" Command="{Binding NewMilitaryCommand}"/>
+                    <Button Classes="secondary" Content="Importer l'effectif Discord" Command="{Binding ToggleImportCommand}"/>
+                </StackPanel>
+
+                <StackPanel IsVisible="{Binding ImportVisible}">
+                    <TextBlock Classes="section" Text="IMPORTER L'EFFECTIF DEPUIS DISCORD"/>
+                    <Border Classes="group">
+                        <Border Classes="row">
+                            <TextBox Classes="field" Text="{Binding ImportText}" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="140" MaxHeight="300"
+                                     VerticalContentAlignment="Top" FontFamily="Menlo, Consolas, monospace" FontSize="12.5"
+                                     Watermark="&lt;:CNE:…&gt; CNE FAUBOURG (Laurent) - *Commandant d'Unité* - NM : …"/>
+                        </Border>
+                    </Border>
+                    <TextBlock Classes="footnote"
+                               Text="Colle le message d'effectif de la compagnie tel qu'il est écrit sur Discord (avec les insignes de grade). Chaque ligne crée ou met à jour un dossier : grade, prénom, fonction, NID ou NM, joueur Discord. Pour les militaires cités par mention, le nom de famille est repris de leur pseudo Discord à leur première connexion à ARGOS."/>
+                    <Button Classes="primary" Content="Importer" Command="{Binding ImportCommand}" Margin="16,10,16,6"/>
+                    <Button Classes="secondary" Content="Annuler" Command="{Binding ToggleImportCommand}"/>
+                </StackPanel>
+
+                <Border Classes="searchbar" Margin="16,12,16,8">
+                    <Grid ColumnDefinitions="Auto,*">
+                        <PathIcon Data="{StaticResource TabSearch}" Width="16" Height="16" Foreground="#8E8E93"/>
+                        <TextBox Grid.Column="1" Classes="field" Text="{Binding MilitarySearch}" Watermark="Nom, prénom, grade, NID, unité, fonction" Margin="6,0,0,0"/>
+                    </Grid>
+                </Border>
+                <Border Classes="group">
+                    <Border Classes="row">
+                        <Grid ColumnDefinitions="Auto,*">
+                            <TextBlock Classes="label" Text="Statut"/>
+                            <ComboBox Grid.Column="1" Classes="field" ItemsSource="{Binding StatusFilters}" SelectedItem="{Binding StatusFilter}"
+                                      HorizontalContentAlignment="Right" Margin="12,0,0,0"/>
+                        </Grid>
+                    </Border>
+                </Border>
+                <TextBlock Classes="section" Text="{Binding MilitaryCount}"/>
+                <Border Classes="group">
+                    <StackPanel>
+                        <ItemsControl ItemsSource="{Binding Military}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Button Classes="row" Command="{Binding OpenCommand}">
+                                        <Grid ColumnDefinitions="Auto,*,Auto">
+                                            <Border Width="44" Height="44" CornerRadius="22" Background="#C9D4E3" ClipToBounds="True" VerticalAlignment="Top">
+                                                <Panel>
+                                                    <Image Source="{Binding Photo}" Stretch="UniformToFill" IsVisible="{Binding HasPhoto}"/>
+                                                    <TextBlock Text="{Binding Initials}" FontSize="15" FontWeight="Bold" Foreground="#13294B"
+                                                               HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding !HasPhoto}"/>
+                                                </Panel>
+                                            </Border>
+                                            <StackPanel Grid.Column="1" Spacing="2" Margin="12,0,0,0">
+                                                <Grid ColumnDefinitions="*,Auto">
+                                                    <TextBlock Classes="title">
+                                                        <Run Text="{Binding Nom}"/><Run Text=" "/><Run Text="{Binding Prenom}"/>
+                                                    </TextBlock>
+                                                    <TextBlock Grid.Column="1" Text="{Binding Status}" FontSize="12.5" FontWeight="SemiBold"
+                                                               Foreground="{DynamicResource AppAccent}" Margin="8,0,0,0"/>
+                                                </Grid>
+                                                <StackPanel Orientation="Horizontal" Spacing="5">
+                                                    <Image Source="{Binding GradeIcon}" Width="18" Height="18"/>
+                                                    <TextBlock Classes="subtitle" Text="{Binding Grade}" VerticalAlignment="Center"/>
+                                                </StackPanel>
+                                                <TextBlock Classes="caption">
+                                                    <Run Text="NID "/><Run Text="{Binding Nid}"/><Run Text="  ·  "/><Run Text="{Binding Unite}"/><Run Text=" · "/><Run Text="{Binding Affectation}"/>
+                                                </TextBlock>
+                                                <TextBlock Classes="caption" Text="{Binding Fonction}"/>
+                                            </StackPanel>
+                                            <TextBlock Grid.Column="2" Classes="chevron"/>
+                                        </Grid>
+                                    </Button>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <Border Classes="row" IsVisible="{Binding !Military.Count}">
+                            <TextBlock Classes="value" Text="Aucun militaire."/>
+                        </Border>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- ===== Historique administratif ===== -->
+        <ScrollViewer Grid.Row="1" IsVisible="{Binding IsHistorique}">
+            <StackPanel Margin="0,0,0,24">
+                <Button Classes="plain" Content="‹ Accueil" HorizontalAlignment="Left" Margin="8,6,0,0" Command="{Binding NavigateCommand}" CommandParameter="Accueil"/>
+                <TextBlock Classes="large" Text="Historique administratif"/>
+                <Border Classes="searchbar">
+                    <Grid ColumnDefinitions="Auto,*">
+                        <PathIcon Data="{StaticResource TabSearch}" Width="16" Height="16" Foreground="#8E8E93"/>
+                        <TextBox Grid.Column="1" Classes="field" Text="{Binding HistorySearch}" Watermark="Militaire, auteur, détail" Margin="6,0,0,0"/>
+                    </Grid>
+                </Border>
+                <Border Classes="group">
+                    <Border Classes="row">
+                        <Grid ColumnDefinitions="Auto,*">
+                            <TextBlock Classes="label" Text="Action"/>
+                            <ComboBox Grid.Column="1" Classes="field" ItemsSource="{Binding HistoryFilters}" SelectedItem="{Binding HistoryFilter}"
+                                      HorizontalContentAlignment="Right" Margin="12,0,0,0"/>
+                        </Grid>
+                    </Border>
+                </Border>
+                <TextBlock Classes="section" Text="ÉVÉNEMENTS"/>
+                <Border Classes="group">
+                    <StackPanel>
+                        <ItemsControl ItemsSource="{Binding History}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Classes="row">
+                                        <StackPanel Spacing="2">
+                                            <Grid ColumnDefinitions="*,Auto">
+                                                <TextBlock Classes="title" Text="{Binding Action}"/>
+                                                <TextBlock Grid.Column="1" Classes="caption" Margin="8,0,0,0"
+                                                           Text="{Binding LocalAt, StringFormat='{}{0:dd/MM/yyyy HH:mm:ss}'}"/>
+                                            </Grid>
+                                            <TextBlock Classes="subtitle" Text="{Binding Target}"/>
+                                            <TextBlock Classes="caption" Text="{Binding UserName, StringFormat='Par {0}'}"/>
+                                            <TextBlock Classes="caption" Text="{Binding Details}" TextWrapping="Wrap" TextTrimming="None"
+                                                       IsVisible="{Binding Details, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <Border Classes="row" IsVisible="{Binding !History.Count}">
+                            <TextBlock Classes="value" Text="Aucun événement."/>
+                        </Border>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- ===== Barre d'onglets ===== -->
+        <Border Grid.Row="2" Classes="tabbar">
+            <UniformGrid Columns="5">
+                <Button Classes="tab" Classes.selected="{Binding IsAccueil}" Command="{Binding NavigateCommand}" CommandParameter="Accueil">
+                    <StackPanel><PathIcon Data="{StaticResource TabHome}"/><TextBlock Text="Accueil"/></StackPanel>
+                </Button>
+                <Button Classes="tab" Classes.selected="{Binding IsComptesRendus}" Command="{Binding NavigateCommand}" CommandParameter="ComptesRendus">
+                    <StackPanel><PathIcon Data="{StaticResource TabDocument}"/><TextBlock Text="Comptes-rendus"/></StackPanel>
+                </Button>
+                <Button Classes="tab" Classes.selected="{Binding IsGarde}" Command="{Binding NavigateCommand}" CommandParameter="Garde">
+                    <StackPanel><PathIcon Data="{StaticResource TabShield}"/><TextBlock Text="Garde"/></StackPanel>
+                </Button>
+                <Button Classes="tab" Classes.selected="{Binding IsPlanning}" Command="{Binding NavigateCommand}" CommandParameter="Planning">
+                    <StackPanel><PathIcon Data="{StaticResource TabCalendar}"/><TextBlock Text="Planning"/></StackPanel>
+                </Button>
+                <Button Classes="tab" Classes.selected="{Binding IsAnnuaire}" Command="{Binding NavigateCommand}" CommandParameter="Annuaire">
+                    <StackPanel><PathIcon Data="{StaticResource TabPeople}"/><TextBlock Text="Annuaire"/></StackPanel>
+                </Button>
+            </UniformGrid>
+        </Border>
+    </Grid>
+</UserControl>

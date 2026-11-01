@@ -1,0 +1,339 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:m="using:Argos.Views.Mobile"
+             xmlns:mail="using:Argos.Views.Apps.Mail"
+             x:Class="Argos.Views.Mobile.Mail.MailMobileView"
+             Classes="ios"
+             m:MobilePage.IsNative="True"
+             m:MobilePage.Accent="#0078D4">
+    <!-- Messagerie sur iPhone, façon app Mail (même modèle que la version bureau : MailAppViewModel).
+         Boîtes aux lettres → liste des messages → lecture en plein écran ; contacts et signature. -->
+    <UserControl.Resources>
+        <SolidColorBrush x:Key="AppAccent" Color="#0078D4"/>
+        <StreamGeometry x:Key="MailIconTrash">M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z</StreamGeometry>
+        <StreamGeometry x:Key="MailIconReply">M10,9V5L3,12L10,19V14.9C15,14.9 18.5,16.5 21,20C20,15 17,10 10,9Z</StreamGeometry>
+        <StreamGeometry x:Key="MailIconReplyAll">M13,9V5L6,12L13,19V14.9C18,14.9 21.5,16.5 24,20C23,15 20,10 13,9M7,8V5L0,12L7,19V16L3,12L7,8Z</StreamGeometry>
+        <StreamGeometry x:Key="MailIconForward">M14,9V5L21,12L14,19V14.9C9,14.9 5.5,16.5 3,20C4,15 7,10 14,9Z</StreamGeometry>
+        <StreamGeometry x:Key="MailIconCompose">M19,19V5H5V19H19M19,3A2,2 0 0,1 21,5V19A2,2 0 0,1 19,21H5A2,2 0 0,1 3,19V5A2,2 0 0,1 5,3H19M16.7,9.35L15.7,10.35L13.65,8.3L14.65,7.3C14.86,7.08 15.21,7.08 15.42,7.3L16.7,8.58C16.92,8.79 16.92,9.14 16.7,9.35M7,14.94L13.06,8.88L15.12,10.94L9.06,17H7V14.94Z</StreamGeometry>
+        <StreamGeometry x:Key="MailIconRefresh">M17.65,6.35C16.2,4.9 14.21,4 12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20C15.73,20 18.84,17.45 19.73,14H17.65C16.83,16.33 14.61,18 12,18A6,6 0 0,1 6,12A6,6 0 0,1 12,6C13.66,6 15.14,6.69 16.22,7.78L13,11H20V4L17.65,6.35Z</StreamGeometry>
+        <StreamGeometry x:Key="MailIconClip">M16.5,6V17.5A4,4 0 0,1 12.5,21.5A4,4 0 0,1 8.5,17.5V5A2.5,2.5 0 0,1 11,2.5A2.5,2.5 0 0,1 13.5,5V15.5A1,1 0 0,1 12.5,16.5A1,1 0 0,1 11.5,15.5V6H10V15.5A2.5,2.5 0 0,0 12.5,18A2.5,2.5 0 0,0 15,15.5V5A4,4 0 0,0 11,1A4,4 0 0,0 7,5V17.5A5.5,5.5 0 0,0 12.5,23A5.5,5.5 0 0,0 18,17.5V6H16.5Z</StreamGeometry>
+        <StreamGeometry x:Key="MailIconFlag">M14.4,6L14,4H5V21H7V14H12.6L13,16H20V6H14.4Z</StreamGeometry>
+        <StreamGeometry x:Key="MailIconRead">M21.03,6.29L12,0.64L2.97,6.29C2.39,6.64 2,7.27 2,8V18A2,2 0 0,0 4,20H20A2,2 0 0,0 22,18V8C22,7.27 21.61,6.64 21.03,6.29M20,18H4V10L12,15L20,10V18M12,13L4,8L12,3L20,8L12,13Z</StreamGeometry>
+
+        <!-- Contact (mes contacts et annuaire) -->
+        <DataTemplate x:Key="MobileContactTemplate">
+            <Border Classes="row">
+                <Grid ColumnDefinitions="Auto,*">
+                    <Border Width="40" Height="40" CornerRadius="20" Background="#8E8E93" VerticalAlignment="Top" Margin="0,0,12,0">
+                        <TextBlock Text="{Binding Name, Converter={x:Static mail:MailConverters.Initials}}" Foreground="White" FontSize="14" FontWeight="SemiBold"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <StackPanel Grid.Column="1" Spacing="2">
+                        <TextBlock Classes="title" Text="{Binding Name}"/>
+                        <TextBlock Classes="subtitle" Text="{Binding Address}" Foreground="{DynamicResource AppAccent}"/>
+                        <TextBlock Classes="caption" Text="{Binding Details}" TextWrapping="Wrap" TextTrimming="None"
+                                   IsVisible="{Binding Details, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+                        <StackPanel Orientation="Horizontal" Spacing="4" Margin="-8,2,0,0">
+                            <Button Classes="plain" FontSize="14.5" Content="Écrire" Command="{Binding WriteCommand}"/>
+                            <Button Classes="plain" FontSize="14.5" Tag="edit" Content="{Binding Personal, Converter={x:Static mail:MailConverters.EditLabel}}" Command="{Binding EditCommand}"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </DataTemplate>
+    </UserControl.Resources>
+    <UserControl.Styles>
+        <Style Selector=".ios Border.banner.ok">
+            <Setter Property="Background" Value="{StaticResource IosGreen}"/>
+        </Style>
+    </UserControl.Styles>
+
+    <Grid RowDefinitions="Auto,*,Auto">
+        <Border Classes="banner" Classes.ok="{Binding !MessageIsError}" IsVisible="{Binding HasMessage}">
+            <TextBlock Text="{Binding Message}"/>
+        </Border>
+
+        <!-- ===== Boîtes aux lettres ===== -->
+        <ScrollViewer Name="FoldersPage" Grid.Row="1" IsVisible="False">
+            <StackPanel Margin="0,0,0,24">
+                <TextBlock Classes="large" Text="Boîtes aux lettres"/>
+                <TextBlock Classes="footnote" Margin="16,-4,16,4" TextWrapping="Wrap">
+                    <Run Text="{Binding Name}"/><Run Text="  ·  "/><Run Text="{Binding Address}"/>
+                </TextBlock>
+
+                <TextBlock Classes="section" Text="DOSSIERS"/>
+                <Border Classes="group">
+                    <ItemsControl Name="FoldersList" ItemsSource="{Binding Folders}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Button Classes="row" Command="{Binding SelectCommand}">
+                                    <Grid ColumnDefinitions="Auto,*,Auto,Auto">
+                                        <PathIcon Data="{StaticResource TabFolder}" Width="22" Height="22" Foreground="{DynamicResource AppAccent}" Margin="0,0,12,0"/>
+                                        <TextBlock Grid.Column="1" Classes="label" Text="{Binding Label}"/>
+                                        <TextBlock Grid.Column="2" Classes="value" Text="{Binding Unread}" IsVisible="{Binding HasUnread}"/>
+                                        <TextBlock Grid.Column="3" Classes="chevron"/>
+                                    </Grid>
+                                </Button>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </Border>
+
+                <TextBlock Classes="section" Text="CONTACTS"/>
+                <Border Classes="group">
+                    <Button Name="ContactsRow" Classes="row" Command="{Binding ContactsCommand}">
+                        <Grid ColumnDefinitions="Auto,*,Auto">
+                            <PathIcon Data="{StaticResource TabPeople}" Width="22" Height="22" Foreground="{DynamicResource AppAccent}" Margin="0,0,12,0"/>
+                            <TextBlock Grid.Column="1" Classes="label" Text="Contacts et annuaire"/>
+                            <TextBlock Grid.Column="2" Classes="chevron"/>
+                        </Grid>
+                    </Button>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- ===== Liste des messages ===== -->
+        <ScrollViewer Name="MessagesPage" Grid.Row="1">
+            <StackPanel Margin="0,0,0,24">
+                <Button Name="BackToFolders" Classes="plain" Content="‹ Boîtes aux lettres" HorizontalAlignment="Left" Margin="8,4,0,0"/>
+                <TextBlock Classes="large" Text="{Binding FolderTitle}"/>
+                <Border Classes="searchbar">
+                    <Grid ColumnDefinitions="Auto,*">
+                        <PathIcon Data="{StaticResource TabSearch}" Width="16" Height="16" Foreground="{StaticResource IosSecondary}" Margin="0,0,8,0"/>
+                        <TextBox Grid.Column="1" Classes="field" Text="{Binding Search}" Watermark="Rechercher dans le courrier et les contacts"/>
+                    </Grid>
+                </Border>
+
+                <Border Classes="group" Margin="16,8,16,0">
+                    <StackPanel>
+                        <ItemsControl ItemsSource="{Binding Messages}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Button Classes="row" Padding="8,10,12,10" Command="{Binding SelectCommand}">
+                                        <Grid ColumnDefinitions="18,*">
+                                            <Ellipse Width="10" Height="10" Fill="{DynamicResource AppAccent}" VerticalAlignment="Top" Margin="0,5,0,0"
+                                                     IsVisible="{Binding Unread}"/>
+                                            <StackPanel Grid.Column="1" Spacing="2">
+                                                <Grid ColumnDefinitions="*,Auto,Auto">
+                                                    <TextBlock Classes="title" Text="{Binding Correspondent}"
+                                                               FontWeight="{Binding Unread, Converter={x:Static mail:MailConverters.Bold}}"/>
+                                                    <TextBlock Grid.Column="1" Classes="caption" Text="{Binding Date}" Margin="8,0,0,0" VerticalAlignment="Center"/>
+                                                    <TextBlock Grid.Column="2" Classes="chevron" FontSize="20"/>
+                                                </Grid>
+                                                <Grid ColumnDefinitions="*,Auto">
+                                                    <TextBlock Classes="subtitle" Text="{Binding Subject}" Foreground="Black"/>
+                                                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6" Margin="6,0,0,0">
+                                                        <TextBlock Text="!" Foreground="{StaticResource IosRed}" FontWeight="Bold" FontSize="14" IsVisible="{Binding High}"/>
+                                                        <PathIcon Data="{StaticResource MailIconClip}" Width="13" Height="13" Foreground="{StaticResource IosSecondary}" IsVisible="{Binding HasAttachments}"/>
+                                                        <PathIcon Data="{StaticResource MailIconFlag}" Width="13" Height="13" Foreground="{StaticResource IosOrange}" IsVisible="{Binding Flagged}"/>
+                                                    </StackPanel>
+                                                </Grid>
+                                                <TextBlock Text="Brouillon" FontSize="12.5" FontWeight="SemiBold" Foreground="{StaticResource IosRed}" IsVisible="{Binding IsDraft}"/>
+                                                <TextBlock Classes="caption" FontSize="13.5" Text="{Binding Preview}" TextWrapping="Wrap" MaxLines="2"/>
+                                            </StackPanel>
+                                        </Grid>
+                                    </Button>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <Border Classes="row" IsVisible="{Binding !HasMessages}">
+                            <TextBlock Classes="value" Text="Aucun élément à afficher."/>
+                        </Border>
+                    </StackPanel>
+                </Border>
+
+                <Button Classes="destructive" Margin="16,18,16,0" Content="Vider les éléments supprimés" Command="{Binding EmptyTrashCommand}" IsVisible="{Binding IsTrash}"/>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- ===== Contacts et signature ===== -->
+        <ScrollViewer Name="ContactsPage" Grid.Row="1" IsVisible="False">
+            <StackPanel Name="ContactsStack" Margin="0,0,0,24">
+                <Button Name="BackFromContacts" Classes="plain" Content="‹ Boîtes aux lettres" HorizontalAlignment="Left" Margin="8,4,0,0"/>
+                <TextBlock Classes="large" Text="Contacts"/>
+                <Border Classes="searchbar">
+                    <Grid ColumnDefinitions="Auto,*">
+                        <PathIcon Data="{StaticResource TabSearch}" Width="16" Height="16" Foreground="{StaticResource IosSecondary}" Margin="0,0,8,0"/>
+                        <TextBox Grid.Column="1" Classes="field" Text="{Binding Search}" Watermark="Rechercher un contact"/>
+                    </Grid>
+                </Border>
+
+                <TextBlock Classes="section" Text="MES CONTACTS"/>
+                <Border Classes="group">
+                    <StackPanel>
+                        <ItemsControl ItemsSource="{Binding Contacts}" ItemTemplate="{StaticResource MobileContactTemplate}"/>
+                        <Border Classes="row" IsVisible="{Binding !Contacts.Count}">
+                            <TextBlock Classes="value" TextWrapping="Wrap" Text="Aucun contact personnel. Ajoutez-en ci-dessous, ou depuis l'annuaire."/>
+                        </Border>
+                    </StackPanel>
+                </Border>
+
+                <TextBlock Name="ContactForm" Classes="section" Text="CONTACT"/>
+                <Border Classes="group">
+                    <StackPanel>
+                        <Border Classes="row">
+                            <Grid ColumnDefinitions="100,*">
+                                <TextBlock Classes="label" Text="Nom"/>
+                                <TextBox Grid.Column="1" Classes="field" Text="{Binding EditedContact.Name}" Watermark="Prénom NOM"/>
+                            </Grid>
+                        </Border>
+                        <Border Classes="row">
+                            <Grid ColumnDefinitions="100,*">
+                                <TextBlock Classes="label" Text="Adresse"/>
+                                <TextBox Grid.Column="1" Classes="field" Text="{Binding EditedContact.Address}" Watermark="prenom.nom@pompiersparis.fr"/>
+                            </Grid>
+                        </Border>
+                        <Border Classes="row">
+                            <StackPanel Spacing="4">
+                                <TextBlock Classes="caption" Text="Notes"/>
+                                <TextBox Classes="field" Text="{Binding EditedContact.Notes}" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="60"
+                                         VerticalContentAlignment="Top"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </Border>
+                <Button Classes="primary" Margin="16,12,16,0" Content="Enregistrer le contact" Command="{Binding SaveContactCommand}"/>
+                <Grid ColumnDefinitions="*,*">
+                    <Button Classes="secondary" Margin="16,6,6,6" Content="Nouveau" Command="{Binding NewContactCommand}"/>
+                    <Button Grid.Column="1" Classes="destructive" Margin="6,6,16,6" Content="Supprimer" Command="{Binding DeleteContactCommand}"/>
+                </Grid>
+
+                <TextBlock Classes="section" Text="SIGNATURE"/>
+                <Border Classes="group">
+                    <Border Classes="row">
+                        <TextBox Classes="field" Text="{Binding Signature}" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="90" VerticalContentAlignment="Top"
+                                 Watermark="Sgt SANTOS Diego&#10;Chef d'agrès VSAV - CS Créteil"/>
+                    </Border>
+                </Border>
+                <TextBlock Classes="footnote" Text="Ajoutée aux nouveaux messages, réponses et transferts."/>
+                <Button Classes="primary" Margin="16,12,16,0" Content="Enregistrer la signature" Command="{Binding SaveSignatureCommand}"/>
+
+                <TextBlock Classes="section" Text="ANNUAIRE DE LA COMPAGNIE"/>
+                <Border Classes="group">
+                    <ItemsControl ItemsSource="{Binding Directory}" ItemTemplate="{StaticResource MobileContactTemplate}"/>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- ===== Lecture en plein écran ===== -->
+        <ScrollViewer Name="ReadingPage" Grid.Row="1" IsVisible="False">
+            <StackPanel Margin="0,0,0,24">
+                <Button Name="BackToList" Classes="plain" HorizontalAlignment="Left" Margin="8,4,0,0">
+                    <TextBlock><Run Text="‹ "/><Run Text="{Binding FolderTitle}"/></TextBlock>
+                </Button>
+
+                <!-- Expéditeur -->
+                <Grid ColumnDefinitions="Auto,*" Margin="16,8,16,0">
+                    <Border Width="44" Height="44" CornerRadius="22" Background="{DynamicResource AppAccent}" VerticalAlignment="Top" Margin="0,0,12,0">
+                        <TextBlock Text="{Binding ReadInitials}" Foreground="White" FontSize="15" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <StackPanel Grid.Column="1" Spacing="2">
+                        <TextBlock Text="{Binding ReadFrom}" FontSize="16" FontWeight="SemiBold" TextWrapping="Wrap"/>
+                        <TextBlock Classes="caption" Text="{Binding ReadDate}"/>
+                        <TextBlock Classes="caption" TextWrapping="Wrap" TextTrimming="None"><Run Text="À : "/><Run Text="{Binding ReadTo}"/></TextBlock>
+                        <TextBlock Classes="caption" TextWrapping="Wrap" TextTrimming="None" IsVisible="{Binding HasCc}"><Run Text="Cc : "/><Run Text="{Binding ReadCc}"/></TextBlock>
+                        <TextBlock Classes="caption" TextWrapping="Wrap" TextTrimming="None" IsVisible="{Binding HasBcc}"><Run Text="Cci : "/><Run Text="{Binding ReadBcc}"/></TextBlock>
+                    </StackPanel>
+                </Grid>
+                <Border Height="0.5" Background="{StaticResource IosSeparator}" Margin="16,12,16,0"/>
+                <TextBlock Text="{Binding ReadSubject}" FontSize="22" FontWeight="Bold" TextWrapping="Wrap" Margin="16,12,16,0"/>
+                <TextBlock Text="! Importance haute" Foreground="{StaticResource IosRed}" FontWeight="SemiBold" FontSize="13" Margin="16,4,16,0" IsVisible="{Binding ReadHigh}"/>
+
+                <!-- Corps -->
+                <Border Background="White" CornerRadius="12" Padding="14,12" Margin="16,12,16,0">
+                    <SelectableTextBlock mail:MailText.Body="{Binding ReadBody}" FontSize="15.5" TextWrapping="Wrap" LineHeight="23"/>
+                </Border>
+
+                <!-- Pièces jointes -->
+                <StackPanel IsVisible="{Binding HasAttachments}">
+                    <TextBlock Classes="section" Text="PIÈCES JOINTES"/>
+                    <Border Classes="group">
+                        <ItemsControl ItemsSource="{Binding Attachments}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Classes="row" Padding="16,8,8,8">
+                                        <Grid ColumnDefinitions="Auto,*,Auto,Auto">
+                                            <PathIcon Data="{StaticResource MailIconClip}" Width="18" Height="18" Foreground="{StaticResource IosSecondary}" Margin="0,0,10,0"/>
+                                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                <TextBlock Classes="title" FontSize="15" Text="{Binding Name}"/>
+                                                <TextBlock Classes="caption" Text="{Binding Size}"/>
+                                            </StackPanel>
+                                            <Button Grid.Column="2" Classes="plain" FontSize="14.5" Content="Ouvrir" Command="{Binding OpenCommand}"/>
+                                            <Button Grid.Column="3" Classes="plain" FontSize="14.5" Content="Enregistrer" Command="{Binding SaveCommand}"/>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </Border>
+                </StackPanel>
+
+                <!-- Autres actions -->
+                <TextBlock Classes="section" Text="ACTIONS"/>
+                <Border Classes="group">
+                    <StackPanel>
+                        <Button Classes="row" Command="{Binding EditDraftCommand}" IsVisible="{Binding IsDraftSelected}">
+                            <Grid ColumnDefinitions="Auto,*,Auto">
+                                <PathIcon Data="{StaticResource MailIconCompose}" Width="20" Height="20" Foreground="{DynamicResource AppAccent}" Margin="0,0,12,0"/>
+                                <TextBlock Grid.Column="1" Classes="label" Text="Modifier le brouillon"/>
+                                <TextBlock Grid.Column="2" Classes="chevron"/>
+                            </Grid>
+                        </Button>
+                        <Button Classes="row" Command="{Binding RestoreCommand}" IsVisible="{Binding IsTrashSelected}">
+                            <Grid ColumnDefinitions="Auto,*">
+                                <PathIcon Data="{StaticResource TabFolder}" Width="20" Height="20" Foreground="{DynamicResource AppAccent}" Margin="0,0,12,0"/>
+                                <TextBlock Grid.Column="1" Classes="label" Text="Restaurer dans la boîte de réception"/>
+                            </Grid>
+                        </Button>
+                        <Button Classes="row" Command="{Binding ToggleReadCommand}">
+                            <Grid ColumnDefinitions="Auto,*">
+                                <PathIcon Data="{StaticResource MailIconRead}" Width="20" Height="20" Foreground="{DynamicResource AppAccent}" Margin="0,0,12,0"/>
+                                <TextBlock Grid.Column="1" Classes="label" Text="{Binding ReadLabel}"/>
+                            </Grid>
+                        </Button>
+                        <Button Classes="row" Command="{Binding ToggleFlagCommand}">
+                            <Grid ColumnDefinitions="Auto,*">
+                                <PathIcon Data="{StaticResource MailIconFlag}" Width="20" Height="20" Foreground="{StaticResource IosOrange}" Margin="0,0,12,0"/>
+                                <TextBlock Grid.Column="1" Classes="label" Text="{Binding FlagLabel}"/>
+                            </Grid>
+                        </Button>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- ===== Barre d'outils : listes ===== -->
+        <Border Name="ListToolbar" Grid.Row="2" Classes="tabbar">
+            <Grid ColumnDefinitions="Auto,*,Auto" Margin="12,0">
+                <Button Classes="plain" Command="{Binding RefreshCommand}" ToolTip.Tip="Actualiser">
+                    <PathIcon Data="{StaticResource MailIconRefresh}" Width="24" Height="24"/>
+                </Button>
+                <TextBlock Grid.Column="1" Classes="caption" FontSize="11.5" HorizontalAlignment="Center" VerticalAlignment="Center" Text="{Binding Address}"/>
+                <Button Grid.Column="2" Classes="plain" Command="{Binding NewCommand}" ToolTip.Tip="Nouveau message">
+                    <PathIcon Data="{StaticResource MailIconCompose}" Width="24" Height="24"/>
+                </Button>
+            </Grid>
+        </Border>
+
+        <!-- ===== Barre d'outils : lecture ===== -->
+        <Border Name="ReadingToolbar" Grid.Row="2" Classes="tabbar" IsVisible="False">
+            <UniformGrid Columns="5">
+                <Button Classes="tab selected" Command="{Binding DeleteCommand}">
+                    <StackPanel><PathIcon Data="{StaticResource MailIconTrash}"/><TextBlock Text="Supprimer"/></StackPanel>
+                </Button>
+                <Button Classes="tab selected" Command="{Binding ReplyCommand}">
+                    <StackPanel><PathIcon Data="{StaticResource MailIconReply}"/><TextBlock Text="Répondre"/></StackPanel>
+                </Button>
+                <Button Classes="tab selected" Command="{Binding ReplyAllCommand}">
+                    <StackPanel><PathIcon Data="{StaticResource MailIconReplyAll}"/><TextBlock Text="Rép. à tous"/></StackPanel>
+                </Button>
+                <Button Classes="tab selected" Command="{Binding ForwardCommand}">
+                    <StackPanel><PathIcon Data="{StaticResource MailIconForward}"/><TextBlock Text="Transférer"/></StackPanel>
+                </Button>
+                <Button Classes="tab selected" Command="{Binding NewCommand}">
+                    <StackPanel><PathIcon Data="{StaticResource MailIconCompose}"/><TextBlock Text="Nouveau"/></StackPanel>
+                </Button>
+            </UniformGrid>
+        </Border>
+    </Grid>
+</UserControl>
