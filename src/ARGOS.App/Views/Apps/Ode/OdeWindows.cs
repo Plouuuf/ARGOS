@@ -2,6 +2,7 @@ using Argos.Services;
 using Argos.Shared.Contracts;
 using Argos.ViewModels;
 using Argos.ViewModels.Ode;
+using Argos.Views.Mobile.Ode;
 
 namespace Argos.Views.Apps.Ode;
 
@@ -14,7 +15,11 @@ public static class OdeWindows
 
     public static WindowSpec PriseAppel(DesktopViewModel desktop, string callId)
         => new(PriseAppelKey(callId), "Prise d'appel - " + PriseAppelViewModel.Version, Icon,
-            () => new PriseAppelView { DataContext = new PriseAppelViewModel(desktop, callId) },
+            () =>
+            {
+                var vm = new PriseAppelViewModel(desktop, callId);
+                return desktop.IsCompactLayout ? (Avalonia.Controls.Control)new PriseAppelMobileView { DataContext = vm } : new PriseAppelView { DataContext = vm };
+            },
             1180, 800);
 
     /// <summary>Nouvelle fiche d'appel (décroché manuel), ouverte aussitôt dans la prise d'appel.</summary>
@@ -41,14 +46,22 @@ public static class OdeWindows
         => new(CreateOdeKey(callId, interventionId),
             interventionId is null ? "ADAGIO ODE - Création de l'ordre de départ" : "ADAGIO ODE - Départ complémentaire",
             Icon,
-            () => new CreateOdeView { DataContext = new CreateOdeViewModel(desktop, callId, interventionId, procedure) },
+            () =>
+            {
+                var vm = new CreateOdeViewModel(desktop, callId, interventionId, procedure);
+                return desktop.IsCompactLayout ? (Avalonia.Controls.Control)new CreateOdeMobileView { DataContext = vm } : new CreateOdeView { DataContext = vm };
+            },
             1020, 760);
 
     public static string InterventionKey(string id) => "intervention:" + id;
 
     public static WindowSpec Intervention(DesktopViewModel desktop, string interventionId)
         => new(InterventionKey(interventionId), "ADAGIO ODE - Suivi d'intervention", Icon,
-            () => new InterventionView { DataContext = new InterventionViewModel(desktop, interventionId) },
+            () =>
+            {
+                var vm = new InterventionViewModel(desktop, interventionId);
+                return desktop.IsCompactLayout ? (Avalonia.Controls.Control)new InterventionMobileView { DataContext = vm } : new InterventionView { DataContext = vm };
+            },
             1040, 720);
 
     public static WindowSpec Print(DesktopViewModel desktop, string interventionId, int orderNumber)

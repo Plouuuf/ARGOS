@@ -15,7 +15,13 @@ public static class McoWindows
         var key = "mco:" + (reportId ?? (interventionId is null ? "nouvelle-" + Guid.NewGuid().ToString("N")[..6] : "inter-" + interventionId + ":" + engin));
         var title = reportId is null ? "MCO - Nouvelle main courante" : "MCO - Main courante";
         return new WindowSpec(key, title, Icon,
-            () => new McoEditorView { DataContext = new McoEditorViewModel(desktop, reportId, interventionId, engin, key) },
+            () =>
+            {
+                var vm = new McoEditorViewModel(desktop, reportId, interventionId, engin, key);
+                return desktop.IsCompactLayout
+                    ? (Avalonia.Controls.Control)new Argos.Views.Mobile.Mco.McoEditorMobileView { DataContext = vm }
+                    : new McoEditorView { DataContext = vm };
+            },
             1100, 800);
     }
 }

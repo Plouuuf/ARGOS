@@ -1,0 +1,521 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:m="using:Argos.Views.Mobile"
+             x:Class="Argos.Views.Mobile.Ode.PriseAppelMobileView"
+             Classes="ios"
+             m:MobilePage.IsNative="True"
+             m:MobilePage.Accent="#D0021B">
+    <!-- Prise d'appel ADAGIO sur iPhone (même modèle que la version bureau : PriseAppelViewModel). -->
+    <UserControl.Resources>
+        <SolidColorBrush x:Key="AppAccent" Color="#D0021B"/>
+    </UserControl.Resources>
+    <UserControl.Styles>
+        <Style Selector=".ios Border.banner.ok">
+            <Setter Property="Background" Value="{StaticResource IosGreen}"/>
+        </Style>
+        <Style Selector=".ios Border.banner.info">
+            <Setter Property="Background" Value="#2C6FB7"/>
+        </Style>
+        <Style Selector="Ellipse.dot">
+            <Setter Property="Width" Value="22"/>
+            <Setter Property="Height" Value="22"/>
+            <Setter Property="Stroke" Value="#C7C7CC"/>
+            <Setter Property="StrokeThickness" Value="0.5"/>
+            <Setter Property="Margin" Value="0,0,12,0"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+        <Style Selector="TextBlock.running">
+            <Setter Property="Foreground" Value="{StaticResource IosGreen}"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+        </Style>
+    </UserControl.Styles>
+
+    <Grid RowDefinitions="Auto,*">
+        <!-- Messages (enregistrement, erreurs) -->
+        <Border Classes="banner" Classes.ok="{Binding !MessageIsError}" IsVisible="{Binding HasMessage}" ZIndex="10">
+            <TextBlock Text="{Binding Message}"/>
+        </Border>
+
+        <ScrollViewer Grid.Row="1">
+            <StackPanel Margin="0,0,0,24">
+                <TextBlock Classes="large" Text="Prise d'appel"/>
+                <TextBlock Classes="footnote" Margin="16,-4,16,4">
+                    <Run Text="{Binding DecrocheText}"/><Run Text="  ·  "/><Run Text="{Binding OperatorName}"/>
+                </TextBlock>
+
+                <!-- Appel clos -->
+                <Border Classes="banner info" IsVisible="{Binding IsClosed}">
+                    <StackPanel Spacing="6">
+                        <TextBlock Text="{Binding ClosedBanner}"/>
+                        <Button Classes="plain" Foreground="White" Padding="0,4" Content="Voir l'intervention ›"
+                                Command="{Binding OpenInterventionCommand}" IsVisible="{Binding HasIntervention}"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- ===== Informations téléphoniques ===== -->
+                <TextBlock Classes="section" Text="INFORMATIONS TÉLÉPHONIQUES"/>
+                <Border Classes="group">
+                    <StackPanel>
+                        <Border Classes="row">
+                            <Grid ColumnDefinitions="Auto,*">
+                                <TextBlock Classes="label" Text="Identifiant décroché"/>
+                                <TextBlock Grid.Column="1" Classes="value" HorizontalAlignment="Right" Margin="12,0,0,0" Text="{Binding DecrocheText}"/>
+                            </Grid>
+                        </Border>
+                        <Border Classes="row">
+                            <Grid ColumnDefinitions="Auto,*">
+                                <TextBlock Classes="label" Text="Groupe horaire"/>
+                                <TextBlock Grid.Column="1" Classes="value" HorizontalAlignment="Right" Margin="12,0,0,0" Text="{Binding GroupeHoraire}"/>
+                            </Grid>
+                        </Border>
+                        <Border Classes="row">
+                            <Grid ColumnDefinitions="Auto,*">
+                                <TextBlock Classes="label" Text="Durée de l'appel"/>
+                                <TextBlock Grid.Column="1" Classes="value" Classes.running="{Binding IsRunning}" HorizontalAlignment="Right"
+                                           Margin="12,0,0,0" Text="{Binding DurationText}"/>
+                            </Grid>
+                        </Border>
+                        <Border Classes="row">
+                            <Grid ColumnDefinitions="Auto,*">
+                                <TextBlock Classes="label" Text="Opérateur"/>
+                                <TextBlock Grid.Column="1" Classes="value" HorizontalAlignment="Right" Margin="12,0,0,0" Text="{Binding OperatorName}"/>
+                            </Grid>
+                        </Border>
+                        <Border Classes="row">
+                            <Grid ColumnDefinitions="Auto,*">
+                                <TextBlock Classes="label" Text="Poste"/>
+                                <TextBlock Grid.Column="1" Classes="value" HorizontalAlignment="Right" Margin="12,0,0,0" Text="{Binding Poste}"/>
+                            </Grid>
+                        </Border>
+                        <Border Classes="row">
+                            <Grid ColumnDefinitions="Auto,*">
+                                <TextBlock Classes="label" Text="N° du requérant"/>
+                                <TextBox Grid.Column="1" Classes="field" TextAlignment="Right" Margin="12,0,0,0"
+                                         Text="{Binding CallerPhone}" IsReadOnly="{Binding IsClosed}" Watermark="Téléphone"/>
+                            </Grid>
+                        </Border>
+                        <Border Classes="row">
+                            <Grid ColumnDefinitions="Auto,*">
+                                <TextBlock Classes="label" Text="N° de l'impliqué"/>
+                                <TextBox Grid.Column="1" Classes="field" TextAlignment="Right" Margin="12,0,0,0"
+                                         Text="{Binding ImplicatedPhone}" IsReadOnly="{Binding IsClosed}" Watermark="Téléphone"/>
+                            </Grid>
+                        </Border>
+                        <Border Classes="row" BorderThickness="0">
+                            <Grid ColumnDefinitions="Auto,*">
+                                <TextBlock Classes="label" Text="Origine de l'appel"/>
+                                <ComboBox Grid.Column="1" Classes="field" HorizontalContentAlignment="Right" Margin="12,0,0,0"
+                                          ItemsSource="{Binding Origins}" SelectedItem="{Binding Origin}" IsEnabled="{Binding IsEditable}"/>
+                            </Grid>
+                        </Border>
+                    </StackPanel>
+                </Border>
+
+                <!-- ===== Localisation de l'événement ===== -->
+                <TextBlock Classes="section" Text="LOCALISATION DE L'ÉVÉNEMENT"/>
+                <Border Classes="group">
+                    <StackPanel>
+                        <Border Classes="row">
+                            <Grid ColumnDefinitions="Auto,*">
+                                <TextBlock Classes="label" Text="Mode"/>
+                                <ComboBox Grid.Column="1" Classes="field" HorizontalContentAlignment="Right" Margin="12,0,0,0"
+                                          ItemsSource="{Binding Modes}" SelectedItem="{Binding Mode}" IsEnabled="{Binding IsEditable}"/>
+                            </Grid>
+                        </Border>
+                        <Border Classes="row">
+                            <Grid ColumnDefinitions="Auto,*">
+                                <TextBlock Classes="label" Text="Réseau"/>
+                                <ComboBox Grid.Column="1" Classes="field" HorizontalContentAlignment="Right" Margin="12,0,0,0"
+                                          ItemsSource="{Binding Networks}" SelectedItem="{Binding Network}" IsEnabled="{Binding IsEditable}"/>
+                            </Grid>
+                        </Border>
+                        <Border Classes="row">
+                            <Grid ColumnDefinitions="Auto,*">
+                                <TextBlock Classes="label" Text="Numéro"/>
+                                <TextBox Grid.Column="1" Classes="field" TextAlignment="Right" Margin="12,0,0,0"
+                                         Text="{Binding StreetNumber}" IsReadOnly="{Binding IsClosed}" Watermark="N°"/>
+                            </Grid>
+                        </Border>
+                        <Border Classes="row" BorderThickness="0">
+                            <StackPanel Spacing="2">
+                                <TextBlock Classes="caption" Text="VOIE - SITE - COMMUNE"/>
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <TextBox Classes="field" Text="{Binding Street}" IsReadOnly="{Binding IsClosed}"
+                                             TextWrapping="Wrap" Watermark="Saisir ou choisir dans le plan"/>
+                                    <Button Name="StreetPick" Grid.Column="1" Classes="plain" Content="Plan ›"
+                                            IsEnabled="{Binding IsEditable}"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </Border>
+                <TextBlock Classes="footnote" Text="Localisation confirmée." IsVisible="{Binding LocationConfirmed}"/>
+                <Button Classes="secondary" Content="Confirmer la localisation" Command="{Binding ConfirmLocationCommand}"/>
+
+                <!-- ===== Adresse de l'alerte ===== -->
+                <TextBlock Classes="section" Text="ADRESSE DE L'ALERTE"/>
+                <Border Classes="group">
+                    <StackPanel>
+                        <Border Classes="row">
+                            <Grid ColumnDefinitions="Auto,*">
+                                <TextBlock Classes="label" Text="CSTC"/>
+                                <TextBox Grid.Column="1" Classes="field" TextAlignment="Right" Margin="12,0,0,0"
+                                         Text="{Binding Cstc}" IsReadOnly="{Binding IsClosed}"/>
+                            </Grid>
+                        </Border>
+                        <Border Classes="row" BorderThickness="0">
+                            <StackPanel Spacing="2">
+                                <TextBlock Classes="caption" Text="ADRESSE"/>
+                                <TextBox Classes="field" Text="{Binding AlertAddress}" IsReadOnly="{Binding IsClosed}" TextWrapping="Wrap"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </Border>
+
+                <!-- ===== Requérant, bâtiment, accès ===== -->
+                <TextBlock Classes="section" Text="REQUÉRANT ET ACCÈS"/>
+                <Border Classes="group">
+                    <StackPanel>
+                        <Border Classes="row">
+                            <Grid ColumnDefinitions="Auto,*">
+                                <TextBlock Classes="label" Text="Requérant"/>
+                                <TextBox Grid.Column="1" Classes="field" TextAlignment="Right" Margin="12,0,0,0"
+                                         Text="{Binding CallerName}" IsReadOnly="{Binding IsClosed}" Watermark="NOM Prénom"/>
+                            </Grid>
+                        </Border>
+                        <Border Classes="row">
+                            <Grid ColumnDefinitions="Auto,*">
+                                <TextBlock Classes="label" Text="Bât. / étage / appt"/>
+                                <TextBox Grid.Column="1" Classes="field" TextAlignment="Right" Margin="12,0,0,0"
+                                         Text="{Binding Building}" IsReadOnly="{Binding IsClosed}"/>
+                            </Grid>
+                        </Border>
+                        <Border Classes="row">
+                            <Grid ColumnDefinitions="Auto,*">
+                                <TextBlock Classes="label" Text="Accès"/>
+                                <TextBox Grid.Column="1" Classes="field" TextAlignment="Right" Margin="12,0,0,0"
+                                         Text="{Binding Access}" IsReadOnly="{Binding IsClosed}" Watermark="Digicode, interphone…"/>
+                            </Grid>
+                        </Border>
+                        <Border Classes="row">
+                            <Grid ColumnDefinitions="Auto,*">
+                                <TextBlock Classes="label" Text="Victimes"/>
+                                <TextBox Grid.Column="1" Classes="field" TextAlignment="Right" Margin="12,0,0,0"
+                                         Text="{Binding VictimCount}" IsReadOnly="{Binding IsClosed}" Watermark="0"/>
+                            </Grid>
+                        </Border>
+                        <Border Classes="row" BorderThickness="0">
+                            <Grid ColumnDefinitions="Auto,*">
+                                <TextBlock Classes="label" Text="Priorité"/>
+                                <ComboBox Grid.Column="1" Classes="field" HorizontalContentAlignment="Right" Margin="12,0,0,0"
+                                          ItemsSource="{Binding Priorities}" SelectedItem="{Binding Priority}" IsEnabled="{Binding IsEditable}"/>
+                            </Grid>
+                        </Border>
+                    </StackPanel>
+                </Border>
+
+                <!-- ===== Motif de l'appel ===== -->
+                <TextBlock Classes="section" Text="MOTIF ET NATURE PRÉSUMÉE"/>
+                <Border Classes="group">
+                    <StackPanel>
+                        <Button Name="MotifPick" Classes="row" IsEnabled="{Binding IsEditable}">
+                            <Grid ColumnDefinitions="*,Auto">
+                                <StackPanel Spacing="2">
+                                    <TextBlock Classes="caption" Text="NATURE PRÉSUMÉE"/>
+                                    <TextBlock Classes="title" Text="{Binding Motif,}" TextWrapping="Wrap" TextTrimming="None"/>
+                                    <TextBlock Classes="value" Text="Choisir une nature" IsVisible="{Binding Motif, Converter={x:Static StringConverters.IsNullOrEmpty}}"/>
+                                </StackPanel>
+                                <TextBlock Grid.Column="1" Classes="chevron"/>
+                            </Grid>
+                        </Button>
+                        <Border Classes="row" BorderThickness="0">
+                            <StackPanel Spacing="2">
+                                <TextBlock Classes="caption" Text="MOTIF DE L'APPEL"/>
+                                <TextBox Classes="field" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="90"
+                                         VerticalContentAlignment="Top" Watermark="Ce que dit le requérant…"
+                                         Text="{Binding Reason}" IsReadOnly="{Binding IsClosed}"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </Border>
+
+                <!-- ===== Qualification ===== -->
+                <TextBlock Classes="section" Text="QUALIFICATION DE L'APPEL"/>
+                <Border Classes="group">
+                    <StackPanel>
+                        <Button Name="FinalNaturePick" Classes="row" IsEnabled="{Binding IsEditable}">
+                            <Grid ColumnDefinitions="*,Auto">
+                                <StackPanel Spacing="2">
+                                    <TextBlock Classes="caption" Text="NATURE DÉFINITIVE"/>
+                                    <TextBlock Classes="title" Text="{Binding FinalNature,}" TextWrapping="Wrap" TextTrimming="None"/>
+                                    <TextBlock Classes="value" Text="Vide = nature présumée" IsVisible="{Binding FinalNature, Converter={x:Static StringConverters.IsNullOrEmpty}}"/>
+                                </StackPanel>
+                                <TextBlock Grid.Column="1" Classes="chevron"/>
+                            </Grid>
+                        </Button>
+                        <Border Classes="row" BorderThickness="0">
+                            <StackPanel Spacing="2">
+                                <TextBlock Classes="caption" Text="RISQUES SIGNALÉS"/>
+                                <TextBox Classes="field" TextWrapping="Wrap" Watermark="Gaz, électricité, animal, arme…"
+                                         Text="{Binding Risks}" IsReadOnly="{Binding IsClosed}"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </Border>
+                <Button Classes="plain" HorizontalAlignment="Right" Margin="16,2" FontSize="14" Content="Effacer la nature définitive"
+                        Name="ClearFinalNature" IsEnabled="{Binding IsEditable}"
+                        IsVisible="{Binding FinalNature, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+
+                <!-- ===== Consignes ===== -->
+                <TextBlock Classes="section" Text="CONSIGNES"/>
+                <Border Classes="group">
+                    <Border Classes="row" BorderThickness="0">
+                        <TextBox Classes="field" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="70" VerticalContentAlignment="Top"
+                                 Watermark="Consignes opérationnelles (reprises sur l'ODE)"
+                                 Text="{Binding Instructions}" IsReadOnly="{Binding IsClosed}"/>
+                    </Border>
+                </Border>
+
+                <!-- ===== Observations ===== -->
+                <TextBlock Classes="section" Text="OBSERVATIONS"/>
+                <Border Classes="group">
+                    <Border Classes="row" BorderThickness="0">
+                        <TextBox Classes="field" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="70" VerticalContentAlignment="Top"
+                                 Watermark="Observations" Text="{Binding Observations}" IsReadOnly="{Binding IsClosed}"/>
+                    </Border>
+                </Border>
+
+                <!-- ===== Procédures (touches F1 à F9 du bureau) ===== -->
+                <TextBlock Classes="section" Text="PROCÉDURE DE DÉPART"/>
+                <Border Classes="group">
+                    <StackPanel>
+                        <Button Classes="row" Command="{Binding FKeyCommand}" CommandParameter="F1">
+                            <Grid ColumnDefinitions="Auto,*,Auto">
+                                <Ellipse Classes="dot" Fill="#FFFFFF"/>
+                                <StackPanel Grid.Column="1" Spacing="1">
+                                    <TextBlock Classes="title" Text="BLANCHE"/>
+                                    <TextBlock Classes="caption" Text="F1 · Création de l'ordre de départ"/>
+                                </StackPanel>
+                                <TextBlock Grid.Column="2" Classes="chevron"/>
+                            </Grid>
+                        </Button>
+                        <Button Classes="row" Command="{Binding FKeyCommand}" CommandParameter="F2">
+                            <Grid ColumnDefinitions="Auto,*,Auto">
+                                <Ellipse Classes="dot" Fill="#EF8733"/>
+                                <StackPanel Grid.Column="1" Spacing="1">
+                                    <TextBlock Classes="title" Text="ORANGE"/>
+                                    <TextBlock Classes="caption" Text="F2 · Création de l'ordre de départ"/>
+                                </StackPanel>
+                                <TextBlock Grid.Column="2" Classes="chevron"/>
+                            </Grid>
+                        </Button>
+                        <Button Classes="row" Command="{Binding FKeyCommand}" CommandParameter="F3">
+                            <Grid ColumnDefinitions="Auto,*,Auto">
+                                <Ellipse Classes="dot" Fill="#EA3323"/>
+                                <StackPanel Grid.Column="1" Spacing="1">
+                                    <TextBlock Classes="title" Text="ROUGE"/>
+                                    <TextBlock Classes="caption" Text="F3 · Création de l'ordre de départ"/>
+                                </StackPanel>
+                                <TextBlock Grid.Column="2" Classes="chevron"/>
+                            </Grid>
+                        </Button>
+                        <Button Classes="row" Command="{Binding FKeyCommand}" CommandParameter="F4">
+                            <Grid ColumnDefinitions="Auto,*,Auto">
+                                <Ellipse Classes="dot" Fill="#F7CEA0"/>
+                                <StackPanel Grid.Column="1" Spacing="1">
+                                    <TextBlock Classes="title" Text="EXERCICE"/>
+                                    <TextBlock Classes="caption" Text="F4 · Création de l'ordre de départ"/>
+                                </StackPanel>
+                                <TextBlock Grid.Column="2" Classes="chevron"/>
+                            </Grid>
+                        </Button>
+                        <Button Classes="row" Command="{Binding FKeyCommand}" CommandParameter="F6">
+                            <Grid ColumnDefinitions="Auto,*,Auto">
+                                <Ellipse Classes="dot" Fill="#A3F3A2"/>
+                                <StackPanel Grid.Column="1" Spacing="1">
+                                    <TextBlock Classes="title" Text="VERTE"/>
+                                    <TextBlock Classes="caption" Text="F6 · Création de l'ordre de départ"/>
+                                </StackPanel>
+                                <TextBlock Grid.Column="2" Classes="chevron"/>
+                            </Grid>
+                        </Button>
+                        <Button Classes="row" Command="{Binding FKeyCommand}" CommandParameter="F7">
+                            <Grid ColumnDefinitions="Auto,*,Auto">
+                                <Ellipse Classes="dot" Fill="#7F4DBD"/>
+                                <StackPanel Grid.Column="1" Spacing="1">
+                                    <TextBlock Classes="title" Text="HMB"/>
+                                    <TextBlock Classes="caption" Text="F7 · Création de l'ordre de départ"/>
+                                </StackPanel>
+                                <TextBlock Grid.Column="2" Classes="chevron"/>
+                            </Grid>
+                        </Button>
+                        <Button Classes="row" Command="{Binding FKeyCommand}" CommandParameter="F8" BorderThickness="0">
+                            <Grid ColumnDefinitions="Auto,*,Auto">
+                                <Ellipse Classes="dot" Fill="#EF8ACD"/>
+                                <StackPanel Grid.Column="1" Spacing="1">
+                                    <TextBlock Classes="title" Text="RETARD"/>
+                                    <TextBlock Classes="caption" Text="F8 · Création de l'ordre de départ"/>
+                                </StackPanel>
+                                <TextBlock Grid.Column="2" Classes="chevron"/>
+                            </Grid>
+                        </Button>
+                    </StackPanel>
+                </Border>
+
+                <TextBlock Classes="section" Text="CLORE SANS DÉPART"/>
+                <Border Classes="group">
+                    <StackPanel>
+                        <Button Classes="row" Command="{Binding FKeyCommand}" CommandParameter="F5">
+                            <Grid ColumnDefinitions="Auto,*,Auto">
+                                <Ellipse Classes="dot" Fill="#3376D0"/>
+                                <StackPanel Grid.Column="1" Spacing="1">
+                                    <TextBlock Classes="title" Text="INU"/>
+                                    <TextBlock Classes="caption" Text="F5 · Appel clos sans départ"/>
+                                </StackPanel>
+                                <TextBlock Grid.Column="2" Classes="chevron"/>
+                            </Grid>
+                        </Button>
+                        <Button Classes="row" Command="{Binding FKeyCommand}" CommandParameter="F9" BorderThickness="0">
+                            <Grid ColumnDefinitions="Auto,*,Auto">
+                                <Ellipse Classes="dot" Fill="#666666"/>
+                                <StackPanel Grid.Column="1" Spacing="1">
+                                    <TextBlock Classes="title" Text="ADRESSE INEXISTANTE"/>
+                                    <TextBlock Classes="caption" Text="F9 · Appel clos sans départ"/>
+                                </StackPanel>
+                                <TextBlock Grid.Column="2" Classes="chevron"/>
+                            </Grid>
+                        </Button>
+                    </StackPanel>
+                </Border>
+
+                <!-- ===== Actions ===== -->
+                <TextBlock Classes="section" Text="ACTIONS"/>
+                <Button Classes="primary" Content="Transmettre pour traitement" Command="{Binding TransmitCommand}"/>
+                <Button Classes="secondary" Content="Enregistrer la fiche" Command="{Binding SaveCommand}"/>
+                <Button Classes="secondary" Content="Rattacher à une intervention en cours" Command="{Binding ShowLinkCommand}"/>
+                <Button Classes="secondary" Content="Main courante de l'appel" Command="{Binding ShowLogCommand}"/>
+                <Button Classes="secondary" Content="Ouvrir l'intervention" Command="{Binding OpenInterventionCommand}"
+                        IsVisible="{Binding HasIntervention}"/>
+                <Button Classes="secondary" Content="Nouvelle prise d'appel" Command="{Binding NewCallCommand}"/>
+                <Button Classes="destructive" Content="Classer sans suite" Command="{Binding SansSuiteCommand}"/>
+
+                <!-- ===== Barre d'état du bureau ===== -->
+                <TextBlock Classes="footnote" Margin="32,14,16,0">
+                    <Run Text="{Binding StatusDate}"/><Run Text="  ·  "/><Run Text="{Binding StatusTime}"/><Run Text="  ·  "/><Run Text="{Binding StatusOperator}"/>
+                </TextBlock>
+                <TextBlock Classes="footnote">
+                    <Run Text="Prise d'appel v1.8.0  ·  "/><Run Text="{Binding Platform}"/>
+                </TextBlock>
+                <Button Classes="plain" HorizontalAlignment="Left" Margin="24,4" FontSize="14" Content="À propos de la prise d'appel"
+                        Command="{Binding AboutCommand}"/>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- ===== Main courante de l'appel (plein écran) ===== -->
+        <Grid Grid.RowSpan="2" Background="{StaticResource IosBack}" IsVisible="{Binding LogVisible}" RowDefinitions="Auto,*,Auto">
+            <Grid ColumnDefinitions="*,Auto">
+                <TextBlock Classes="large" Text="Main courante"/>
+                <Button Grid.Column="1" Classes="plain" Content="Terminé" FontWeight="SemiBold" Margin="0,0,8,0"
+                        VerticalAlignment="Center" Command="{Binding ShowLogCommand}"/>
+            </Grid>
+            <ScrollViewer Grid.Row="1">
+                <StackPanel Margin="0,0,0,16">
+                    <TextBlock Classes="section" Text="RENSEIGNEMENTS"/>
+                    <Border Classes="group">
+                        <StackPanel>
+                            <ItemsControl ItemsSource="{Binding Events}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Classes="row">
+                                            <StackPanel Spacing="2">
+                                                <Grid ColumnDefinitions="*,Auto">
+                                                    <TextBlock Classes="subtitle" Text="{Binding Author}" FontWeight="SemiBold"/>
+                                                    <TextBlock Grid.Column="1" Classes="caption" Margin="8,0,0,0"
+                                                               Text="{Binding LocalAt, StringFormat='{}{0:dd/MM HH:mm:ss}'}"/>
+                                                </Grid>
+                                                <TextBlock Text="{Binding Text}" FontSize="15" TextWrapping="Wrap"/>
+                                            </StackPanel>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <Border Classes="row" IsVisible="{Binding !Events.Count}">
+                                <TextBlock Classes="value" Text="Aucun renseignement"/>
+                            </Border>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
+            <StackPanel Grid.Row="2" Margin="0,4,0,12">
+                <Border Classes="group">
+                    <Border Classes="row" BorderThickness="0">
+                        <TextBox Classes="field" Text="{Binding LogText}" Watermark="Nouveau renseignement…"
+                                 AcceptsReturn="True" TextWrapping="Wrap" MinHeight="44"/>
+                    </Border>
+                </Border>
+                <Button Classes="primary" Content="Ajouter" Command="{Binding AddLogCommand}"/>
+            </StackPanel>
+        </Grid>
+
+        <!-- ===== Rattachement à une intervention en cours (plein écran) ===== -->
+        <ScrollViewer Grid.RowSpan="2" Background="{StaticResource IosBack}" IsVisible="{Binding LinkVisible}">
+            <StackPanel Margin="0,0,0,24">
+                <TextBlock Classes="large" Text="Rattacher l'appel"/>
+                <TextBlock Classes="footnote" Margin="16,0,16,0"
+                           Text="Plusieurs appels pour un même événement : l'appel rejoint l'intervention, sans nouveau départ."/>
+                <TextBlock Classes="section" Text="INTERVENTION EN COURS"/>
+                <Border Classes="group">
+                    <Border Classes="row" BorderThickness="0">
+                        <StackPanel>
+                            <ComboBox Classes="field" ItemsSource="{Binding LinkChoices}" SelectedItem="{Binding LinkChoice}"
+                                      IsVisible="{Binding HasLinkChoices}"/>
+                            <TextBlock Classes="value" Text="Aucune intervention en cours." IsVisible="{Binding !HasLinkChoices}"/>
+                        </StackPanel>
+                    </Border>
+                </Border>
+                <Button Classes="primary" Margin="16,18,16,6" Content="Rattacher" Command="{Binding LinkCommand}" IsEnabled="{Binding HasLinkChoices}"/>
+                <Button Classes="secondary" Content="Annuler" Command="{Binding CancelLinkCommand}"/>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- ===== Demande de motif (INU, adresse inexistante, sans suite) (plein écran) ===== -->
+        <ScrollViewer Grid.RowSpan="2" Background="{StaticResource IosBack}" IsVisible="{Binding PromptVisible}">
+            <StackPanel Margin="0,0,0,24">
+                <TextBlock Classes="large" Text="Clore l'appel"/>
+                <TextBlock Classes="footnote" Margin="16,0,16,0" Text="{Binding PromptTitle}"/>
+                <TextBlock Classes="section" Text="MOTIF DU CLASSEMENT"/>
+                <Border Classes="group">
+                    <Border Classes="row" BorderThickness="0">
+                        <TextBox Classes="field" Text="{Binding PromptText}" AcceptsReturn="True" TextWrapping="Wrap"
+                                 MinHeight="80" VerticalContentAlignment="Top"/>
+                    </Border>
+                </Border>
+                <Button Classes="destructive" Margin="16,18,16,6" Content="Clore l'appel" Command="{Binding PromptOkCommand}"/>
+                <Button Classes="secondary" Content="Annuler" Command="{Binding PromptCancelCommand}"/>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- ===== Choix dans une liste (plan VDMS, natures) (plein écran, géré par le code-behind) ===== -->
+        <Grid Name="PickerOverlay" Grid.RowSpan="2" Background="{StaticResource IosBack}" IsVisible="False" RowDefinitions="Auto,Auto,*">
+            <Grid ColumnDefinitions="*,Auto">
+                <TextBlock Name="PickerTitle" Classes="large" Text="Choisir"/>
+                <Button Name="PickerCancel" Grid.Column="1" Classes="plain" Content="Annuler" Margin="0,0,8,0" VerticalAlignment="Center"/>
+            </Grid>
+            <Border Grid.Row="1" Classes="searchbar">
+                <Grid ColumnDefinitions="Auto,*">
+                    <PathIcon Data="{StaticResource TabSearch}" Width="16" Height="16" Foreground="{StaticResource IosSecondary}"/>
+                    <TextBox Name="PickerSearch" Grid.Column="1" Classes="field" Margin="6,0,0,0" Watermark="Rechercher"/>
+                </Grid>
+            </Border>
+            <Border Grid.Row="2" Classes="group" Margin="16,4,16,16">
+                <ListBox Name="PickerList" Background="White">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding}" FontSize="15.5" TextWrapping="Wrap" Margin="4,6"/>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </Border>
+        </Grid>
+    </Grid>
+</UserControl>

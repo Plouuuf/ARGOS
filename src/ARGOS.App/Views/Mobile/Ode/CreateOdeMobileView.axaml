@@ -1,0 +1,237 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:m="using:Argos.Views.Mobile"
+             xmlns:ode="clr-namespace:Argos.Views.Apps.Ode"
+             x:Class="Argos.Views.Mobile.Ode.CreateOdeMobileView"
+             Classes="ios"
+             m:MobilePage.IsNative="True"
+             m:MobilePage.Accent="#D0021B">
+    <!-- Création de l'ordre de départ sur iPhone (même modèle que la version bureau : CreateOdeViewModel). -->
+    <UserControl.Resources>
+        <SolidColorBrush x:Key="AppAccent" Color="#D0021B"/>
+    </UserControl.Resources>
+
+    <Grid RowDefinitions="Auto,*">
+        <Border Classes="banner" IsVisible="{Binding HasError}" ZIndex="10">
+            <TextBlock Text="{Binding Error}"/>
+        </Border>
+
+        <ScrollViewer Grid.Row="1">
+            <StackPanel Margin="0,0,0,24">
+                <TextBlock Classes="large" Text="{Binding Heading}"/>
+                <TextBlock Classes="footnote" Text="{Binding Source}" Margin="16,-4,16,4"/>
+
+                <!-- ===== Procédure ===== -->
+                <TextBlock Classes="section" Text="PROCÉDURE"/>
+                <Border Classes="group">
+                    <Border Classes="row" BorderThickness="0">
+                        <Grid ColumnDefinitions="Auto,*">
+                            <TextBlock Classes="label" Text="Procédure"/>
+                            <ComboBox Grid.Column="1" Classes="field" HorizontalContentAlignment="Right" Margin="12,0,0,0"
+                                      ItemsSource="{Binding ProcedureChoices}" SelectedItem="{Binding SelectedProcedure}">
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock><Run Text="{Binding Key}"/><Run Text=" - "/><Run Text="{Binding Label}"/></TextBlock>
+                                    </DataTemplate>
+                                </ComboBox.ItemTemplate>
+                            </ComboBox>
+                        </Grid>
+                    </Border>
+                </Border>
+
+                <!-- ===== Nature et localisation ===== -->
+                <TextBlock Classes="section" Text="NATURE ET LOCALISATION"/>
+                <Border Classes="group" IsEnabled="{Binding IsNew}">
+                    <StackPanel>
+                        <Border Classes="row">
+                            <Grid ColumnDefinitions="Auto,*">
+                                <TextBlock Classes="label" Text="Catégorie"/>
+                                <ComboBox Grid.Column="1" Classes="field" HorizontalContentAlignment="Right" Margin="12,0,0,0"
+                                          ItemsSource="{Binding Categories}" SelectedItem="{Binding Category}" PlaceholderText="Toutes les catégories">
+                                    <ComboBox.ItemTemplate>
+                                        <DataTemplate><TextBlock Text="{Binding Label, FallbackValue='Toutes les catégories'}"/></DataTemplate>
+                                    </ComboBox.ItemTemplate>
+                                </ComboBox>
+                            </Grid>
+                        </Border>
+                        <Button Name="NaturePick" Classes="row">
+                            <Grid ColumnDefinitions="*,Auto">
+                                <StackPanel Spacing="2">
+                                    <TextBlock Classes="caption" Text="NATURE OPÉRATIONNELLE"/>
+                                    <TextBlock Classes="title" Text="{Binding Nature}" TextWrapping="Wrap" TextTrimming="None"/>
+                                    <TextBlock Classes="value" Text="Choisir une nature" IsVisible="{Binding Nature, Converter={x:Static StringConverters.IsNullOrEmpty}}"/>
+                                </StackPanel>
+                                <TextBlock Grid.Column="1" Classes="chevron"/>
+                            </Grid>
+                        </Button>
+                        <Border Classes="row">
+                            <StackPanel Spacing="2">
+                                <TextBlock Classes="caption" Text="MOTIF DU DÉPART"/>
+                                <TextBox Classes="field" Text="{Binding Motif}" TextWrapping="Wrap"
+                                         Watermark="Feu de poubelle contre façade, personne bloquée…"/>
+                            </StackPanel>
+                        </Border>
+                        <Border Classes="row">
+                            <StackPanel Spacing="2">
+                                <TextBlock Classes="caption" Text="ADRESSE D'INTERVENTION"/>
+                                <TextBox Classes="field" Text="{Binding Address}" TextWrapping="Wrap"/>
+                            </StackPanel>
+                        </Border>
+                        <Border Classes="row">
+                            <Grid ColumnDefinitions="Auto,*">
+                                <TextBlock Classes="label" Text="Commune / quartier"/>
+                                <TextBox Grid.Column="1" Classes="field" TextAlignment="Right" Margin="12,0,0,0"
+                                         Text="{Binding Locality}" Watermark="ex. L'ECHAT"/>
+                            </Grid>
+                        </Border>
+                        <Border Classes="row">
+                            <Grid ColumnDefinitions="Auto,*">
+                                <TextBlock Classes="label" Text="CSTC"/>
+                                <TextBox Grid.Column="1" Classes="field" TextAlignment="Right" Margin="12,0,0,0" Text="{Binding Cstc}"/>
+                            </Grid>
+                        </Border>
+                        <Border Classes="row">
+                            <Grid ColumnDefinitions="Auto,*">
+                                <TextBlock Classes="label" Text="Secteur"/>
+                                <TextBox Grid.Column="1" Classes="field" TextAlignment="Right" Margin="12,0,0,0" Text="{Binding Secteur}"/>
+                            </Grid>
+                        </Border>
+                        <Border Classes="row">
+                            <Grid ColumnDefinitions="Auto,*">
+                                <TextBlock Classes="label" Text="Bât., étage, appt."/>
+                                <TextBox Grid.Column="1" Classes="field" TextAlignment="Right" Margin="12,0,0,0" Text="{Binding Building}"/>
+                            </Grid>
+                        </Border>
+                        <Border Classes="row" BorderThickness="0">
+                            <Grid ColumnDefinitions="Auto,*">
+                                <TextBlock Classes="label" Text="Accès"/>
+                                <TextBox Grid.Column="1" Classes="field" TextAlignment="Right" Margin="12,0,0,0"
+                                         Text="{Binding Access}" Watermark="Digicode, portail…"/>
+                            </Grid>
+                        </Border>
+                    </StackPanel>
+                </Border>
+
+                <!-- ===== Requérant ===== -->
+                <TextBlock Classes="section" Text="REQUÉRANT"/>
+                <Border Classes="group" IsEnabled="{Binding IsNew}">
+                    <StackPanel>
+                        <Border Classes="row">
+                            <Grid ColumnDefinitions="Auto,*">
+                                <TextBlock Classes="label" Text="Numéro requérant"/>
+                                <TextBox Grid.Column="1" Classes="field" TextAlignment="Right" Margin="12,0,0,0" Text="{Binding CallerPhone}"/>
+                            </Grid>
+                        </Border>
+                        <Border Classes="row" BorderThickness="0">
+                            <StackPanel Spacing="2">
+                                <TextBlock Classes="caption" Text="INFORMATIONS REQUÉRANTS"/>
+                                <TextBox Classes="field" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="70"
+                                         VerticalContentAlignment="Top" Text="{Binding CallerInfo}"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </Border>
+
+                <!-- ===== Consignes ===== -->
+                <TextBlock Classes="section" Text="CONSIGNES CHEF D'AGRÈS"/>
+                <Border Classes="group">
+                    <Border Classes="row" BorderThickness="0">
+                        <TextBox Classes="field" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="80"
+                                 VerticalContentAlignment="Top" Text="{Binding Consignes}" Watermark="Consignes"/>
+                    </Border>
+                </Border>
+
+                <!-- ===== Moyens ===== -->
+                <TextBlock Classes="section" Text="PREMIER DÉPART"/>
+                <Border Classes="group">
+                    <Border Classes="row" BorderThickness="0">
+                        <Grid ColumnDefinitions="Auto,*">
+                            <TextBlock Classes="label" Text="Engin"/>
+                            <ComboBox Grid.Column="1" Classes="field" HorizontalContentAlignment="Right" Margin="12,0,0,0"
+                                      ItemsSource="{Binding AvailableEngins}" SelectedItem="{Binding FirstEngin}"
+                                      PlaceholderText="Engin à engager">
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock>
+                                            <Run Text="{Binding Nom}" FontWeight="SemiBold"/><Run Text=" · "/><Run Text="{Binding Libelle}" FontSize="12"/>
+                                        </TextBlock>
+                                    </DataTemplate>
+                                </ComboBox.ItemTemplate>
+                            </ComboBox>
+                        </Grid>
+                    </Border>
+                </Border>
+
+                <TextBlock Classes="section" Text="ENGINS COMPLÉMENTAIRES"/>
+                <Border Classes="group">
+                    <StackPanel>
+                        <ItemsControl ItemsSource="{Binding AllEngins}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Classes="row" Padding="16,6">
+                                        <Grid ColumnDefinitions="*,Auto">
+                                            <StackPanel Spacing="1" VerticalAlignment="Center">
+                                                <TextBlock Classes="title" Text="{Binding Nom}"/>
+                                                <TextBlock Classes="caption">
+                                                    <Run Text="{Binding Status}"/><Run Text="  ·  "/><Run Text="{Binding Libelle}"/>
+                                                </TextBlock>
+                                            </StackPanel>
+                                            <ToggleSwitch Grid.Column="1" OnContent="" OffContent="" IsChecked="{Binding IsSelected}"
+                                                          IsEnabled="{Binding IsAvailable}" VerticalAlignment="Center" Margin="8,0,-12,0"/>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <Border Classes="row" IsVisible="{Binding !AllEngins.Count}">
+                            <TextBlock Classes="value" Text="Aucun engin au parc"/>
+                        </Border>
+                    </StackPanel>
+                </Border>
+
+                <!-- ===== Actions ===== -->
+                <TextBlock Classes="section" Text="ACTIONS"/>
+                <Button Classes="primary" Content="Valider l'ordre de départ" Command="{Binding ValidateCommand}"/>
+                <Button Classes="secondary" Content="Prévisualiser" Command="{Binding PreviewCommand}"/>
+                <Button Classes="destructive" Content="Annuler" Command="{Binding CancelCommand}"/>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- ===== Prévisualisation (plein écran) ===== -->
+        <Grid Grid.RowSpan="2" Background="{StaticResource IosBack}" IsVisible="{Binding PreviewVisible}" RowDefinitions="Auto,*">
+            <Grid ColumnDefinitions="*,Auto">
+                <TextBlock Classes="large" Text="Aperçu de l'ODE"/>
+                <Button Grid.Column="1" Classes="plain" Content="Fermer" FontWeight="SemiBold" Margin="0,0,8,0"
+                        VerticalAlignment="Center" Command="{Binding ClosePreviewCommand}"/>
+            </Grid>
+            <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Auto">
+                <LayoutTransformControl HorizontalAlignment="Left" Margin="8,0,8,16" LayoutTransform="scale(0.5)">
+                    <ode:OdeDocumentView DataContext="{Binding Preview}"/>
+                </LayoutTransformControl>
+            </ScrollViewer>
+        </Grid>
+
+        <!-- ===== Choix de la nature (plein écran, géré par le code-behind) ===== -->
+        <Grid Name="PickerOverlay" Grid.RowSpan="2" Background="{StaticResource IosBack}" IsVisible="False" RowDefinitions="Auto,Auto,*">
+            <Grid ColumnDefinitions="*,Auto">
+                <TextBlock Classes="large" Text="Nature opérationnelle"/>
+                <Button Name="PickerCancel" Grid.Column="1" Classes="plain" Content="Annuler" Margin="0,0,8,0" VerticalAlignment="Center"/>
+            </Grid>
+            <Border Grid.Row="1" Classes="searchbar">
+                <Grid ColumnDefinitions="Auto,*">
+                    <PathIcon Data="{StaticResource TabSearch}" Width="16" Height="16" Foreground="{StaticResource IosSecondary}"/>
+                    <TextBox Name="PickerSearch" Grid.Column="1" Classes="field" Margin="6,0,0,0" Watermark="Code ou mot (ex. 117, feu, malaise)"/>
+                </Grid>
+            </Border>
+            <Border Grid.Row="2" Classes="group" Margin="16,4,16,16">
+                <ListBox Name="PickerList" Background="White">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding}" FontSize="15.5" TextWrapping="Wrap" Margin="4,6"/>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </Border>
+        </Grid>
+    </Grid>
+</UserControl>

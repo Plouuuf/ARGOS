@@ -22,33 +22,56 @@ public partial class MobileHomeView : UserControl
 {
     // Largeur maximale imposée par un tableau (au-delà, on accepte de tronquer).
     private const double MaxContentWidth = 980;
-
     private static readonly IBrush DefaultAccent = new SolidColorBrush(Color.Parse("#007AFF"));
+
+    /// <summary>
+    /// Une page de la pile de navigation. Les pages restent dans l'arbre visuel (masquées) tant qu'on peut y revenir :
+    /// leur saisie et leur état sont conservés, comme dans une vraie app iPhone.
+    /// </summary>
+    private sealed class PageEntry
+    {
+        public required string Key { get; init; }
+        public required Control Root { get; init; }
+        public required Control Content { get; init; }
+        public IBrush? Accent { get; init; }
+        public ScrollViewer? Pan { get; init; }
+        public Border? Host { get; init; }
+        public double BaseWidth { get; init; }
+        public double MinWidth { get; set; }
+        public Grid? SidebarGrid { get; set; }
+        public Control? Sidebar { get; set; }
+        public Border? Backdrop { get; set; }
+        public double SidebarColumn { get; set; }
+        public bool MeasureScheduled { get; set; }
+    }
+
+    private readonly Panel _pages = new();
+    private readonly Dictionary<string, PageEntry> _cache = new();
+    private PageEntry? _current;
     private DesktopViewModel? _vm;
-    private ScrollViewer? _pan;
-    private Border? _host;
-    private double _minWidth;
-    private double _baseWidth;
-    private Grid? _sidebarGrid;
-    private Control? _sidebar;
-    private Border? _backdrop;
-    private GridLength _sidebarColumn;
 
     public MobileHomeView()
     {
         InitializeComponent();
-        MenuButton.Click += (_, _) => SetDrawer(!(_sidebar?.IsVisible ?? false));
+        MobileBody.Content = _pages;
+        MenuButton.Click += (_, _) => SetDrawer(_current, !(_current?.Sidebar?.IsVisible ?? false));
     }
 
     protected override void OnDataContextChanged(EventArgs e)
     {
         base.OnDataContextChanged(e);
         if (_vm is not null)
+        {
             _vm.PropertyChanged -= OnViewModelPropertyChanged;
+            _vm.MobileCanGoBack = null;
+        }
 
         _vm = DataContext as DesktopViewModel;
         if (_vm is not null)
+        {
             _vm.PropertyChanged += OnViewModelPropertyChanged;
+            _vm.MobileCanGoBack = CanGoBack;
+        }
         UpdateBody();
     }
 
@@ -58,102 +81,117 @@ public partial class MobileHomeView : UserControl
             UpdateBody();
     }
 
+    private bool CanGoBack()
+        => _current?.Content.DataContext is not ICloseGuard guard || guard.TryClose();
+
     private void UpdateBody()
     {
-        _sidebarGrid = null;
-        _sidebar = null;
-        _backdrop = null;
-        MenuButton.IsVisible = false;
+        // Pages qui ne sont plus dans la pile : retirées (leur vue libère alors son modèle).
+        var alive = new HashSet<string>(_vm?.MobileStackKeys ?? []);
+        if (_vm?.MobileApp is { } shown) alive.Add(shown.Key);
+        foreach (var gone in _cache.Values.Where(p => !alive.Contains(p.Key)).ToList())
+        {
+            _cache.Remove(gone.Key);
+            _pages.Children.Remove(gone.Root);
+        }
+
         if (_vm?.MobileApp is not { } page)
         {
-            MobileBody.Content = null;
+            _current = null;
+            MenuButton.IsVisible = false;
             return;
         }
 
+        if (!_cache.TryGetValue(page.Key, out var entry))
+        {
+            entry = Create(page);
+            _cache[page.Key] = entry;
+            _pages.Children.Add(entry.Root);
+        }
+        foreach (var p in _cache.Values) p.Root.IsVisible = ReferenceEquals(p, entry);
+        _current = entry;
+        BackLabel.Foreground = entry.Accent ?? DefaultAccent;
+        BackIcon.Foreground = entry.Accent ?? DefaultAccent;
+        MenuButton.IsVisible = entry.Sidebar is not null;
+    }
+
+    private PageEntry Create(WindowSpec page)
+    {
         var content = page.CreateContent();
-        // Vue iPhone dédiée : affichée telle quelle, barre de navigation aux couleurs de l'application.
         var accent = Argos.Views.Mobile.MobilePage.GetAccent(content);
-        BackLabel.Foreground = accent ?? DefaultAccent;
-        BackIcon.Foreground = accent ?? DefaultAccent;
+        // Vue iPhone dédiée : affichée telle quelle.
         if (Argos.Views.Mobile.MobilePage.GetIsNative(content))
-        {
-            _pan = null;
-            _host = null;
-            MobileBody.Content = content;
-            return;
-        }
+            return new PageEntry { Key = page.Key, Root = content, Content = content, Accent = accent };
 
-        // Fenêtre de saisie (prise d'appel, fiche…) : mise en page fixe, gardée lisible et glissée horizontalement.
-        _baseWidth = _vm.Apps.Any(a => a.Id == page.Key) ? 0 : Math.Min(page.Width, MaxContentWidth);
-        _minWidth = _baseWidth;
-        _host = new Border { Child = content, HorizontalAlignment = HorizontalAlignment.Left };
-        _pan = new ScrollViewer
+        // Vue bureau adaptée : menu latéral en tiroir, tableaux larges glissés horizontalement ;
+        // fenêtre de saisie : mise en page fixe gardée lisible.
+        var baseWidth = _vm!.Apps.Any(a => a.Id == page.Key) ? 0 : Math.Min(page.Width, MaxContentWidth);
+        var host = new Border { Child = content, HorizontalAlignment = HorizontalAlignment.Left };
+        var pan = new ScrollViewer
         {
-            Content = _host,
+            Content = host,
             HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto,
             VerticalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled
         };
-        _pan.SizeChanged += (_, _) => FitHost();
-        MobileBody.Content = _pan;
+        var entry = new PageEntry
+        {
+            Key = page.Key, Root = pan, Content = content, Accent = accent, Pan = pan, Host = host,
+            BaseWidth = baseWidth, MinWidth = baseWidth
+        };
+        pan.SizeChanged += (_, _) => FitHost(entry);
 
-        // Le menu latéral n'est connu qu'une fois l'arbre visuel construit.
         void OnLoaded(object? s, RoutedEventArgs e)
         {
             content.Loaded -= OnLoaded;
-            FindSidebar(content);
-            MeasureTables();
+            FindSidebar(entry);
+            if (ReferenceEquals(_current, entry)) MenuButton.IsVisible = entry.Sidebar is not null;
+            MeasureTables(entry);
         }
         content.Loaded += OnLoaded;
         // Changement de rubrique, d'onglet ou de filtre : la largeur utile peut changer.
-        content.AddHandler(Button.ClickEvent, (_, _) => ScheduleMeasure(), RoutingStrategies.Bubble, handledEventsToo: true);
+        content.AddHandler(Button.ClickEvent, (_, _) => ScheduleMeasure(entry), RoutingStrategies.Bubble, handledEventsToo: true);
+        return entry;
     }
 
-    private bool _measureScheduled;
-
-    private void ScheduleMeasure()
+    private static void ScheduleMeasure(PageEntry entry)
     {
-        if (_measureScheduled) return;
-        _measureScheduled = true;
+        if (entry.MeasureScheduled) return;
+        entry.MeasureScheduled = true;
         Avalonia.Threading.Dispatcher.UIThread.Post(() =>
         {
-            _measureScheduled = false;
-            MeasureTables();
+            entry.MeasureScheduled = false;
+            MeasureTables(entry);
         }, Avalonia.Threading.DispatcherPriority.Background);
     }
 
-    /// <summary>
-    /// Largeur minimale = la plus large ligne de tableau visible (somme de ses colonnes fixes) ;
-    /// sans tableau large, le contenu prend simplement la largeur de l'écran.
-    /// </summary>
-    private void MeasureTables()
+    /// <summary>Largeur minimale = la plus large ligne de tableau visible ; sinon la largeur de l'écran.</summary>
+    private static void MeasureTables(PageEntry entry)
     {
-        if (_host?.Child is not Control root) return;
         double need = 0;
-        foreach (var g in root.GetSelfAndVisualDescendants().OfType<Grid>())
+        foreach (var g in entry.Content.GetSelfAndVisualDescendants().OfType<Grid>())
         {
-            if (g.ColumnDefinitions.Count < 3 || !g.IsEffectivelyVisible || ReferenceEquals(g, _sidebarGrid)) continue;
+            if (g.ColumnDefinitions.Count < 3 || !g.IsEffectivelyVisible || ReferenceEquals(g, entry.SidebarGrid)) continue;
             var fixedWidth = g.ColumnDefinitions.Where(c => c.Width.IsAbsolute).Sum(c => c.Width.Value);
             var stars = g.ColumnDefinitions.Count(c => c.Width.IsStar);
             if (fixedWidth < 300) continue;
             need = Math.Max(need, fixedWidth + stars * 90 + 48);
         }
-        _minWidth = Math.Max(_baseWidth, Math.Min(need, MaxContentWidth));
-        FitHost();
+        entry.MinWidth = Math.Max(entry.BaseWidth, Math.Min(need, MaxContentWidth));
+        FitHost(entry);
     }
 
-    /// <summary>Largeur du contenu : celle de l'écran, sans descendre sous le minimum lisible de l'application.</summary>
-    private void FitHost()
+    private static void FitHost(PageEntry entry)
     {
-        if (_pan is null || _host is null) return;
-        var viewport = _pan.Bounds.Width;
+        if (entry.Pan is null || entry.Host is null) return;
+        var viewport = entry.Pan.Bounds.Width;
         if (viewport <= 0) return;
-        _host.Width = Math.Max(viewport, _minWidth);
-        _host.Height = _pan.Bounds.Height;
+        entry.Host.Width = Math.Max(viewport, entry.MinWidth);
+        entry.Host.Height = entry.Pan.Bounds.Height;
     }
 
-    private void FindSidebar(Control root)
+    private void FindSidebar(PageEntry entry)
     {
-        var grid = root.GetSelfAndVisualDescendants().OfType<Grid>().FirstOrDefault(g =>
+        var grid = entry.Content.GetSelfAndVisualDescendants().OfType<Grid>().FirstOrDefault(g =>
             g.ColumnDefinitions.Count >= 2
             && g.ColumnDefinitions[0].Width is { IsAbsolute: true, Value: >= 150 and <= 300 }
             && g.ColumnDefinitions[1].Width.IsStar
@@ -162,35 +200,34 @@ public partial class MobileHomeView : UserControl
         if (grid is null) return;
         var sidebar = grid.Children.First(c => Grid.GetColumn(c) == 0);
 
-        _sidebarGrid = grid;
-        _sidebar = sidebar;
-        _sidebarColumn = grid.ColumnDefinitions[0].Width;
+        entry.SidebarGrid = grid;
+        entry.Sidebar = sidebar;
+        entry.SidebarColumn = grid.ColumnDefinitions[0].Width.Value;
         grid.ColumnDefinitions[0].Width = new GridLength(0);
 
         // Tiroir : le menu passe au-dessus du contenu, sur un voile sombre.
-        _backdrop = new Border { Background = new SolidColorBrush(Color.FromArgb(0x66, 0, 0, 0)), IsVisible = false, ZIndex = 50 };
-        Grid.SetColumnSpan(_backdrop, grid.ColumnDefinitions.Count);
-        Grid.SetRowSpan(_backdrop, Math.Max(1, grid.RowDefinitions.Count));
-        _backdrop.PointerPressed += (_, e) => { SetDrawer(false); e.Handled = true; };
-        grid.Children.Add(_backdrop);
+        var backdrop = new Border { Background = new SolidColorBrush(Color.FromArgb(0x66, 0, 0, 0)), IsVisible = false, ZIndex = 50 };
+        Grid.SetColumnSpan(backdrop, grid.ColumnDefinitions.Count);
+        Grid.SetRowSpan(backdrop, Math.Max(1, grid.RowDefinitions.Count));
+        backdrop.PointerPressed += (_, e) => { SetDrawer(entry, false); e.Handled = true; };
+        grid.Children.Add(backdrop);
+        entry.Backdrop = backdrop;
 
         Grid.SetColumnSpan(sidebar, grid.ColumnDefinitions.Count);
-        sidebar.Width = Math.Min(_sidebarColumn.Value + 40, 300);
+        sidebar.Width = Math.Min(entry.SidebarColumn + 40, 300);
         sidebar.HorizontalAlignment = HorizontalAlignment.Left;
         sidebar.ZIndex = 51;
         sidebar.IsVisible = false;
         // Un choix dans le menu le referme.
-        sidebar.AddHandler(Button.ClickEvent, (_, _) => SetDrawer(false), RoutingStrategies.Bubble, handledEventsToo: true);
-
-        MenuButton.IsVisible = true;
+        sidebar.AddHandler(Button.ClickEvent, (_, _) => SetDrawer(entry, false), RoutingStrategies.Bubble, handledEventsToo: true);
     }
 
-    private void SetDrawer(bool open)
+    private static void SetDrawer(PageEntry? entry, bool open)
     {
-        if (_sidebar is null || _backdrop is null) return;
-        _sidebar.IsVisible = open;
-        _backdrop.IsVisible = open;
+        if (entry?.Sidebar is null || entry.Backdrop is null) return;
+        entry.Sidebar.IsVisible = open;
+        entry.Backdrop.IsVisible = open;
         // Le tiroir s'ouvre toujours à gauche de l'écran, même si le contenu a glissé.
-        if (open && _pan is not null) _pan.Offset = new Vector(0, _pan.Offset.Y);
+        if (open && entry.Pan is not null) entry.Pan.Offset = new Vector(0, entry.Pan.Offset.Y);
     }
 }

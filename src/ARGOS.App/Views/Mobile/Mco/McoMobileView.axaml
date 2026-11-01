@@ -1,0 +1,179 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:m="using:Argos.Views.Mobile"
+             x:Class="Argos.Views.Mobile.Mco.McoMobileView"
+             Classes="ios"
+             m:MobilePage.IsNative="True"
+             m:MobilePage.Accent="#D84315">
+    <!-- MCO sur iPhone (même modèle que la version bureau : McoAppViewModel). Onglets gérés par le code-behind. -->
+    <UserControl.Resources>
+        <SolidColorBrush x:Key="AppAccent" Color="#D84315"/>
+    </UserControl.Resources>
+
+    <Grid RowDefinitions="Auto,*,Auto">
+        <Border Classes="banner" IsVisible="{Binding HasError}">
+            <Grid ColumnDefinitions="*,Auto">
+                <TextBlock Text="{Binding Error}"/>
+                <Button Grid.Column="1" Classes="plain" Foreground="White" Content="Réessayer" Command="{Binding RefreshCommand}"/>
+            </Grid>
+        </Border>
+
+        <!-- ===== Accueil ===== -->
+        <ScrollViewer x:Name="PageHome" Grid.Row="1">
+            <StackPanel Margin="0,0,0,24">
+                <TextBlock Classes="large" Text="MCO"/>
+                <TextBlock Classes="footnote" Text="Main courante opérationnelle" Margin="16,-4,16,0"/>
+                <TextBlock Classes="footnote" Text="{Binding OperatorName}" Margin="16,2,16,4"/>
+                <Grid ColumnDefinitions="*,*" Margin="0,4,0,0">
+                    <Button Classes="primary" Margin="16,6,6,6" Content="Nouvelle MCO" Command="{Binding NewCommand}"/>
+                    <Button Grid.Column="1" Classes="secondary" Margin="6,6,16,6" Content="Actualiser" Command="{Binding RefreshCommand}"/>
+                </Grid>
+                <UniformGrid Columns="2" Margin="11,4">
+                    <Border Classes="tile"><StackPanel><TextBlock Classes="big" Text="{Binding Drafts}" Foreground="#FF9500"/><TextBlock Classes="caption" Text="Brouillons" TextWrapping="Wrap"/></StackPanel></Border>
+                    <Border Classes="tile"><StackPanel><TextBlock Classes="big" Text="{Binding Validated}" Foreground="#34C759"/><TextBlock Classes="caption" Text="Validées" TextWrapping="Wrap"/></StackPanel></Border>
+                    <Border Classes="tile"><StackPanel><TextBlock Classes="big" Text="{Binding Archived}" Foreground="#8E8E93"/><TextBlock Classes="caption" Text="Archivées" TextWrapping="Wrap"/></StackPanel></Border>
+                    <Border Classes="tile"><StackPanel><TextBlock Classes="big" Text="{Binding ToWrite}" Foreground="{DynamicResource AppAccent}"/><TextBlock Classes="caption" Text="Interventions sans MCO" TextWrapping="Wrap"/></StackPanel></Border>
+                </UniformGrid>
+                <TextBlock Classes="footnote" Text="Comptes-rendus d'intervention : rédaction, validation et archives. Une MCO par engin engagé."/>
+
+                <TextBlock Classes="section" Text="RACCOURCIS"/>
+                <Border Classes="group">
+                    <StackPanel>
+                        <Button Classes="row" Click="OnShowInterventions">
+                            <Grid ColumnDefinitions="Auto,*,Auto">
+                                <PathIcon Data="{StaticResource TabTruck}" Width="20" Height="20" Foreground="{DynamicResource AppAccent}" Margin="0,0,12,0"/>
+                                <TextBlock Grid.Column="1" Classes="label" Text="Dernières interventions ADAGIO ODE"/>
+                                <TextBlock Grid.Column="2" Classes="chevron"/>
+                            </Grid>
+                        </Button>
+                        <Button Classes="row" Click="OnShowReports">
+                            <Grid ColumnDefinitions="Auto,*,Auto">
+                                <PathIcon Data="{StaticResource TabDocument}" Width="20" Height="20" Foreground="{DynamicResource AppAccent}" Margin="0,0,12,0"/>
+                                <TextBlock Grid.Column="1" Classes="label" Text="Mains courantes enregistrées"/>
+                                <TextBlock Grid.Column="2" Classes="value" Text="{Binding ReportsCount}"/>
+                            </Grid>
+                        </Button>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- ===== Interventions ADAGIO ODE ===== -->
+        <ScrollViewer x:Name="PageInterventions" Grid.Row="1" IsVisible="False">
+            <StackPanel Margin="0,0,0,24">
+                <TextBlock Classes="large" Text="Interventions"/>
+                <TextBlock Classes="footnote" Text="Dernières interventions ADAGIO ODE : touchez une intervention pour rédiger sa MCO." Margin="16,-4,16,4"/>
+                <TextBlock Classes="section" Text="DERNIÈRES INTERVENTIONS (ADAGIO ODE)"/>
+                <Border Classes="group">
+                    <StackPanel>
+                        <ItemsControl ItemsSource="{Binding Interventions}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Button Classes="row" Command="{Binding WriteCommand}">
+                                        <Grid ColumnDefinitions="*,Auto">
+                                            <StackPanel Spacing="2">
+                                                <Grid ColumnDefinitions="*,Auto">
+                                                    <TextBlock Classes="title" Text="{Binding Number}"/>
+                                                    <TextBlock Grid.Column="1" Classes="caption" Text="{Binding Date}" Margin="8,0,0,0"/>
+                                                </Grid>
+                                                <TextBlock Classes="subtitle" Text="{Binding Nature}"/>
+                                                <TextBlock Classes="caption" Text="{Binding Address}"/>
+                                                <TextBlock Classes="caption" Text="{Binding Engins}" TextWrapping="Wrap" TextTrimming="None"
+                                                           IsVisible="{Binding Engins, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+                                                <TextBlock FontSize="12.5" Text="{Binding McoState}" TextWrapping="Wrap" Foreground="#8E8E93"/>
+                                                <TextBlock FontSize="13.5" FontWeight="SemiBold" Text="Rédiger la MCO" Foreground="{DynamicResource AppAccent}" Margin="0,2,0,0"/>
+                                            </StackPanel>
+                                            <TextBlock Grid.Column="1" Classes="chevron"/>
+                                        </Grid>
+                                    </Button>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <Border Classes="row" IsVisible="{Binding !Interventions.Count}">
+                            <TextBlock Classes="value" Text="Aucune intervention."/>
+                        </Border>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- ===== Mains courantes ===== -->
+        <ScrollViewer x:Name="PageReports" Grid.Row="1" IsVisible="False">
+            <StackPanel Margin="0,0,0,24">
+                <TextBlock Classes="large" Text="Mains courantes"/>
+                <Border Classes="searchbar">
+                    <Grid ColumnDefinitions="Auto,*">
+                        <PathIcon Data="{StaticResource TabSearch}" Width="16" Height="16" Foreground="#8E8E93"/>
+                        <TextBox Grid.Column="1" Classes="field" Text="{Binding Search}"
+                                 Watermark="N° d'intervention, adresse, nature, date, engin, rédacteur" Margin="6,0,0,0"/>
+                    </Grid>
+                </Border>
+                <Border Classes="group" Margin="16,8,16,0">
+                    <StackPanel>
+                        <Border Classes="row">
+                            <Grid ColumnDefinitions="Auto,*">
+                                <TextBlock Classes="label" Text="Statut"/>
+                                <ComboBox Grid.Column="1" Classes="field" ItemsSource="{Binding StatusFilters}" SelectedItem="{Binding StatusFilter}"
+                                          HorizontalContentAlignment="Right" Margin="12,0,0,0"/>
+                            </Grid>
+                        </Border>
+                        <Border Classes="row">
+                            <Grid ColumnDefinitions="Auto,*">
+                                <TextBlock Classes="label" Text="Engin"/>
+                                <ComboBox Grid.Column="1" Classes="field" ItemsSource="{Binding EnginFilters}" SelectedItem="{Binding EnginFilter}"
+                                          HorizontalContentAlignment="Right" Margin="12,0,0,0"/>
+                            </Grid>
+                        </Border>
+                    </StackPanel>
+                </Border>
+
+                <TextBlock Classes="section" Text="{Binding ReportsCount}"/>
+                <Border Classes="group">
+                    <StackPanel>
+                        <ItemsControl ItemsSource="{Binding Reports}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Button Classes="row" Command="{Binding OpenCommand}">
+                                        <Grid ColumnDefinitions="*,Auto">
+                                            <StackPanel Spacing="2">
+                                                <Grid ColumnDefinitions="*,Auto">
+                                                    <TextBlock Classes="title" Text="{Binding Number}"/>
+                                                    <TextBlock Grid.Column="1" Classes="caption" Text="{Binding Date}" Margin="8,0,0,0"/>
+                                                </Grid>
+                                                <TextBlock Classes="subtitle" Text="{Binding Nature}"/>
+                                                <TextBlock Classes="caption" Text="{Binding Address}"/>
+                                                <TextBlock Classes="caption">
+                                                    <Run Text="Interv. "/><Run Text="{Binding Intervention}"/><Run Text="  ·  "/><Run Text="{Binding Engin}"/><Run Text="  ·  "/><Run Text="{Binding Author}"/>
+                                                </TextBlock>
+                                                <TextBlock FontSize="12.5" FontWeight="SemiBold" Text="{Binding Status}" Foreground="{DynamicResource AppAccent}"/>
+                                            </StackPanel>
+                                            <TextBlock Grid.Column="1" Classes="chevron"/>
+                                        </Grid>
+                                    </Button>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <Border Classes="row" IsVisible="{Binding !Reports.Count}">
+                            <TextBlock Classes="value" Text="Aucune MCO ne correspond."/>
+                        </Border>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- ===== Barre d'onglets ===== -->
+        <Border Grid.Row="2" Classes="tabbar">
+            <UniformGrid Columns="3">
+                <Button x:Name="BtnHome" Classes="tab selected" Click="OnShowHome">
+                    <StackPanel><PathIcon Data="{StaticResource TabHome}"/><TextBlock Text="Accueil"/></StackPanel>
+                </Button>
+                <Button x:Name="BtnInterventions" Classes="tab" Click="OnShowInterventions">
+                    <StackPanel><PathIcon Data="{StaticResource TabTruck}"/><TextBlock Text="Interventions"/></StackPanel>
+                </Button>
+                <Button x:Name="BtnReports" Classes="tab" Click="OnShowReports">
+                    <StackPanel><PathIcon Data="{StaticResource TabDocument}"/><TextBlock Text="Mains courantes"/></StackPanel>
+                </Button>
+            </UniformGrid>
+        </Border>
+    </Grid>
+</UserControl>

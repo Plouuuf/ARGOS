@@ -1,0 +1,280 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:m="using:Argos.Views.Mobile"
+             x:Class="Argos.Views.Mobile.Ode.InterventionMobileView"
+             Classes="ios"
+             m:MobilePage.IsNative="True"
+             m:MobilePage.Accent="#D0021B">
+    <!-- Suivi d'intervention sur iPhone (même modèle que la version bureau : InterventionViewModel). -->
+    <UserControl.Resources>
+        <SolidColorBrush x:Key="AppAccent" Color="#D0021B"/>
+    </UserControl.Resources>
+    <UserControl.Styles>
+        <!-- Boutons de statut des engins : petites pastilles arrondies -->
+        <Style Selector=".ios Button.status">
+            <Setter Property="Background" Value="{StaticResource IosBack}"/>
+            <Setter Property="Foreground" Value="{DynamicResource AppAccent}"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="CornerRadius" Value="14"/>
+            <Setter Property="FontSize" Value="12.5"/>
+            <Setter Property="FontWeight" Value="Medium"/>
+            <Setter Property="Padding" Value="11,5"/>
+            <Setter Property="Margin" Value="0,0,6,6"/>
+            <Setter Property="MinHeight" Value="28"/>
+        </Style>
+        <Style Selector=".ios Button.status:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{StaticResource IosPressed}"/>
+            <Setter Property="Foreground" Value="{DynamicResource AppAccent}"/>
+        </Style>
+        <Style Selector=".ios Button.status.current">
+            <Setter Property="Background" Value="{DynamicResource AppAccent}"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+        </Style>
+        <Style Selector=".ios Button.status.current:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource AppAccent}"/>
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+    </UserControl.Styles>
+
+    <Grid RowDefinitions="Auto,*">
+        <Border Classes="banner" IsVisible="{Binding HasError}" ZIndex="10">
+            <TextBlock Text="{Binding Error}"/>
+        </Border>
+
+        <ScrollViewer Grid.Row="1">
+            <StackPanel Margin="0,0,0,24">
+                <!-- ===== En-tête ===== -->
+                <TextBlock Classes="large" Text="{Binding Number}"/>
+                <StackPanel Orientation="Horizontal" Spacing="8" Margin="16,0,16,4">
+                    <Border Classes="badge">
+                        <TextBlock Text="{Binding StateLabel}"/>
+                    </Border>
+                    <TextBlock Text="{Binding Procedure}" FontSize="14" FontWeight="SemiBold"
+                               Foreground="{DynamicResource AppAccent}" VerticalAlignment="Center"/>
+                </StackPanel>
+
+                <Border Classes="group" Margin="16,10,16,0">
+                    <StackPanel>
+                        <Border Classes="row">
+                            <StackPanel Spacing="2">
+                                <TextBlock Classes="caption" Text="NATURE"/>
+                                <TextBlock Classes="title" Text="{Binding Nature}" TextWrapping="Wrap" TextTrimming="None"/>
+                            </StackPanel>
+                        </Border>
+                        <Border Classes="row">
+                            <StackPanel Spacing="2">
+                                <TextBlock Classes="caption" Text="ADRESSE"/>
+                                <TextBlock FontSize="15" Text="{Binding Address}" TextWrapping="Wrap"/>
+                            </StackPanel>
+                        </Border>
+                        <Border Classes="row" BorderThickness="0">
+                            <TextBlock Classes="caption" Text="{Binding Created}" TextWrapping="Wrap" TextTrimming="None"/>
+                        </Border>
+                    </StackPanel>
+                </Border>
+
+                <!-- ===== Engins engagés ===== -->
+                <TextBlock Classes="section" Text="ENGINS ENGAGÉS"/>
+                <Border Classes="group">
+                    <StackPanel>
+                        <ItemsControl ItemsSource="{Binding Engins}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Classes="row" Padding="16,11,10,5">
+                                        <StackPanel Spacing="3">
+                                            <Grid ColumnDefinitions="*,Auto">
+                                                <TextBlock Classes="title" Text="{Binding Nom}"/>
+                                                <TextBlock Grid.Column="1" Classes="caption" Text="{Binding Since}" Margin="8,0,6,0"/>
+                                            </Grid>
+                                            <TextBlock Classes="subtitle" Text="{Binding Libelle}"/>
+                                            <TextBlock FontSize="12.5">
+                                                <Run Text="{Binding Status}" FontWeight="SemiBold" Foreground="{DynamicResource AppAccent}"/><Run Text="  ·  " Foreground="{StaticResource IosSecondary}"/><Run Text="{Binding Role}" Foreground="{StaticResource IosSecondary}"/>
+                                            </TextBlock>
+                                            <ItemsControl ItemsSource="{Binding Buttons}" Margin="0,6,0,0">
+                                                <ItemsControl.ItemsPanel>
+                                                    <ItemsPanelTemplate>
+                                                        <WrapPanel/>
+                                                    </ItemsPanelTemplate>
+                                                </ItemsControl.ItemsPanel>
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <Button Classes="status" Classes.current="{Binding IsCurrent}"
+                                                                Content="{Binding Label}" Command="{Binding Command}"/>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <Border Classes="row" IsVisible="{Binding !Engins.Count}">
+                            <TextBlock Classes="value" Text="Aucun engin engagé"/>
+                        </Border>
+                    </StackPanel>
+                </Border>
+                <Button Classes="secondary" Margin="16,10,16,0" Content="Ajouter des moyens" Command="{Binding AddMeansCommand}"/>
+
+                <!-- ===== Requérant et consignes ===== -->
+                <TextBlock Classes="section" Text="REQUÉRANT ET CONSIGNES"/>
+                <Border Classes="group">
+                    <StackPanel>
+                        <Border Classes="row">
+                            <TextBlock FontSize="14.5" Text="{Binding Requerant}" TextWrapping="Wrap"/>
+                        </Border>
+                        <Border Classes="row" BorderThickness="0">
+                            <StackPanel Spacing="2">
+                                <TextBlock Classes="caption" Text="CONSIGNES CHEF D'AGRÈS"/>
+                                <TextBlock FontSize="14.5" Text="{Binding Consignes}" TextWrapping="Wrap"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </Border>
+
+                <!-- ===== Messages et renforts ===== -->
+                <TextBlock Classes="section" Text="MESSAGE OPÉRATIONNEL"/>
+                <Border Classes="group">
+                    <Border Classes="row" BorderThickness="0">
+                        <TextBox Classes="field" Text="{Binding Message}" Watermark="Message opérationnel…"
+                                 AcceptsReturn="True" TextWrapping="Wrap" MinHeight="60" VerticalContentAlignment="Top"/>
+                    </Border>
+                </Border>
+                <Grid ColumnDefinitions="*,*" Margin="0,4,0,0">
+                    <Button Classes="primary" Margin="16,6,6,6" Content="Ajouter" Command="{Binding SendMessageCommand}"/>
+                    <Button Grid.Column="1" Classes="secondary" Margin="6,6,16,6" Content="Renfort" Command="{Binding RenfortCommand}"/>
+                </Grid>
+                <TextBlock Classes="footnote" Margin="32,0,16,0"
+                           Text="« Renfort » trace la demande dans la main courante puis ouvre le départ complémentaire."/>
+
+                <!-- ===== Main courante ===== -->
+                <TextBlock Classes="section" Text="MAIN COURANTE"/>
+                <Border Classes="group">
+                    <StackPanel>
+                        <ItemsControl ItemsSource="{Binding Events}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Classes="row">
+                                        <StackPanel Spacing="2">
+                                            <Grid ColumnDefinitions="*,Auto">
+                                                <TextBlock Classes="subtitle" Text="{Binding Author}" FontWeight="SemiBold"/>
+                                                <TextBlock Grid.Column="1" Classes="caption" Margin="8,0,0,0"
+                                                           Text="{Binding LocalAt, StringFormat='{}{0:dd/MM HH:mm:ss}'}"/>
+                                            </Grid>
+                                            <TextBlock Text="{Binding Text}" FontSize="15" TextWrapping="Wrap"/>
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <Border Classes="row" IsVisible="{Binding !Events.Count}">
+                            <TextBlock Classes="value" Text="Aucun message"/>
+                        </Border>
+                    </StackPanel>
+                </Border>
+
+                <!-- ===== Ordres de départ ===== -->
+                <TextBlock Classes="section" Text="ORDRES DE DÉPART"/>
+                <Border Classes="group">
+                    <StackPanel>
+                        <ItemsControl ItemsSource="{Binding Orders}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Button Classes="row" Command="{Binding PrintCommand}">
+                                        <Grid ColumnDefinitions="Auto,*,Auto">
+                                            <PathIcon Data="{StaticResource TabDocument}" Width="20" Height="20"
+                                                      Foreground="{DynamicResource AppAccent}" Margin="0,0,12,0"/>
+                                            <StackPanel Grid.Column="1" Spacing="1">
+                                                <TextBlock Classes="caption" Text="VOIR / IMPRIMER"/>
+                                                <TextBlock Text="{Binding Text}" FontSize="14.5" TextWrapping="Wrap"/>
+                                            </StackPanel>
+                                            <TextBlock Grid.Column="2" Classes="chevron"/>
+                                        </Grid>
+                                    </Button>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <Border Classes="row" IsVisible="{Binding !Orders.Count}">
+                            <TextBlock Classes="value" Text="Aucun ordre de départ"/>
+                        </Border>
+                    </StackPanel>
+                </Border>
+
+                <!-- ===== Appels rattachés ===== -->
+                <TextBlock Classes="section" Text="APPELS RATTACHÉS"/>
+                <Border Classes="group">
+                    <StackPanel>
+                        <ItemsControl ItemsSource="{Binding Calls}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Button Classes="row" Command="{Binding OpenCommand}">
+                                        <Grid ColumnDefinitions="Auto,*,Auto">
+                                            <PathIcon Data="{StaticResource TabPhone}" Width="20" Height="20"
+                                                      Foreground="{DynamicResource AppAccent}" Margin="0,0,12,0"/>
+                                            <TextBlock Grid.Column="1" Text="{Binding Text}" FontSize="14.5" TextWrapping="Wrap" VerticalAlignment="Center"/>
+                                            <TextBlock Grid.Column="2" Classes="chevron"/>
+                                        </Grid>
+                                    </Button>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <Border Classes="row" IsVisible="{Binding !Calls.Count}">
+                            <TextBlock Classes="value" Text="Aucun appel rattaché"/>
+                        </Border>
+                    </StackPanel>
+                </Border>
+
+                <!-- ===== Actions ===== -->
+                <TextBlock Classes="section" Text="ACTIONS"/>
+                <Button Classes="secondary" Content="Rédiger la MCO" Command="{Binding WriteMcoCommand}"/>
+                <Button Classes="secondary" Content="Changer la procédure" Command="{Binding AskProcedureCommand}"/>
+                <Button Classes="destructive" Content="Clôturer l'intervention" Command="{Binding AskCloseCommand}"/>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- ===== Changement de procédure (plein écran) ===== -->
+        <ScrollViewer Grid.RowSpan="2" Background="{StaticResource IosBack}" IsVisible="{Binding ChangingProcedure}">
+            <StackPanel Margin="0,0,0,24">
+                <TextBlock Classes="large" Text="Changer la procédure"/>
+                <TextBlock Classes="footnote" Margin="16,0,16,0"
+                           Text="Réservé à l'auteur de l'intervention et à l'encadrement. Le changement est tracé dans la main courante."/>
+                <TextBlock Classes="section" Text="NOUVELLE PROCÉDURE"/>
+                <Border Classes="group">
+                    <StackPanel>
+                        <Border Classes="row">
+                            <Grid ColumnDefinitions="Auto,*">
+                                <TextBlock Classes="label" Text="Procédure"/>
+                                <ComboBox Grid.Column="1" Classes="field" HorizontalContentAlignment="Right" Margin="12,0,0,0"
+                                          ItemsSource="{Binding ProcedureChoices}" SelectedItem="{Binding NewProcedure}">
+                                    <ComboBox.ItemTemplate>
+                                        <DataTemplate><TextBlock><Run Text="{Binding Key}"/><Run Text=" - "/><Run Text="{Binding Label}"/></TextBlock></DataTemplate>
+                                    </ComboBox.ItemTemplate>
+                                </ComboBox>
+                            </Grid>
+                        </Border>
+                        <Border Classes="row" BorderThickness="0">
+                            <StackPanel Spacing="2">
+                                <TextBlock Classes="caption" Text="MOTIF DU CHANGEMENT"/>
+                                <TextBox Classes="field" Text="{Binding ProcedureReason}" TextWrapping="Wrap" Watermark="Facultatif"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </Border>
+                <TextBlock Classes="footnote" Foreground="{StaticResource IosRed}" Text="{Binding Error}" IsVisible="{Binding HasError}"/>
+                <Button Classes="primary" Margin="16,18,16,6" Content="Appliquer" Command="{Binding ChangeProcedureCommand}"/>
+                <Button Classes="secondary" Content="Annuler" Command="{Binding CancelProcedureCommand}"/>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- ===== Confirmation de clôture (plein écran) ===== -->
+        <ScrollViewer Grid.RowSpan="2" Background="{StaticResource IosBack}" IsVisible="{Binding ConfirmClose}">
+            <StackPanel Margin="0,0,0,24">
+                <TextBlock Classes="large" Text="Clôturer l'intervention ?"/>
+                <TextBlock Classes="footnote" Margin="16,0,16,0"
+                           Text="Tous les engins encore engagés seront remis disponibles. L'intervention passera dans les archives."/>
+                <Button Classes="destructive" Margin="16,18,16,6" Content="Clôturer" Command="{Binding CloseInterventionCommand}"/>
+                <Button Classes="secondary" Content="Annuler" Command="{Binding CancelCloseCommand}"/>
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</UserControl>

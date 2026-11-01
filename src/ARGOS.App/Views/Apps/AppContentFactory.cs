@@ -33,6 +33,7 @@ public static class AppContentFactory
     private static Control? CreateMobile(AppTileViewModel app, DesktopViewModel desktop) => app.Id switch
     {
         ArgosApps.AdagioOde => new Argos.Views.Mobile.Ode.OdeMobileView { DataContext = new OdeAppViewModel(desktop) },
+        ArgosApps.Mco => new Argos.Views.Mobile.Mco.McoMobileView { DataContext = new McoAppViewModel(desktop) },
         _ => null
     };
 

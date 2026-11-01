@@ -65,7 +65,12 @@ public sealed partial class DesktopViewModel : ViewModelBase
         LockCommand = new RelayCommand(() => { IsStartMenuOpen = false; _lock(); });
         SignOutCommand = new RelayCommand(() => { IsStartMenuOpen = false; _signOut(); });
         ShowDesktopCommand = new RelayCommand(ShowDesktop);
-        MobileBackCommand = new RelayCommand(() => MobileApp = _mobileStack.Count > 0 ? _mobileStack.Pop() : null);
+        MobileBackCommand = new RelayCommand(() =>
+        {
+            // Saisie non enregistrée (MCO, Bloc-notes…) : la page affiche sa propre confirmation.
+            if (MobileCanGoBack?.Invoke() == false) return;
+            MobileApp = _mobileStack.Count > 0 ? _mobileStack.Pop() : null;
+        });
 
         UpdateClock(DateTime.Now);
         WindowsSettings.Changed += OnWindowsSettingsChanged;
@@ -146,6 +151,12 @@ public sealed partial class DesktopViewModel : ViewModelBase
     }
 
     public bool IsMobileAppOpen => MobileApp is not null;
+
+    /// <summary>Pages encore ouvertes sous la page affichée (téléphone) : leur vue est conservée telle quelle.</summary>
+    public IReadOnlyList<string> MobileStackKeys => _mobileStack.Select(s => s.Key).ToList();
+
+    /// <summary>Fourni par l'écran téléphone : faux si la page affichée refuse le retour (saisie à enregistrer).</summary>
+    public Func<bool>? MobileCanGoBack { get; set; }
 
     public RelayCommand ToggleStartMenuCommand { get; }
     public RelayCommand CloseStartMenuCommand { get; }
