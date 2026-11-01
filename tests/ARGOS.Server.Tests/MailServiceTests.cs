@@ -99,15 +99,22 @@ public sealed class MailServiceTests : IDisposable
     [Fact]
     public async Task Identite_de_premiere_connexion_donne_l_adresse_BSPP()
     {
-        Assert.False(_mail.Identity(Santos).Complete);
-        Assert.False((await _mail.SaveIdentityAsync(Santos, new UserIdentity { Prenom = "  ", Nom = "x" })).Ok);
-        Assert.True((await _mail.SaveIdentityAsync(Santos, new UserIdentity { Prenom = "jean-pierre", Nom = "dupont" })).Ok);
-        var identity = _mail.Identity(Santos);
+        // Utilisateur sans dossier SIGTAO : l'adresse vient du Prénom / NOM saisis.
+        var nouveau = new ArgosUserDto("7", "Pseudo", null, [AccessLevels.Sapeur]);
+        Assert.False(_mail.Identity(nouveau).Complete);
+        Assert.False((await _mail.SaveIdentityAsync(nouveau, new UserIdentity { Prenom = "  ", Nom = "x" })).Ok);
+        Assert.True((await _mail.SaveIdentityAsync(nouveau, new UserIdentity { Prenom = "jean-pierre", Nom = "dupont" })).Ok);
+        var identity = _mail.Identity(nouveau);
         Assert.Equal("Jean-Pierre", identity.Prenom);
         Assert.Equal("DUPONT", identity.Nom);
         Assert.Equal("Jean-Pierre DUPONT", identity.FullName);
-        Assert.StartsWith("jean-pierre.dupont@", identity.Email.Replace("jeanpierre", "jean-pierre"));
-        Assert.Equal("Jean-Pierre DUPONT", _mail.Profile(Santos).Name);
+        Assert.StartsWith("jean", identity.Email);
+        Assert.Contains("dupont@pompiersparis.fr", identity.Email);
+        Assert.Equal("Jean-Pierre DUPONT", _mail.Profile(nouveau).Name);
+
+        // Militaire déjà enregistré dans SIGTAO : son adresse existante est conservée.
+        Assert.True((await _mail.SaveIdentityAsync(Santos, new UserIdentity { Prenom = "diégo", Nom = "santos" })).Ok);
+        Assert.Equal("diego.santos@pompiersparis.fr", _mail.Identity(Santos).Email);
     }
 
     public void Dispose()
