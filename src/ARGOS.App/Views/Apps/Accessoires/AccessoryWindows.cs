@@ -1,6 +1,7 @@
 using Argos.Services;
 using Argos.ViewModels;
 using Argos.ViewModels.Accessoires;
+using Argos.Views.Mobile.Accessoires;
 
 namespace Argos.Views.Apps.Accessoires;
 
@@ -12,6 +13,11 @@ public static class AccessoryWindows
         var key = "bloc-notes:" + fileId;
         var name = ArgosSession.Current?.Files.Find(fileId)?.Name ?? "Document";
         return new WindowSpec(key, name + " - Bloc-notes", ImageLoader.Asset("Icons/bloc-notes.png"),
-            () => new BlocNotesView { DataContext = new BlocNotesViewModel(desktop, key, fileId) }, 760, 560);
+            () =>
+            {
+                var vm = new BlocNotesViewModel(desktop, key, fileId);
+                if (desktop.IsCompactLayout) return new BlocNotesMobileView { DataContext = vm };
+                return new BlocNotesView { DataContext = vm };
+            }, 760, 560);
     }
 }

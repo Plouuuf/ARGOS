@@ -1,0 +1,340 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:m="using:Argos.Views.Mobile"
+             x:Class="Argos.Views.Mobile.Accessoires.ParametresMobileView"
+             Classes="ios"
+             m:MobilePage.IsNative="True"
+             m:MobilePage.Accent="#0078D7">
+    <!-- Paramètres sur iPhone, façon app Réglages (même modèle que la version bureau : ParametresViewModel). -->
+    <UserControl.Resources>
+        <SolidColorBrush x:Key="AppAccent" Color="#0078D7"/>
+        <StreamGeometry x:Key="SetIconInfo">M13,9H11V7H13M13,17H11V11H13M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2Z</StreamGeometry>
+        <StreamGeometry x:Key="SetIconImage">M8.5,13.5L11,16.5L14.5,12L19,18H5M21,19V5C21,3.89 20.1,3 19,3H5A2,2 0 0,0 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19Z</StreamGeometry>
+        <StreamGeometry x:Key="SetIconSun">M12,8A4,4 0 0,0 8,12A4,4 0 0,0 12,16A4,4 0 0,0 16,12A4,4 0 0,0 12,8M12,18A6,6 0 0,1 6,12A6,6 0 0,1 12,6A6,6 0 0,1 18,12A6,6 0 0,1 12,18M20,8.69V4H15.31L12,0.69L8.69,4H4V8.69L0.69,12L4,15.31V20H8.69L12,23.31L15.31,20H20V15.31L23.31,12L20,8.69Z</StreamGeometry>
+        <StreamGeometry x:Key="SetIconSound">M14,3.23V5.29C16.89,6.15 19,8.83 19,12C19,15.17 16.89,17.84 14,18.7V20.77C18,19.86 21,16.28 21,12C21,7.72 18,4.14 14,3.23M16.5,12C16.5,10.23 15.5,8.71 14,7.97V16C15.5,15.29 16.5,13.76 16.5,12M3,9V15H7L12,20V4L7,9H3Z</StreamGeometry>
+        <StreamGeometry x:Key="SetIconWifi">M12,21L15.6,16.2C14.6,15.45 13.35,15 12,15C10.65,15 9.4,15.45 8.4,16.2L12,21M12,3C7.95,3 4.21,4.34 1.2,6.6L3,9C5.5,7.12 8.62,6 12,6C15.38,6 18.5,7.12 21,9L22.8,6.6C19.79,4.34 16.05,3 12,3M12,9C9.3,9 6.81,9.89 4.8,11.4L6.6,13.8C8.1,12.67 9.97,12 12,12C14.03,12 15.9,12.67 17.4,13.8L19.2,11.4C17.19,9.89 14.7,9 12,9Z</StreamGeometry>
+        <StreamGeometry x:Key="SetIconBell">M21,19V20H3V19L5,17V11C5,7.9 7.03,5.17 10,4.29C10,4.19 10,4.1 10,4A2,2 0 0,1 12,2A2,2 0 0,1 14,4C14,4.1 14,4.19 14,4.29C16.97,5.17 19,7.9 19,11V17L21,19M14,21A2,2 0 0,1 12,23A2,2 0 0,1 10,21</StreamGeometry>
+    </UserControl.Resources>
+    <UserControl.Styles>
+        <Style Selector="Border.icon">
+            <Setter Property="Width" Value="30"/>
+            <Setter Property="Height" Value="30"/>
+            <Setter Property="CornerRadius" Value="7"/>
+            <Setter Property="Margin" Value="0,0,12,0"/>
+        </Style>
+        <Style Selector="Border.icon PathIcon">
+            <Setter Property="Width" Value="18"/>
+            <Setter Property="Height" Value="18"/>
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+    </UserControl.Styles>
+
+    <Grid>
+        <!-- ===== Liste des réglages ===== -->
+        <ScrollViewer Name="RootPage">
+            <StackPanel Margin="0,0,0,24">
+                <TextBlock Classes="large" Text="Réglages"/>
+
+                <!-- Compte -->
+                <Border Classes="group" Margin="16,8,16,0">
+                    <Button Name="AccountRow" Classes="row" Command="{Binding NavigateCommand}" CommandParameter="comptes" Padding="16,10">
+                        <Grid ColumnDefinitions="Auto,*,Auto">
+                            <Border Width="58" Height="58" CornerRadius="29" ClipToBounds="True" Background="#C7C7CC" Margin="0,0,14,0">
+                                <Image Source="{Binding Avatar}" Stretch="UniformToFill" IsVisible="{Binding HasAvatar}"/>
+                            </Border>
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+                                <TextBlock Classes="title" FontSize="19" Text="{Binding DisplayName}"/>
+                                <TextBlock Classes="caption" FontSize="13" Text="{Binding LevelLabel}"/>
+                            </StackPanel>
+                            <TextBlock Grid.Column="2" Classes="chevron"/>
+                        </Grid>
+                    </Button>
+                </Border>
+
+                <Border Name="NavGroup" Classes="group" Margin="16,24,16,0">
+                    <StackPanel>
+                        <Button Classes="row" Command="{Binding NavigateCommand}" CommandParameter="systeme">
+                            <Grid ColumnDefinitions="Auto,*,Auto">
+                                <Border Classes="icon" Background="#8E8E93"><PathIcon Data="{StaticResource SetIconInfo}"/></Border>
+                                <StackPanel Grid.Column="1" VerticalAlignment="Center"><TextBlock Classes="label" Text="Système"/><TextBlock Classes="caption" Text="Informations sur l'ordinateur, version"/></StackPanel>
+                                <TextBlock Grid.Column="2" Classes="chevron"/>
+                            </Grid>
+                        </Button>
+                        <Button Classes="row" Command="{Binding NavigateCommand}" CommandParameter="personnalisation">
+                            <Grid ColumnDefinitions="Auto,*,Auto">
+                                <Border Classes="icon" Background="#32ADE6"><PathIcon Data="{StaticResource SetIconImage}"/></Border>
+                                <StackPanel Grid.Column="1" VerticalAlignment="Center"><TextBlock Classes="label" Text="Fond d'écran"/><TextBlock Classes="caption" Text="Fond d'écran, diaporama"/></StackPanel>
+                                <TextBlock Grid.Column="2" Classes="chevron"/>
+                            </Grid>
+                        </Button>
+                        <Button Classes="row" Command="{Binding NavigateCommand}" CommandParameter="affichage">
+                            <Grid ColumnDefinitions="Auto,*,Auto">
+                                <Border Classes="icon" Background="#007AFF"><PathIcon Data="{StaticResource SetIconSun}"/></Border>
+                                <StackPanel Grid.Column="1" VerticalAlignment="Center"><TextBlock Classes="label" Text="Luminosité et affichage"/><TextBlock Classes="caption" Text="Taille du texte, éclairage nocturne"/></StackPanel>
+                                <TextBlock Grid.Column="2" Classes="chevron"/>
+                            </Grid>
+                        </Button>
+                        <Button Classes="row" Command="{Binding NavigateCommand}" CommandParameter="son">
+                            <Grid ColumnDefinitions="Auto,*,Auto">
+                                <Border Classes="icon" Background="#FF2D55"><PathIcon Data="{StaticResource SetIconSound}"/></Border>
+                                <StackPanel Grid.Column="1" VerticalAlignment="Center"><TextBlock Classes="label" Text="Son"/><TextBlock Classes="caption" Text="Volume, son coupé"/></StackPanel>
+                                <TextBlock Grid.Column="2" Classes="value" Text="{Binding VolumeText}"/>
+                            </Grid>
+                        </Button>
+                        <Button Classes="row" Command="{Binding NavigateCommand}" CommandParameter="reseau">
+                            <Grid ColumnDefinitions="Auto,*,Auto">
+                                <Border Classes="icon" Background="#34C759"><PathIcon Data="{StaticResource SetIconWifi}"/></Border>
+                                <StackPanel Grid.Column="1" VerticalAlignment="Center"><TextBlock Classes="label" Text="Réseau"/><TextBlock Classes="caption" Text="Serveur ARGOS, état de la connexion"/></StackPanel>
+                                <TextBlock Grid.Column="2" Classes="chevron"/>
+                            </Grid>
+                        </Button>
+                        <Button Classes="row" Command="{Binding NavigateCommand}" CommandParameter="notifications">
+                            <Grid ColumnDefinitions="Auto,*,Auto">
+                                <Border Classes="icon" Background="#FF3B30"><PathIcon Data="{StaticResource SetIconBell}"/></Border>
+                                <StackPanel Grid.Column="1" VerticalAlignment="Center"><TextBlock Classes="label" Text="Notifications"/><TextBlock Classes="caption" Text="Bannières, ne pas déranger"/></StackPanel>
+                                <TextBlock Grid.Column="2" Classes="chevron"/>
+                            </Grid>
+                        </Button>
+                        <Button Classes="row" Command="{Binding NavigateCommand}" CommandParameter="comptes">
+                            <Grid ColumnDefinitions="Auto,*,Auto">
+                                <Border Classes="icon" Background="#5856D6"><PathIcon Data="{StaticResource TabPerson}"/></Border>
+                                <StackPanel Grid.Column="1" VerticalAlignment="Center"><TextBlock Classes="label" Text="Comptes"/><TextBlock Classes="caption" Text="Session ouverte, changement d'utilisateur"/></StackPanel>
+                                <TextBlock Grid.Column="2" Classes="chevron"/>
+                            </Grid>
+                        </Button>
+                    </StackPanel>
+                </Border>
+                <TextBlock Classes="footnote" Text="{Binding ArgosVersion}"/>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- ===== Page de réglage ===== -->
+        <ScrollViewer Name="DetailPage" IsVisible="False">
+            <StackPanel Margin="0,0,0,24">
+                <Button Name="BackToRoot" Classes="plain" Content="‹ Réglages" HorizontalAlignment="Left" Margin="8,4,0,0"/>
+
+                <!-- Système -->
+                <StackPanel IsVisible="{Binding IsSysteme}">
+                    <TextBlock Classes="large" Text="Informations"/>
+                    <Border Classes="group" Margin="16,8,16,0">
+                        <StackPanel>
+                            <Border Classes="row">
+                                <Grid ColumnDefinitions="Auto,*">
+                                    <TextBlock Classes="label" Text="Nom de l'appareil"/>
+                                    <TextBlock Grid.Column="1" Classes="value" HorizontalAlignment="Right" Margin="12,0,0,0" Text="{Binding MachineName}"/>
+                                </Grid>
+                            </Border>
+                            <Border Classes="row">
+                                <Grid ColumnDefinitions="Auto,*">
+                                    <TextBlock Classes="label" Text="Version ARGOS"/>
+                                    <TextBlock Grid.Column="1" Classes="value" HorizontalAlignment="Right" Margin="12,0,0,0" Text="{Binding ArgosVersion}"/>
+                                </Grid>
+                            </Border>
+                            <Border Classes="row">
+                                <StackPanel Spacing="2">
+                                    <TextBlock Classes="label" Text="Système"/>
+                                    <TextBlock Classes="value" TextWrapping="Wrap" TextTrimming="None" Text="{Binding OsVersion}"/>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </Border>
+                    <TextBlock Classes="section" Text="CARACTÉRISTIQUES DE L'APPAREIL"/>
+                    <Border Classes="group">
+                        <ItemsControl ItemsSource="{Binding Hardware}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Classes="row">
+                                        <StackPanel Spacing="2">
+                                            <TextBlock Classes="label" Text="{Binding Label}"/>
+                                            <TextBlock Classes="value" TextWrapping="Wrap" TextTrimming="None" Text="{Binding Value}"/>
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </Border>
+                </StackPanel>
+
+                <!-- Personnalisation -->
+                <StackPanel IsVisible="{Binding IsPersonnalisation}">
+                    <TextBlock Classes="large" Text="Fond d'écran"/>
+                    <Border Classes="group" Margin="16,8,16,0">
+                        <StackPanel>
+                            <Button Classes="row" Command="{Binding SlideshowCommand}">
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <TextBlock Classes="label" Text="Diaporama"/>
+                                    <PathIcon Grid.Column="1" Data="{StaticResource TabCheck}" Width="18" Height="18" Foreground="{DynamicResource AppAccent}" IsVisible="{Binding IsSlideshow}"/>
+                                </Grid>
+                            </Button>
+                            <Border Classes="row" IsEnabled="{Binding IsSlideshow}">
+                                <Grid ColumnDefinitions="*,Auto,Auto">
+                                    <TextBlock Classes="label" Text="Changer d'image toutes les"/>
+                                    <ComboBox Grid.Column="1" Classes="field" MinWidth="64" HorizontalContentAlignment="Right" ItemsSource="{Binding Intervals}" SelectedItem="{Binding Interval}"/>
+                                    <TextBlock Grid.Column="2" Classes="value" Margin="4,0,0,0" Text="min"/>
+                                </Grid>
+                            </Border>
+                        </StackPanel>
+                    </Border>
+                    <TextBlock Classes="section" Text="CHOISIR UNE PHOTO FIXE"/>
+                    <ItemsControl ItemsSource="{Binding Wallpapers}" Margin="11,0">
+                        <ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="2"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Button Command="{Binding SelectCommand}" Padding="0" Margin="5" Background="Transparent" BorderThickness="0"
+                                        HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch">
+                                    <Border BorderThickness="3" CornerRadius="12" ClipToBounds="True" Classes.on="{Binding Selected}" BorderBrush="Transparent">
+                                        <Border.Styles><Style Selector="Border.on"><Setter Property="BorderBrush" Value="#0078D7"/></Style></Border.Styles>
+                                        <Image Source="{Binding Image}" Height="96" Stretch="UniformToFill"/>
+                                    </Border>
+                                </Button>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+
+                <!-- Affichage -->
+                <StackPanel IsVisible="{Binding IsAffichage}">
+                    <TextBlock Classes="large" Text="Luminosité et affichage"/>
+                    <TextBlock Classes="section" Text="MISE À L'ÉCHELLE"/>
+                    <Border Classes="group">
+                        <Border Classes="row">
+                            <Grid ColumnDefinitions="Auto,*">
+                                <TextBlock Classes="label" Text="Taille du texte"/>
+                                <ComboBox Grid.Column="1" Classes="field" Margin="12,0,0,0" HorizontalContentAlignment="Right" ItemsSource="{Binding Scales}" SelectedItem="{Binding Scale}"/>
+                            </Grid>
+                        </Border>
+                    </Border>
+                    <TextBlock Classes="footnote" Text="Modifier la taille du texte, des applications et d'autres éléments."/>
+                    <TextBlock Classes="section" Text="COULEUR ET DÉMARRAGE"/>
+                    <Border Classes="group">
+                        <StackPanel>
+                            <Border Classes="row">
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <TextBlock Classes="label" TextWrapping="Wrap" Text="Éclairage nocturne (couleurs plus chaudes)"/>
+                                    <ToggleSwitch Grid.Column="1" IsChecked="{Binding NightLight}" OnContent="" OffContent="" MinWidth="0" Margin="8,0,0,0"/>
+                                </Grid>
+                            </Border>
+                            <Border Classes="row">
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <TextBlock Classes="label" TextWrapping="Wrap" Text="Séquence de démarrage UEFI au lancement"/>
+                                    <ToggleSwitch Grid.Column="1" IsChecked="{Binding BootSequence}" OnContent="" OffContent="" MinWidth="0" Margin="8,0,0,0"/>
+                                </Grid>
+                            </Border>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <!-- Son -->
+                <StackPanel IsVisible="{Binding IsSon}">
+                    <TextBlock Classes="large" Text="Son"/>
+                    <TextBlock Classes="section" Text="VOLUME PRINCIPAL"/>
+                    <Border Classes="group">
+                        <StackPanel>
+                            <Border Classes="row">
+                                <Grid ColumnDefinitions="Auto,*,Auto">
+                                    <PathIcon Data="{StaticResource SetIconSound}" Width="16" Height="16" Foreground="{StaticResource IosSecondary}" Margin="0,0,10,0"/>
+                                    <Slider Grid.Column="1" Minimum="0" Maximum="100" Value="{Binding Volume}"/>
+                                    <TextBlock Grid.Column="2" Classes="value" Margin="10,0,0,0" MinWidth="70" TextAlignment="Right" Text="{Binding VolumeText}"/>
+                                </Grid>
+                            </Border>
+                            <Border Classes="row">
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <TextBlock Classes="label" Text="Couper le son"/>
+                                    <ToggleSwitch Grid.Column="1" IsChecked="{Binding Muted}" OnContent="" OffContent="" MinWidth="0"/>
+                                </Grid>
+                            </Border>
+                        </StackPanel>
+                    </Border>
+                    <TextBlock Classes="footnote" Text="Haut-parleurs du poste."/>
+                </StackPanel>
+
+                <!-- Réseau -->
+                <StackPanel IsVisible="{Binding IsReseau}">
+                    <TextBlock Classes="large" Text="Réseau"/>
+                    <Border Classes="group" Margin="16,8,16,0">
+                        <StackPanel>
+                            <Border Classes="row">
+                                <Grid ColumnDefinitions="Auto,*">
+                                    <TextBlock Classes="label" Text="État"/>
+                                    <TextBlock Grid.Column="1" Classes="value" HorizontalAlignment="Right" Margin="12,0,0,0" Text="{Binding ConnectionState}"/>
+                                </Grid>
+                            </Border>
+                            <Border Classes="row">
+                                <StackPanel Spacing="2">
+                                    <TextBlock Classes="label" Text="Serveur ARGOS"/>
+                                    <TextBlock Classes="value" TextWrapping="Wrap" TextTrimming="None" Text="{Binding ServerUrl}"/>
+                                </StackPanel>
+                            </Border>
+                            <Button Classes="row" Command="{Binding TestNetworkCommand}">
+                                <TextBlock Classes="label" Foreground="{DynamicResource AppAccent}" Text="Tester la connexion"/>
+                            </Button>
+                        </StackPanel>
+                    </Border>
+                    <TextBlock Classes="footnote" Text="{Binding NetworkTest}"/>
+                </StackPanel>
+
+                <!-- Notifications -->
+                <StackPanel IsVisible="{Binding IsNotifications}">
+                    <TextBlock Classes="large" Text="Notifications"/>
+                    <Border Classes="group" Margin="16,8,16,0">
+                        <StackPanel>
+                            <Border Classes="row">
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <TextBlock Classes="label" TextWrapping="Wrap" Text="Afficher les notifications des applications"/>
+                                    <ToggleSwitch Grid.Column="1" IsChecked="{Binding Notifications}" OnContent="" OffContent="" MinWidth="0" Margin="8,0,0,0"/>
+                                </Grid>
+                            </Border>
+                            <Border Classes="row">
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <TextBlock Classes="label" Text="Ne pas déranger"/>
+                                    <ToggleSwitch Grid.Column="1" IsChecked="{Binding DoNotDisturb}" OnContent="" OffContent="" MinWidth="0" Margin="8,0,0,0"/>
+                                </Grid>
+                            </Border>
+                        </StackPanel>
+                    </Border>
+                    <TextBlock Classes="footnote" Text="Avec « Ne pas déranger », les notifications vont directement au centre de notifications."/>
+                    <Button Classes="destructive" Margin="16,18,16,0" Content="Effacer toutes les notifications" Command="{Binding ClearNotificationsCommand}"/>
+                </StackPanel>
+
+                <!-- Comptes -->
+                <StackPanel IsVisible="{Binding IsComptes}">
+                    <TextBlock Classes="large" Text="Comptes"/>
+                    <Border Width="96" Height="96" CornerRadius="48" ClipToBounds="True" Background="#C7C7CC" HorizontalAlignment="Center" Margin="0,8,0,0">
+                        <Image Source="{Binding Avatar}" Stretch="UniformToFill" IsVisible="{Binding HasAvatar}"/>
+                    </Border>
+                    <TextBlock Text="{Binding DisplayName}" FontSize="22" FontWeight="SemiBold" HorizontalAlignment="Center" TextWrapping="Wrap" Margin="16,10,16,0"/>
+                    <TextBlock Classes="caption" FontSize="14" HorizontalAlignment="Center" Text="{Binding LevelLabel}"/>
+                    <Border Classes="group" Margin="16,18,16,0">
+                        <StackPanel>
+                            <Border Classes="row">
+                                <Grid ColumnDefinitions="Auto,*">
+                                    <TextBlock Classes="label" Text="Compte Discord"/>
+                                    <TextBlock Grid.Column="1" Classes="value" HorizontalAlignment="Right" Margin="12,0,0,0" Text="{Binding UserId}"/>
+                                </Grid>
+                            </Border>
+                            <Border Classes="row">
+                                <StackPanel Spacing="2">
+                                    <TextBlock Classes="label" Text="Habilitations (rôles Discord)"/>
+                                    <TextBlock Classes="value" TextWrapping="Wrap" TextTrimming="None" Text="{Binding Roles}"/>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </Border>
+                    <Border Classes="group" Margin="16,24,16,0">
+                        <StackPanel>
+                            <Button Classes="row" Command="{Binding SwitchUserCommand}">
+                                <TextBlock Classes="label" Foreground="{DynamicResource AppAccent}" Text="Changer d'utilisateur"/>
+                            </Button>
+                            <Button Classes="row" Command="{Binding LockCommand}">
+                                <TextBlock Classes="label" Foreground="{DynamicResource AppAccent}" Text="Verrouiller"/>
+                            </Button>
+                            <Button Classes="row" Command="{Binding SignOutCommand}">
+                                <TextBlock Classes="label" Foreground="{StaticResource IosRed}" Text="Se déconnecter"/>
+                            </Button>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</UserControl>

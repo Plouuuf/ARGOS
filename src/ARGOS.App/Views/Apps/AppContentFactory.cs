@@ -38,6 +38,13 @@ public static class AppContentFactory
         ArgosApps.Efibi => new Argos.Views.Mobile.Efibi.EfibiMobileView { DataContext = new EfibiAppViewModel(desktop) },
         ArgosApps.Ilias => new Argos.Views.Mobile.Ilias.IliasMobileView { DataContext = new IliasAppViewModel(desktop) },
         ArgosApps.Sigtao => new Argos.Views.Mobile.Sigtao.SigtaoMobileView { DataContext = new SigtaoAppViewModel(desktop) },
+        ArgosApps.Mail => new Argos.Views.Mobile.Mail.MailMobileView { DataContext = new MailAppViewModel(desktop) },
+        ArgosApps.Explorateur => new Argos.Views.Mobile.Accessoires.ExplorateurMobileView { DataContext = new ExplorateurViewModel(desktop) },
+        ArgosApps.BlocNotes => new Argos.Views.Mobile.Accessoires.BlocNotesMobileView { DataContext = new BlocNotesViewModel(desktop, app.Id, null) },
+        ArgosApps.Calculatrice => new Argos.Views.Mobile.Accessoires.CalculatriceMobileView { DataContext = new CalculatriceViewModel() },
+        ArgosApps.Corbeille => new Argos.Views.Mobile.Accessoires.CorbeilleMobileView { DataContext = new CorbeilleViewModel() },
+        ArgosApps.Imprimante => new Argos.Views.Mobile.Accessoires.ImprimanteMobileView { DataContext = new ImprimanteViewModel(desktop) },
+        ArgosApps.Parametres => new Argos.Views.Mobile.Accessoires.ParametresMobileView { DataContext = new ParametresViewModel(desktop) },
         _ => null
     };
 

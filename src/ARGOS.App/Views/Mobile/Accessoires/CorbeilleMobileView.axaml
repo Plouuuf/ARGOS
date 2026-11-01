@@ -1,0 +1,87 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:m="using:Argos.Views.Mobile"
+             x:Class="Argos.Views.Mobile.Accessoires.CorbeilleMobileView"
+             Classes="ios"
+             m:MobilePage.IsNative="True"
+             m:MobilePage.Accent="#0078D7">
+    <!-- Corbeille sur iPhone, façon « Suppressions récentes » (même modèle que la version bureau : CorbeilleViewModel). -->
+    <UserControl.Resources>
+        <SolidColorBrush x:Key="AppAccent" Color="#0078D7"/>
+    </UserControl.Resources>
+
+    <Grid RowDefinitions="Auto,*,Auto">
+        <Border Classes="banner" Background="{DynamicResource AppAccent}" IsVisible="{Binding HasMessage}">
+            <TextBlock Text="{Binding Message}"/>
+        </Border>
+
+        <ScrollViewer Grid.Row="1">
+            <StackPanel Margin="0,0,0,24">
+                <TextBlock Classes="large" Text="Corbeille"/>
+                <Border Classes="searchbar">
+                    <Grid ColumnDefinitions="Auto,*">
+                        <PathIcon Data="{StaticResource TabSearch}" Width="16" Height="16" Foreground="{StaticResource IosSecondary}" Margin="0,0,8,0"/>
+                        <TextBox Grid.Column="1" Classes="field" Text="{Binding Search}" Watermark="Rechercher dans la Corbeille"/>
+                    </Grid>
+                </Border>
+
+                <!-- Vider la Corbeille ? -->
+                <StackPanel IsVisible="{Binding ConfirmEmpty}">
+                    <TextBlock Classes="footnote" Foreground="Black" FontSize="14.5" Margin="16,8,16,4"
+                               Text="Voulez-vous vraiment supprimer définitivement tous les éléments de la Corbeille ?"/>
+                    <Grid ColumnDefinitions="*,*">
+                        <Button Classes="destructive" Margin="16,6,6,6" Content="Oui, vider" Command="{Binding ConfirmEmptyCommand}"/>
+                        <Button Grid.Column="1" Classes="secondary" Margin="6,6,16,6" Content="Non" Command="{Binding CancelEmptyCommand}"/>
+                    </Grid>
+                </StackPanel>
+
+                <Grid ColumnDefinitions="*,Auto" Margin="0,8,0,0">
+                    <TextBlock Classes="section" Margin="32,8,16,7" Text="{Binding StatusText}"/>
+                    <TextBlock Grid.Column="1" Classes="section" Margin="16,8,32,7" Foreground="{DynamicResource AppAccent}" Text="{Binding SelectionText}"/>
+                </Grid>
+                <Border Classes="group">
+                    <StackPanel>
+                        <ItemsControl ItemsSource="{Binding Items}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Button Classes="row" Classes.selected="{Binding Selected}" Command="{Binding SelectCommand}" Padding="10,10,16,10">
+                                        <Grid ColumnDefinitions="Auto,Auto,*">
+                                            <CheckBox IsChecked="{Binding Checked}" MinWidth="0" Padding="0" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                            <Panel Grid.Column="1" Width="26" Height="30" Margin="0,0,12,0" VerticalAlignment="Center">
+                                                <PathIcon Data="{StaticResource TabFolder}" Width="26" Height="26" Foreground="{DynamicResource AppAccent}" IsVisible="{Binding IsFolder}"/>
+                                                <Path Data="{StaticResource W10File}" Stroke="#8E8E93" StrokeThickness="1.4" Fill="White" Stretch="Uniform" IsVisible="{Binding !IsFolder}"/>
+                                            </Panel>
+                                            <StackPanel Grid.Column="2" Spacing="1">
+                                                <Grid ColumnDefinitions="*,Auto">
+                                                    <TextBlock Classes="title" Text="{Binding Name}"/>
+                                                    <TextBlock Grid.Column="1" Classes="caption" Text="{Binding DeletedAt}" Margin="8,0,0,0" VerticalAlignment="Center"/>
+                                                </Grid>
+                                                <TextBlock Classes="subtitle"><Run Text="Depuis : "/><Run Text="{Binding Origin}"/></TextBlock>
+                                                <TextBlock Classes="caption"><Run Text="{Binding Type}"/><Run Text="  ·  "/><Run Text="{Binding Size}"/></TextBlock>
+                                            </StackPanel>
+                                        </Grid>
+                                    </Button>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <Border Classes="row" IsVisible="{Binding IsEmpty}">
+                            <TextBlock Classes="value" Text="La Corbeille est vide."/>
+                        </Border>
+                    </StackPanel>
+                </Border>
+                <TextBlock Classes="footnote" Text="Cochez plusieurs éléments pour les restaurer ou les supprimer ensemble ; sinon l'action porte sur l'élément touché."/>
+
+                <Button Classes="secondary" Margin="16,18,16,0" Content="Restaurer tous les éléments" Command="{Binding RestoreAllCommand}"/>
+                <Button Classes="destructive" Content="Vider la Corbeille" Command="{Binding EmptyCommand}"/>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- Actions sur la sélection -->
+        <Border Grid.Row="2" Classes="tabbar">
+            <Grid ColumnDefinitions="*,*" Margin="12,0">
+                <Button Classes="plain" HorizontalAlignment="Left" Content="Restaurer" Command="{Binding RestoreCommand}"/>
+                <Button Grid.Column="1" Classes="plain" HorizontalAlignment="Right" Foreground="{StaticResource IosRed}" Content="Supprimer définitivement" Command="{Binding PurgeCommand}"/>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>

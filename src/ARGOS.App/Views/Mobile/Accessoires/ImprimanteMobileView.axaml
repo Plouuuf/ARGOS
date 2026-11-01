@@ -1,0 +1,128 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:m="using:Argos.Views.Mobile"
+             x:Class="Argos.Views.Mobile.Accessoires.ImprimanteMobileView"
+             Classes="ios"
+             m:MobilePage.IsNative="True"
+             m:MobilePage.Accent="#0078D7">
+    <!-- Imprimante du centre sur iPhone (même modèle que la version bureau : ImprimanteViewModel).
+         Liste des documents → document en plein écran (aperçu et actions). -->
+    <UserControl.Resources>
+        <SolidColorBrush x:Key="AppAccent" Color="#0078D7"/>
+    </UserControl.Resources>
+
+    <Grid RowDefinitions="Auto,*,Auto">
+        <Border Classes="banner" Background="{DynamicResource AppAccent}" IsVisible="{Binding HasMessage}">
+            <TextBlock Text="{Binding Message}"/>
+        </Border>
+
+        <!-- ===== File d'impression ===== -->
+        <ScrollViewer Name="ListPage" Grid.Row="1" IsVisible="{Binding !HasSelection}">
+            <StackPanel Margin="0,0,0,24">
+                <TextBlock Classes="large" Text="Imprimante"/>
+                <TextBlock Classes="footnote" Margin="16,-4,16,4" Text="{Binding StatusText}"/>
+                <Border Classes="searchbar">
+                    <Grid ColumnDefinitions="Auto,*">
+                        <PathIcon Data="{StaticResource TabSearch}" Width="16" Height="16" Foreground="{StaticResource IosSecondary}" Margin="0,0,8,0"/>
+                        <TextBox Grid.Column="1" Classes="field" Text="{Binding Search}" Watermark="Rechercher un document"/>
+                    </Grid>
+                </Border>
+                <Border Classes="group">
+                    <Border Classes="row">
+                        <Grid ColumnDefinitions="Auto,*">
+                            <TextBlock Classes="label" Text="Afficher"/>
+                            <ComboBox Grid.Column="1" Classes="field" HorizontalContentAlignment="Right" Margin="12,0,0,0"
+                                      ItemsSource="{Binding Filters}" SelectedItem="{Binding Filter}"/>
+                        </Grid>
+                    </Border>
+                </Border>
+
+                <TextBlock Classes="section" Text="DOCUMENTS"/>
+                <Border Classes="group">
+                    <StackPanel>
+                        <ItemsControl ItemsSource="{Binding Jobs}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Button Classes="row" Command="{Binding SelectCommand}">
+                                        <Grid ColumnDefinitions="Auto,*,Auto">
+                                            <Image Source="avares://ARGOS.App/Assets/Icons/imprimante.png" Width="28" Height="28" Margin="0,0,12,0" VerticalAlignment="Top"/>
+                                            <StackPanel Grid.Column="1" Spacing="2">
+                                                <Grid ColumnDefinitions="*,Auto">
+                                                    <TextBlock Classes="title" Text="{Binding Title}"/>
+                                                    <TextBlock Grid.Column="1" Classes="caption" Text="{Binding Created}" Margin="8,0,0,0" VerticalAlignment="Center"/>
+                                                </Grid>
+                                                <TextBlock Classes="subtitle" Text="{Binding Owner}"/>
+                                                <TextBlock Classes="caption"><Run Text="Imprimé : "/><Run Text="{Binding Printed}"/><Run Text="  ·  "/><Run Text="{Binding Size}"/></TextBlock>
+                                                <Panel>
+                                                    <TextBlock FontSize="12.5" FontWeight="SemiBold" Foreground="{StaticResource IosOrange}" Text="{Binding Status}" IsVisible="{Binding Pending}"/>
+                                                    <TextBlock FontSize="12.5" FontWeight="SemiBold" Foreground="{StaticResource IosGreen}" Text="{Binding Status}" IsVisible="{Binding !Pending}"/>
+                                                </Panel>
+                                            </StackPanel>
+                                            <TextBlock Grid.Column="2" Classes="chevron"/>
+                                        </Grid>
+                                    </Button>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <Border Classes="row" IsVisible="{Binding !Jobs.Count}">
+                            <TextBlock Classes="value" Text="Aucun document dans l'imprimante."/>
+                        </Border>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- ===== Document ===== -->
+        <ScrollViewer Name="DetailPage" Grid.Row="1" IsVisible="{Binding HasSelection}">
+            <StackPanel Margin="0,0,0,24">
+                <Button Name="BackToList" Classes="plain" Content="‹ Imprimante" HorizontalAlignment="Left" Margin="8,4,0,0"/>
+                <TextBlock Classes="large" FontSize="24" Text="{Binding SelectedTitle}"/>
+                <TextBlock Classes="footnote" Margin="16,-2,16,8" Text="{Binding SelectedInfo}"/>
+
+                <Border Background="White" CornerRadius="12" Margin="16,4" Padding="8" MinHeight="160">
+                    <Panel>
+                        <TextBlock Classes="value" Text="Chargement de l'aperçu…" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding PreviewLoading}"/>
+                        <TextBlock Classes="value" Text="Aucune image enregistrée pour ce document." HorizontalAlignment="Center" VerticalAlignment="Center"
+                                   TextWrapping="Wrap" IsVisible="{Binding NoImage}"/>
+                        <Image Source="{Binding Preview}" Stretch="Uniform" IsVisible="{Binding HasPreview}"/>
+                    </Panel>
+                </Border>
+
+                <TextBlock Classes="section" Text="ACTIONS"/>
+                <Border Classes="group">
+                    <StackPanel>
+                        <Button Classes="row" Command="{Binding ReprintCommand}">
+                            <Grid ColumnDefinitions="Auto,*">
+                                <Image Source="avares://ARGOS.App/Assets/Icons/imprimante.png" Width="20" Height="20" Margin="0,0,12,0"/>
+                                <TextBlock Grid.Column="1" Classes="label" Text="Réimprimer"/>
+                            </Grid>
+                        </Button>
+                        <Button Name="SaveButton" Classes="row">
+                            <Grid ColumnDefinitions="Auto,*">
+                                <PathIcon Data="{StaticResource TabDocument}" Width="20" Height="20" Foreground="{DynamicResource AppAccent}" Margin="0,0,12,0"/>
+                                <TextBlock Grid.Column="1" Classes="label" Text="Enregistrer sur l'appareil…"/>
+                            </Grid>
+                        </Button>
+                        <Button Classes="row" Command="{Binding OpenInterventionCommand}">
+                            <Grid ColumnDefinitions="Auto,*,Auto">
+                                <PathIcon Data="{StaticResource TabList}" Width="20" Height="20" Foreground="{DynamicResource AppAccent}" Margin="0,0,12,0"/>
+                                <TextBlock Grid.Column="1" Classes="label" Text="Ouvrir l'intervention"/>
+                                <TextBlock Grid.Column="2" Classes="chevron"/>
+                            </Grid>
+                        </Button>
+                        <Button Classes="row" Command="{Binding DeleteCommand}">
+                            <TextBlock Classes="label" Foreground="{StaticResource IosRed}" Text="Supprimer le document"/>
+                        </Button>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+
+        <Border Grid.Row="2" Classes="tabbar">
+            <Grid ColumnDefinitions="*,Auto" Margin="12,0">
+                <TextBlock Classes="caption" VerticalAlignment="Center" Text="{Binding StatusText}"/>
+                <Button Grid.Column="1" Classes="plain" Content="Actualiser" Command="{Binding RefreshCommand}"/>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>
