@@ -218,7 +218,7 @@ public sealed class ShellViewModel : ViewModelBase
     // ===== Fond d'écran changeant (bureau et écran de verrouillage) =====
 
     /// <summary>Photos du diaporama : paysage (ordinateur) et portrait (téléphone), dans le même ordre.</summary>
-    private static readonly string[] Wallpapers = ["", "-2", "-3", "-4", "-5", "-6", "-7", "-8"];
+    private static readonly string[] Wallpapers = ["", "-2", "-3", "-4", "-5", "-6", "-7", "-8", "-9", "-10", "-11", "-12"];
     public static readonly TimeSpan WallpaperInterval = TimeSpan.FromMinutes(10);
     private int _wallpaperIndex;
     private Bitmap? _wallpaperA, _wallpaperB;
