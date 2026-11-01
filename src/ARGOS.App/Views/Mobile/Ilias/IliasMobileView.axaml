@@ -1,0 +1,744 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:m="using:Argos.Views.Mobile"
+             x:Class="Argos.Views.Mobile.Ilias.IliasMobileView"
+             Classes="ios"
+             m:MobilePage.IsNative="True"
+             m:MobilePage.Accent="#0C3C78">
+    <!-- ILIAS sur iPhone (même modèle que la version bureau : IliasAppViewModel). -->
+    <UserControl.Resources>
+        <SolidColorBrush x:Key="AppAccent" Color="#0C3C78"/>
+    </UserControl.Resources>
+    <UserControl.Styles>
+        <Style Selector="Border.banner.ok">
+            <Setter Property="Background" Value="#34C759"/>
+        </Style>
+        <Style Selector="ProgressBar.bar">
+            <Setter Property="Minimum" Value="0"/>
+            <Setter Property="Maximum" Value="1"/>
+            <Setter Property="Height" Value="6"/>
+            <Setter Property="MinHeight" Value="6"/>
+            <Setter Property="CornerRadius" Value="3"/>
+            <Setter Property="Foreground" Value="#0C3C78"/>
+            <Setter Property="Background" Value="#E5E5EA"/>
+        </Style>
+    </UserControl.Styles>
+
+    <Grid RowDefinitions="Auto,*,Auto">
+        <Border Classes="banner" Classes.ok="{Binding !MessageIsError}" IsVisible="{Binding HasMessage}">
+            <TextBlock Text="{Binding Message}"/>
+        </Border>
+
+        <!-- ===== Accueil ===== -->
+        <ScrollViewer Grid.Row="1" IsVisible="{Binding IsAccueil}" HorizontalScrollBarVisibility="Disabled">
+            <StackPanel Margin="0,0,0,24">
+                <TextBlock Classes="large" Text="ILIAS"/>
+                <TextBlock Classes="footnote" Margin="16,-4,16,4">
+                    <Run Text="{Binding UserName}"/><Run Text="  ·  "/><Run Text="{Binding UserAccess}"/>
+                </TextBlock>
+
+                <UniformGrid Columns="2" Margin="11,4">
+                    <Border Classes="tile"><StackPanel><TextBlock Classes="big" Text="{Binding FormationsFollowed}"/><TextBlock Classes="caption" Text="Formations suivies" TextWrapping="Wrap"/></StackPanel></Border>
+                    <Border Classes="tile"><StackPanel><TextBlock Classes="big" Text="{Binding GlobalProgressLabel}" Foreground="{DynamicResource AppAccent}"/><TextBlock Classes="caption" Text="Progression globale" TextWrapping="Wrap"/></StackPanel></Border>
+                </UniformGrid>
+
+                <TextBlock Classes="section" Text="CATÉGORIES DOCUMENTAIRES"/>
+                <Border Classes="group">
+                    <StackPanel>
+                        <ItemsControl ItemsSource="{Binding MainCategories}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Button Classes="row" Command="{Binding SelectCommand}">
+                                        <Grid ColumnDefinitions="Auto,*,Auto,Auto">
+                                            <PathIcon Data="{StaticResource TabFolder}" Width="20" Height="20" Foreground="{DynamicResource AppAccent}" Margin="0,0,12,0"/>
+                                            <StackPanel Grid.Column="1" Spacing="2">
+                                                <TextBlock Classes="title" Text="{Binding Name}"/>
+                                                <TextBlock Classes="caption" Text="{Binding Description}"
+                                                           IsVisible="{Binding Description, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+                                            </StackPanel>
+                                            <TextBlock Grid.Column="2" Classes="value" Text="{Binding Count}" Margin="8,0,0,0"/>
+                                            <TextBlock Grid.Column="3" Classes="chevron"/>
+                                        </Grid>
+                                    </Button>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <Border Classes="row" IsVisible="{Binding !MainCategories.Count}">
+                            <TextBlock Classes="value" Text="Aucune catégorie."/>
+                        </Border>
+                    </StackPanel>
+                </Border>
+
+                <TextBlock Classes="section" Text="DERNIÈRES PUBLICATIONS"/>
+                <Border Classes="group">
+                    <StackPanel>
+                        <ItemsControl ItemsSource="{Binding Latest}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Button Classes="row" Command="{Binding OpenCommand}">
+                                        <Grid ColumnDefinitions="*,Auto">
+                                            <StackPanel Spacing="2">
+                                                <Grid ColumnDefinitions="*,Auto">
+                                                    <TextBlock Classes="title" Text="{Binding Title}"/>
+                                                    <TextBlock Grid.Column="1" Classes="caption" Text="{Binding Updated}" Margin="8,0,0,0"/>
+                                                </Grid>
+                                                <TextBlock Classes="caption" Text="{Binding Category}"/>
+                                            </StackPanel>
+                                            <TextBlock Grid.Column="1" Classes="chevron"/>
+                                        </Grid>
+                                    </Button>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <Border Classes="row" IsVisible="{Binding !Latest.Count}">
+                            <TextBlock Classes="value" Text="Aucun document publié pour le moment."/>
+                        </Border>
+                    </StackPanel>
+                </Border>
+
+                <TextBlock Classes="section" Text="CONSULTÉS RÉCEMMENT"/>
+                <Border Classes="group">
+                    <StackPanel>
+                        <ItemsControl ItemsSource="{Binding Recent}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Button Classes="row" Command="{Binding OpenCommand}">
+                                        <Grid ColumnDefinitions="Auto,*,Auto">
+                                            <PathIcon Data="{StaticResource TabDocument}" Width="18" Height="18" Foreground="{DynamicResource AppAccent}" Margin="0,0,12,0"/>
+                                            <TextBlock Grid.Column="1" Classes="label" Text="{Binding Title}" TextTrimming="CharacterEllipsis"/>
+                                            <TextBlock Grid.Column="2" Classes="chevron"/>
+                                        </Grid>
+                                    </Button>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <Border Classes="row" IsVisible="{Binding !Recent.Count}">
+                            <TextBlock Classes="value" Text="Aucun document consulté."/>
+                        </Border>
+                    </StackPanel>
+                </Border>
+
+                <TextBlock Classes="section" Text="FORMATIONS DISPONIBLES"/>
+                <Border Classes="group">
+                    <StackPanel>
+                        <ItemsControl ItemsSource="{Binding FormationsHome}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Button Classes="row" Command="{Binding OpenCommand}">
+                                        <Grid ColumnDefinitions="*,Auto">
+                                            <StackPanel Spacing="4">
+                                                <TextBlock Classes="title" Text="{Binding Title}"/>
+                                                <ProgressBar Classes="bar" Value="{Binding Progress}"/>
+                                                <TextBlock Classes="caption">
+                                                    <Run Text="{Binding State}" FontWeight="SemiBold" Foreground="{DynamicResource AppAccent}"/><Run Text="  ·  "/><Run Text="{Binding ProgressLabel}"/>
+                                                </TextBlock>
+                                            </StackPanel>
+                                            <TextBlock Grid.Column="1" Classes="chevron"/>
+                                        </Grid>
+                                    </Button>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <Border Classes="row" IsVisible="{Binding !FormationsHome.Count}">
+                            <TextBlock Classes="value" Text="Aucune formation disponible."/>
+                        </Border>
+                    </StackPanel>
+                </Border>
+
+                <TextBlock Classes="section" Text="PLUS"/>
+                <Border Classes="group">
+                    <StackPanel>
+                        <Button Classes="row" Command="{Binding NavigateCommand}" CommandParameter="Administration" IsVisible="{Binding CanAdmin}">
+                            <Grid ColumnDefinitions="Auto,*,Auto">
+                                <PathIcon Data="{StaticResource TabWrench}" Width="20" Height="20" Foreground="{DynamicResource AppAccent}" Margin="0,0,12,0"/>
+                                <TextBlock Grid.Column="1" Classes="label" Text="Administration documentaire"/>
+                                <TextBlock Grid.Column="2" Classes="chevron"/>
+                            </Grid>
+                        </Button>
+                        <Button Classes="row" Command="{Binding RefreshCommand}">
+                            <Grid ColumnDefinitions="Auto,*">
+                                <PathIcon Data="{StaticResource TabClock}" Width="20" Height="20" Foreground="{DynamicResource AppAccent}" Margin="0,0,12,0"/>
+                                <TextBlock Grid.Column="1" Classes="label" Text="Actualiser" Foreground="{DynamicResource AppAccent}"/>
+                            </Grid>
+                        </Button>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- ===== Bibliothèque ===== -->
+        <ScrollViewer Grid.Row="1" IsVisible="{Binding IsBibliotheque}" HorizontalScrollBarVisibility="Disabled">
+            <StackPanel Margin="0,0,0,24">
+                <TextBlock Classes="large" Text="Bibliothèque"/>
+                <Border Classes="searchbar">
+                    <Grid ColumnDefinitions="Auto,*">
+                        <PathIcon Data="{StaticResource TabSearch}" Width="16" Height="16" Foreground="#8E8E93"/>
+                        <TextBox Grid.Column="1" Classes="field" Text="{Binding Search}" Watermark="Rechercher un document (titre, mot-clé)" Margin="6,0,0,0"/>
+                    </Grid>
+                </Border>
+
+                <TextBlock Classes="section" Text="CATÉGORIES"/>
+                <Border Classes="group">
+                    <StackPanel>
+                        <Button Classes="row" Command="{Binding AllCategoriesCommand}">
+                            <Grid ColumnDefinitions="Auto,*,Auto">
+                                <PathIcon Data="{StaticResource TabBook}" Width="18" Height="18" Foreground="{DynamicResource AppAccent}" Margin="0,0,12,0"/>
+                                <TextBlock Grid.Column="1" Classes="label" Text="Tous les documents"/>
+                                <TextBlock Grid.Column="2" Classes="chevron"/>
+                            </Grid>
+                        </Button>
+                        <ItemsControl ItemsSource="{Binding Categories}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Button Classes="row" Command="{Binding SelectCommand}">
+                                        <Grid ColumnDefinitions="Auto,*,Auto,Auto" Margin="{Binding Indent}">
+                                            <PathIcon Data="{StaticResource TabFolder}" Width="18" Height="18" Foreground="{DynamicResource AppAccent}" Margin="0,0,12,0"/>
+                                            <TextBlock Grid.Column="1" Classes="label" Text="{Binding Name}" TextTrimming="CharacterEllipsis"/>
+                                            <TextBlock Grid.Column="2" Classes="value" Text="{Binding Count}" Margin="8,0,0,0"/>
+                                            <TextBlock Grid.Column="3" Classes="chevron"/>
+                                        </Grid>
+                                    </Button>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Border>
+
+                <TextBlock Classes="section" Text="{Binding CategoryTitle}"/>
+                <Border Classes="group">
+                    <StackPanel>
+                        <ItemsControl ItemsSource="{Binding Documents}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Classes="row">
+                                        <StackPanel Spacing="3">
+                                            <Button Classes="plain" Padding="0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Command="{Binding OpenCommand}">
+                                                <Grid ColumnDefinitions="Auto,*,Auto">
+                                                    <Border Width="34" Height="40" Background="#FF3B30" CornerRadius="6" VerticalAlignment="Top" Margin="0,0,12,0">
+                                                        <TextBlock Text="PDF" Foreground="White" FontWeight="Bold" FontSize="11" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                    </Border>
+                                                    <StackPanel Grid.Column="1" Spacing="2">
+                                                        <TextBlock Classes="title" Text="{Binding Title}" Foreground="Black"/>
+                                                        <TextBlock Classes="subtitle" Text="{Binding Description}" TextWrapping="Wrap" TextTrimming="None" MaxLines="3"
+                                                                   IsVisible="{Binding Description, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+                                                        <TextBlock Classes="caption" TextWrapping="Wrap" TextTrimming="None">
+                                                            <Run Text="{Binding Category}"/><Run Text=" · publié le "/><Run Text="{Binding Published}"/><Run Text=" · mis à jour le "/><Run Text="{Binding Updated}"/><Run Text=" · v"/><Run Text="{Binding Version}"/><Run Text=" · "/><Run Text="{Binding Size}"/>
+                                                        </TextBlock>
+                                                        <TextBlock Text="Archivé" Foreground="#FF3B30" FontSize="12" FontWeight="SemiBold" IsVisible="{Binding Archived}"/>
+                                                    </StackPanel>
+                                                    <TextBlock Grid.Column="2" Classes="chevron"/>
+                                                </Grid>
+                                            </Button>
+                                            <StackPanel Orientation="Horizontal" Spacing="4" Margin="38,0,0,0">
+                                                <Button Classes="plain" FontSize="14.5" Content="Ouvrir" Command="{Binding OpenCommand}"/>
+                                                <Button Classes="plain" FontSize="14.5" Content="Télécharger" Command="{Binding DownloadCommand}"/>
+                                                <Button Classes="plain" FontSize="14.5" Content="Modifier" Command="{Binding EditCommand}"
+                                                        IsVisible="{Binding $parent[UserControl].DataContext.CanAdmin}"/>
+                                            </StackPanel>
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <Border Classes="row" IsVisible="{Binding !Documents.Count}">
+                            <TextBlock Classes="value" Text="Aucun document dans cette catégorie."/>
+                        </Border>
+                    </StackPanel>
+                </Border>
+                <TextBlock Classes="footnote" Text="{Binding CategoryDescription}"/>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- ===== Formations ===== -->
+        <ScrollViewer Grid.Row="1" IsVisible="{Binding IsFormations}" HorizontalScrollBarVisibility="Disabled">
+            <StackPanel Margin="0,0,0,24">
+                <TextBlock Classes="large" Text="Formations"/>
+                <Border Classes="group" Margin="16,8,16,0">
+                    <StackPanel>
+                        <ItemsControl ItemsSource="{Binding Formations}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Button Classes="row" Command="{Binding OpenCommand}">
+                                        <Grid ColumnDefinitions="*,Auto">
+                                            <StackPanel Spacing="4">
+                                                <TextBlock Classes="title" Text="{Binding Title}"/>
+                                                <TextBlock Classes="subtitle" Text="{Binding Description}" TextWrapping="Wrap" TextTrimming="None" MaxLines="3"
+                                                           IsVisible="{Binding Description, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+                                                <ProgressBar Classes="bar" Value="{Binding Progress}" Margin="0,2,0,0"/>
+                                                <TextBlock Classes="caption">
+                                                    <Run Text="{Binding State}" FontWeight="SemiBold" Foreground="{DynamicResource AppAccent}"/><Run Text="  ·  "/><Run Text="{Binding ProgressLabel}"/>
+                                                </TextBlock>
+                                            </StackPanel>
+                                            <TextBlock Grid.Column="1" Classes="chevron"/>
+                                        </Grid>
+                                    </Button>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <Border Classes="row" IsVisible="{Binding !Formations.Count}">
+                            <TextBlock Classes="value" Text="Aucune formation disponible."/>
+                        </Border>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- ===== Questionnaires ===== -->
+        <ScrollViewer Grid.Row="1" IsVisible="{Binding IsQuestionnaires}" HorizontalScrollBarVisibility="Disabled">
+            <StackPanel Margin="0,0,0,24">
+                <TextBlock Classes="large" Text="Évaluations"/>
+                <TextBlock Classes="section" Text="QUESTIONNAIRES"/>
+                <Border Classes="group">
+                    <StackPanel>
+                        <ItemsControl ItemsSource="{Binding Quizzes}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Button Classes="row" Command="{Binding StartCommand}">
+                                        <Grid ColumnDefinitions="*,Auto">
+                                            <StackPanel Spacing="2">
+                                                <TextBlock Classes="title" Text="{Binding Title}"/>
+                                                <TextBlock Classes="subtitle" Text="{Binding Description}" TextWrapping="Wrap" TextTrimming="None" MaxLines="3"
+                                                           IsVisible="{Binding Description, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+                                                <TextBlock Classes="caption">
+                                                    <Run Text="{Binding Questions}"/><Run Text=" question(s)  ·  "/><Run Text="{Binding Timer}"/>
+                                                </TextBlock>
+                                                <TextBlock Classes="caption" Text="{Binding LastResult}" Foreground="{DynamicResource AppAccent}"/>
+                                            </StackPanel>
+                                            <TextBlock Grid.Column="1" Classes="value" Text="Commencer ›" Foreground="{DynamicResource AppAccent}" Margin="8,0,0,0"/>
+                                        </Grid>
+                                    </Button>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <Border Classes="row" IsVisible="{Binding !Quizzes.Count}">
+                            <TextBlock Classes="value" Text="Aucun questionnaire disponible."/>
+                        </Border>
+                    </StackPanel>
+                </Border>
+
+                <TextBlock Classes="section" Text="MES ANCIENNES ÉVALUATIONS"/>
+                <Border Classes="group">
+                    <StackPanel>
+                        <ItemsControl ItemsSource="{Binding Results}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Classes="row">
+                                        <StackPanel Spacing="2">
+                                            <Grid ColumnDefinitions="*,Auto">
+                                                <TextBlock Classes="title" Text="{Binding Quiz}"/>
+                                                <TextBlock Grid.Column="1" Classes="caption" Text="{Binding Date}" Margin="8,0,0,0"/>
+                                            </Grid>
+                                            <Grid ColumnDefinitions="*,Auto">
+                                                <TextBlock Classes="subtitle" Text="{Binding Score}"/>
+                                                <Panel Grid.Column="1">
+                                                    <TextBlock Text="Réussie" Foreground="#34C759" FontWeight="SemiBold" FontSize="13" IsVisible="{Binding Passed}"/>
+                                                    <TextBlock Text="Échouée" Foreground="#FF3B30" FontWeight="SemiBold" FontSize="13" IsVisible="{Binding !Passed}"/>
+                                                </Panel>
+                                            </Grid>
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <Border Classes="row" IsVisible="{Binding !Results.Count}">
+                            <TextBlock Classes="value" Text="Aucune évaluation passée."/>
+                        </Border>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- ===== Suivi pédagogique ===== -->
+        <ScrollViewer Grid.Row="1" IsVisible="{Binding IsSuivi}" HorizontalScrollBarVisibility="Disabled">
+            <StackPanel Margin="0,0,0,24">
+                <TextBlock Classes="large" Text="Suivi pédagogique"/>
+                <UniformGrid Columns="2" Margin="11,4">
+                    <Border Classes="tile"><StackPanel><TextBlock Classes="big" Text="{Binding FormationsFollowed}"/><TextBlock Classes="caption" Text="Formations suivies" TextWrapping="Wrap"/></StackPanel></Border>
+                    <Border Classes="tile"><StackPanel><TextBlock Classes="big" Text="{Binding FormationsValidated}" Foreground="#34C759"/><TextBlock Classes="caption" Text="Formations validées" TextWrapping="Wrap"/></StackPanel></Border>
+                    <Border Classes="tile"><StackPanel><TextBlock Classes="big" Text="{Binding QuizzesPassed}" Foreground="#34C759"/><TextBlock Classes="caption" Text="Évaluations réussies" TextWrapping="Wrap"/></StackPanel></Border>
+                    <Border Classes="tile"><StackPanel><TextBlock Classes="big" Text="{Binding QuizzesFailed}" Foreground="#FF3B30"/><TextBlock Classes="caption" Text="Évaluations échouées" TextWrapping="Wrap"/></StackPanel></Border>
+                </UniformGrid>
+
+                <TextBlock Classes="section" Text="PROGRESSION GLOBALE"/>
+                <Border Classes="group">
+                    <Border Classes="row">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <ProgressBar Classes="bar" Value="{Binding GlobalProgress}" Height="10" MinHeight="10" CornerRadius="5" VerticalAlignment="Center"/>
+                            <TextBlock Grid.Column="1" Classes="label" FontWeight="SemiBold" Text="{Binding GlobalProgressLabel}" Margin="12,0,0,0"/>
+                        </Grid>
+                    </Border>
+                </Border>
+
+                <TextBlock Classes="section" Text="FORMATIONS VALIDÉES"/>
+                <Border Classes="group">
+                    <StackPanel>
+                        <ItemsControl ItemsSource="{Binding ValidatedFormations}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Classes="row">
+                                        <Grid ColumnDefinitions="Auto,*">
+                                            <PathIcon Data="{StaticResource TabCheck}" Width="18" Height="18" Foreground="#34C759" Margin="0,0,12,0"/>
+                                            <TextBlock Grid.Column="1" Classes="label" Text="{Binding}" TextWrapping="Wrap"/>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <Border Classes="row" IsVisible="{Binding !ValidatedFormations.Count}">
+                            <TextBlock Classes="value" Text="Aucune formation validée."/>
+                        </Border>
+                    </StackPanel>
+                </Border>
+
+                <TextBlock Classes="section" Text="NOTES"/>
+                <Border Classes="group">
+                    <StackPanel>
+                        <ItemsControl ItemsSource="{Binding Results}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Classes="row">
+                                        <Grid ColumnDefinitions="*,Auto">
+                                            <StackPanel Spacing="2">
+                                                <TextBlock Classes="title" Text="{Binding Quiz}" FontSize="15"/>
+                                                <TextBlock Classes="caption" Text="{Binding Date}"/>
+                                            </StackPanel>
+                                            <TextBlock Grid.Column="1" Classes="value" Text="{Binding Score}" FontWeight="SemiBold" Margin="8,0,0,0"/>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <Border Classes="row" IsVisible="{Binding !Results.Count}">
+                            <TextBlock Classes="value" Text="Aucune note."/>
+                        </Border>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- ===== Administration documentaire ===== -->
+        <ScrollViewer Grid.Row="1" IsVisible="{Binding IsAdministration}" HorizontalScrollBarVisibility="Disabled">
+            <StackPanel Margin="0,0,0,24">
+                <TextBlock Classes="large" Text="Administration"/>
+                <TextBlock Classes="footnote" Text="Gestion des catégories, documents, formations et questionnaires." Margin="16,-4,16,4"/>
+
+                <!-- Catégories -->
+                <TextBlock Classes="section" Text="CATÉGORIE"/>
+                <Border Classes="group">
+                    <StackPanel>
+                        <Border Classes="row">
+                            <Grid ColumnDefinitions="Auto,*">
+                                <TextBlock Classes="label" Text="Modifier"/>
+                                <ComboBox Grid.Column="1" Classes="field" PlaceholderText="Élément existant…" ItemsSource="{Binding CategoryEditChoices}" SelectedItem="{Binding CategoryPick}"
+                                          HorizontalContentAlignment="Right" Margin="12,0,0,0"/>
+                            </Grid>
+                        </Border>
+                        <Border Classes="row">
+                            <Grid ColumnDefinitions="Auto,*">
+                                <TextBlock Classes="label" Text="Nom"/>
+                                <TextBox Grid.Column="1" Classes="field" Text="{Binding EditedCategory.Name}" HorizontalContentAlignment="Right" Margin="12,0,0,0"/>
+                            </Grid>
+                        </Border>
+                        <Border Classes="row">
+                            <Grid ColumnDefinitions="Auto,*">
+                                <TextBlock Classes="label" Text="Parente"/>
+                                <ComboBox Grid.Column="1" Classes="field" ItemsSource="{Binding ParentChoices}" SelectedItem="{Binding CategoryParent}"
+                                          HorizontalContentAlignment="Right" Margin="12,0,0,0"/>
+                            </Grid>
+                        </Border>
+                        <Border Classes="row">
+                            <StackPanel Spacing="2">
+                                <TextBlock Classes="caption" Text="Description"/>
+                                <TextBox Classes="field" Text="{Binding EditedCategory.Description}" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="44"/>
+                            </StackPanel>
+                        </Border>
+                        <Border Classes="row">
+                            <Grid ColumnDefinitions="*,Auto">
+                                <TextBlock Classes="label" Text="Archivée"/>
+                                <ToggleSwitch Grid.Column="1" IsChecked="{Binding EditedCategory.Archived}" OnContent="" OffContent="" MinWidth="0" VerticalAlignment="Center"/>
+                            </Grid>
+                        </Border>
+                    </StackPanel>
+                </Border>
+                <Button Classes="primary" Content="Enregistrer la catégorie" Command="{Binding SaveCategoryCommand}" Margin="16,12,16,6"/>
+                <Button Classes="secondary" Content="Nouvelle catégorie" Command="{Binding NewCategoryCommand}"/>
+
+                <!-- Documents -->
+                <TextBlock Classes="section" Text="DOCUMENT"/>
+                <Border Classes="group">
+                    <StackPanel>
+                        <Border Classes="row">
+                            <Grid ColumnDefinitions="Auto,*">
+                                <TextBlock Classes="label" Text="Modifier"/>
+                                <ComboBox Grid.Column="1" Classes="field" PlaceholderText="Élément existant…" ItemsSource="{Binding DocumentEditChoices}" SelectedItem="{Binding DocumentPick}"
+                                          HorizontalContentAlignment="Right" Margin="12,0,0,0"/>
+                            </Grid>
+                        </Border>
+                        <Border Classes="row">
+                            <Grid ColumnDefinitions="Auto,*">
+                                <TextBlock Classes="label" Text="Titre"/>
+                                <TextBox Grid.Column="1" Classes="field" Text="{Binding EditedDocument.Title}" HorizontalContentAlignment="Right" Margin="12,0,0,0"/>
+                            </Grid>
+                        </Border>
+                        <Border Classes="row">
+                            <Grid ColumnDefinitions="Auto,*">
+                                <TextBlock Classes="label" Text="Catégorie"/>
+                                <ComboBox Grid.Column="1" Classes="field" ItemsSource="{Binding CategoryChoices}" SelectedItem="{Binding DocumentCategory}"
+                                          HorizontalContentAlignment="Right" Margin="12,0,0,0"/>
+                            </Grid>
+                        </Border>
+                        <Border Classes="row">
+                            <StackPanel Spacing="2">
+                                <TextBlock Classes="caption" Text="Description"/>
+                                <TextBox Classes="field" Text="{Binding EditedDocument.Description}" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="54"/>
+                            </StackPanel>
+                        </Border>
+                        <Border Classes="row">
+                            <Grid ColumnDefinitions="Auto,*">
+                                <TextBlock Classes="label" Text="Mots-clés"/>
+                                <TextBox Grid.Column="1" Classes="field" Text="{Binding EditedDocument.Keywords}" Watermark="SUAP, bilan, VSAV…"
+                                         HorizontalContentAlignment="Right" Margin="12,0,0,0"/>
+                            </Grid>
+                        </Border>
+                        <Border Classes="row">
+                            <Grid ColumnDefinitions="Auto,*">
+                                <TextBlock Classes="label" Text="Droits d'accès"/>
+                                <ComboBox Grid.Column="1" Classes="field" ItemsSource="{Binding Audiences}" SelectedItem="{Binding EditedDocument.Audience}"
+                                          HorizontalContentAlignment="Right" Margin="12,0,0,0"/>
+                            </Grid>
+                        </Border>
+                        <Button Name="FileButton" Classes="row">
+                            <Grid ColumnDefinitions="Auto,*,Auto">
+                                <PathIcon Data="{StaticResource TabDocument}" Width="18" Height="18" Foreground="{DynamicResource AppAccent}" Margin="0,0,12,0"/>
+                                <StackPanel Grid.Column="1" Spacing="2">
+                                    <TextBlock Classes="label" Text="Choisir le fichier PDF…" Foreground="{DynamicResource AppAccent}"/>
+                                    <TextBlock Classes="caption" Text="{Binding PendingFileLabel}" TextWrapping="Wrap" TextTrimming="None"/>
+                                </StackPanel>
+                                <TextBlock Grid.Column="2" Classes="chevron"/>
+                            </Grid>
+                        </Button>
+                        <Border Classes="row">
+                            <Grid ColumnDefinitions="*,Auto">
+                                <TextBlock Classes="label" Text="Téléchargement autorisé"/>
+                                <ToggleSwitch Grid.Column="1" IsChecked="{Binding EditedDocument.Downloadable}" OnContent="" OffContent="" MinWidth="0" VerticalAlignment="Center"/>
+                            </Grid>
+                        </Border>
+                        <Border Classes="row">
+                            <Grid ColumnDefinitions="*,Auto">
+                                <TextBlock Classes="label" Text="Archivé"/>
+                                <ToggleSwitch Grid.Column="1" IsChecked="{Binding EditedDocument.Archived}" OnContent="" OffContent="" MinWidth="0" VerticalAlignment="Center"/>
+                            </Grid>
+                        </Border>
+                    </StackPanel>
+                </Border>
+                <Button Classes="primary" Content="Enregistrer le document" Command="{Binding SaveDocumentCommand}" Margin="16,12,16,6"/>
+                <Button Classes="secondary" Content="Nouveau document" Command="{Binding NewDocumentCommand}"/>
+
+                <!-- Formations -->
+                <TextBlock Classes="section" Text="FORMATION"/>
+                <Border Classes="group">
+                    <StackPanel>
+                        <Border Classes="row">
+                            <Grid ColumnDefinitions="Auto,*">
+                                <TextBlock Classes="label" Text="Modifier"/>
+                                <ComboBox Grid.Column="1" Classes="field" PlaceholderText="Élément existant…" ItemsSource="{Binding FormationEditChoices}" SelectedItem="{Binding FormationPick}"
+                                          HorizontalContentAlignment="Right" Margin="12,0,0,0"/>
+                            </Grid>
+                        </Border>
+                        <Border Classes="row">
+                            <Grid ColumnDefinitions="Auto,*">
+                                <TextBlock Classes="label" Text="Titre"/>
+                                <TextBox Grid.Column="1" Classes="field" Text="{Binding EditedFormation.Title}" HorizontalContentAlignment="Right" Margin="12,0,0,0"/>
+                            </Grid>
+                        </Border>
+                        <Border Classes="row">
+                            <Grid ColumnDefinitions="Auto,*">
+                                <TextBlock Classes="label" Text="Évaluation finale"/>
+                                <ComboBox Grid.Column="1" Classes="field" ItemsSource="{Binding QuizChoices}" SelectedItem="{Binding FormationQuiz}"
+                                          HorizontalContentAlignment="Right" Margin="12,0,0,0"/>
+                            </Grid>
+                        </Border>
+                        <Border Classes="row">
+                            <StackPanel Spacing="2">
+                                <TextBlock Classes="caption" Text="Description"/>
+                                <TextBox Classes="field" Text="{Binding EditedFormation.Description}" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="44"/>
+                            </StackPanel>
+                        </Border>
+                        <Border Classes="row">
+                            <StackPanel Spacing="2">
+                                <TextBlock Classes="caption" Text="Objectifs"/>
+                                <TextBox Classes="field" Text="{Binding EditedFormation.Objectives}" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="54"/>
+                            </StackPanel>
+                        </Border>
+                        <Border Classes="row">
+                            <StackPanel Spacing="2">
+                                <TextBlock Classes="caption" Text="Prérequis"/>
+                                <TextBox Classes="field" Text="{Binding EditedFormation.Prerequisites}" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="54"/>
+                            </StackPanel>
+                        </Border>
+                        <Border Classes="row">
+                            <Grid ColumnDefinitions="Auto,*">
+                                <TextBlock Classes="label" Text="Droits d'accès"/>
+                                <ComboBox Grid.Column="1" Classes="field" ItemsSource="{Binding Audiences}" SelectedItem="{Binding EditedFormation.Audience}"
+                                          HorizontalContentAlignment="Right" Margin="12,0,0,0"/>
+                            </Grid>
+                        </Border>
+                        <Border Classes="row">
+                            <Grid ColumnDefinitions="*,Auto">
+                                <TextBlock Classes="label" Text="Archivée"/>
+                                <ToggleSwitch Grid.Column="1" IsChecked="{Binding EditedFormation.Archived}" OnContent="" OffContent="" MinWidth="0" VerticalAlignment="Center"/>
+                            </Grid>
+                        </Border>
+                    </StackPanel>
+                </Border>
+
+                <TextBlock Classes="section" Text="MODULES DE LA FORMATION"/>
+                <ItemsControl ItemsSource="{Binding Modules}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border Classes="group" Margin="16,0,16,10">
+                                <StackPanel>
+                                    <Border Classes="row">
+                                        <Grid ColumnDefinitions="Auto,*">
+                                            <TextBlock Classes="label" Text="Titre"/>
+                                            <TextBox Grid.Column="1" Classes="field" Text="{Binding Title}" Watermark="Titre du module" HorizontalContentAlignment="Right" Margin="12,0,0,0"/>
+                                        </Grid>
+                                    </Border>
+                                    <Border Classes="row">
+                                        <Grid ColumnDefinitions="Auto,*">
+                                            <TextBlock Classes="label" Text="Support"/>
+                                            <ComboBox Grid.Column="1" Classes="field" ItemsSource="{Binding Documents}" SelectedItem="{Binding Document}"
+                                                      HorizontalContentAlignment="Right" Margin="12,0,0,0"/>
+                                        </Grid>
+                                    </Border>
+                                    <Border Classes="row">
+                                        <TextBox Classes="field" Text="{Binding Content}" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="64" Watermark="Contenu du module"/>
+                                    </Border>
+                                    <Button Classes="row" Command="{Binding RemoveCommand}">
+                                        <TextBlock Classes="label" Text="Retirer le module" Foreground="#FF3B30"/>
+                                    </Button>
+                                </StackPanel>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+                <Button Classes="secondary" Content="Ajouter un module" Command="{Binding AddModuleCommand}"/>
+                <Button Classes="primary" Content="Enregistrer la formation" Command="{Binding SaveFormationCommand}"/>
+                <Button Classes="secondary" Content="Nouvelle formation" Command="{Binding NewFormationCommand}"/>
+
+                <!-- Questionnaires -->
+                <TextBlock Classes="section" Text="QUESTIONNAIRE"/>
+                <Border Classes="group">
+                    <StackPanel>
+                        <Border Classes="row">
+                            <Grid ColumnDefinitions="Auto,*">
+                                <TextBlock Classes="label" Text="Modifier"/>
+                                <ComboBox Grid.Column="1" Classes="field" PlaceholderText="Élément existant…" ItemsSource="{Binding QuizEditChoices}" SelectedItem="{Binding QuizPick}"
+                                          HorizontalContentAlignment="Right" Margin="12,0,0,0"/>
+                            </Grid>
+                        </Border>
+                        <Border Classes="row">
+                            <Grid ColumnDefinitions="Auto,*">
+                                <TextBlock Classes="label" Text="Titre"/>
+                                <TextBox Grid.Column="1" Classes="field" Text="{Binding EditedQuiz.Title}" HorizontalContentAlignment="Right" Margin="12,0,0,0"/>
+                            </Grid>
+                        </Border>
+                        <Border Classes="row">
+                            <StackPanel Spacing="2">
+                                <TextBlock Classes="caption" Text="Description"/>
+                                <TextBox Classes="field" Text="{Binding EditedQuiz.Description}" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="44"/>
+                            </StackPanel>
+                        </Border>
+                        <Border Classes="row">
+                            <Grid ColumnDefinitions="*,Auto">
+                                <TextBlock Classes="label" Text="Durée (min, 0 = sans limite)"/>
+                                <NumericUpDown Grid.Column="1" Value="{Binding EditedQuiz.TimeLimitMinutes}" Minimum="0" Maximum="180" FormatString="0" Width="130"/>
+                            </Grid>
+                        </Border>
+                        <Border Classes="row">
+                            <Grid ColumnDefinitions="*,Auto">
+                                <TextBlock Classes="label" Text="Réussite (%)"/>
+                                <NumericUpDown Grid.Column="1" Value="{Binding EditedQuiz.PassPercent}" Minimum="0" Maximum="100" FormatString="0" Width="130"/>
+                            </Grid>
+                        </Border>
+                        <Border Classes="row">
+                            <Grid ColumnDefinitions="Auto,*">
+                                <TextBlock Classes="label" Text="Droits d'accès"/>
+                                <ComboBox Grid.Column="1" Classes="field" ItemsSource="{Binding Audiences}" SelectedItem="{Binding EditedQuiz.Audience}"
+                                          HorizontalContentAlignment="Right" Margin="12,0,0,0"/>
+                            </Grid>
+                        </Border>
+                        <Border Classes="row">
+                            <Grid ColumnDefinitions="*,Auto">
+                                <TextBlock Classes="label" Text="Afficher les corrections"/>
+                                <ToggleSwitch Grid.Column="1" IsChecked="{Binding EditedQuiz.ShowCorrections}" OnContent="" OffContent="" MinWidth="0" VerticalAlignment="Center"/>
+                            </Grid>
+                        </Border>
+                        <Border Classes="row">
+                            <Grid ColumnDefinitions="*,Auto">
+                                <TextBlock Classes="label" Text="Archivé"/>
+                                <ToggleSwitch Grid.Column="1" IsChecked="{Binding EditedQuiz.Archived}" OnContent="" OffContent="" MinWidth="0" VerticalAlignment="Center"/>
+                            </Grid>
+                        </Border>
+                    </StackPanel>
+                </Border>
+
+                <TextBlock Classes="section" Text="QUESTIONS"/>
+                <TextBlock Classes="footnote" Text="Une réponse par ligne ; indiquez le numéro de la bonne réponse." Margin="32,-4,16,8"/>
+                <ItemsControl ItemsSource="{Binding Questions}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border Classes="group" Margin="16,0,16,10">
+                                <StackPanel>
+                                    <Border Classes="row">
+                                        <TextBox Classes="field" Text="{Binding Text}" Watermark="Question" TextWrapping="Wrap"/>
+                                    </Border>
+                                    <Border Classes="row">
+                                        <TextBox Classes="field" Text="{Binding Options}" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="76"
+                                                 Watermark="Réponse 1&#10;Réponse 2&#10;Réponse 3"/>
+                                    </Border>
+                                    <Border Classes="row">
+                                        <Grid ColumnDefinitions="Auto,*">
+                                            <TextBlock Classes="label" Text="Bonne réponse n°"/>
+                                            <TextBox Grid.Column="1" Classes="field" Text="{Binding Correct}" HorizontalContentAlignment="Right" Margin="12,0,0,0"/>
+                                        </Grid>
+                                    </Border>
+                                    <Border Classes="row">
+                                        <TextBox Classes="field" Text="{Binding Explanation}" Watermark="Correction / explication (facultatif)" AcceptsReturn="True" TextWrapping="Wrap"/>
+                                    </Border>
+                                    <Button Classes="row" Command="{Binding RemoveCommand}">
+                                        <TextBlock Classes="label" Text="Retirer la question" Foreground="#FF3B30"/>
+                                    </Button>
+                                </StackPanel>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+                <Button Classes="secondary" Content="Ajouter une question" Command="{Binding AddQuestionCommand}"/>
+                <Button Classes="primary" Content="Enregistrer le questionnaire" Command="{Binding SaveQuizCommand}"/>
+                <Button Classes="secondary" Content="Nouveau questionnaire" Command="{Binding NewQuizCommand}"/>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- ===== Barre d'onglets ===== -->
+        <Border Grid.Row="2" Classes="tabbar">
+            <UniformGrid Columns="5">
+                <Button Classes="tab" Classes.selected="{Binding IsAccueil}" Command="{Binding NavigateCommand}" CommandParameter="Accueil">
+                    <StackPanel><PathIcon Data="{StaticResource TabHome}"/><TextBlock Text="Accueil"/></StackPanel>
+                </Button>
+                <Button Classes="tab" Classes.selected="{Binding IsBibliotheque}" Command="{Binding NavigateCommand}" CommandParameter="Bibliotheque">
+                    <StackPanel><PathIcon Data="{StaticResource TabBook}"/><TextBlock Text="Bibliothèque"/></StackPanel>
+                </Button>
+                <Button Classes="tab" Classes.selected="{Binding IsFormations}" Command="{Binding NavigateCommand}" CommandParameter="Formations">
+                    <StackPanel><PathIcon Data="{StaticResource TabFolder}"/><TextBlock Text="Formations"/></StackPanel>
+                </Button>
+                <Button Classes="tab" Classes.selected="{Binding IsQuestionnaires}" Command="{Binding NavigateCommand}" CommandParameter="Questionnaires">
+                    <StackPanel><PathIcon Data="{StaticResource TabCheck}"/><TextBlock Text="Évaluations"/></StackPanel>
+                </Button>
+                <Button Classes="tab" Classes.selected="{Binding IsSuivi}" Command="{Binding NavigateCommand}" CommandParameter="Suivi">
+                    <StackPanel><PathIcon Data="{StaticResource TabChart}"/><TextBlock Text="Suivi"/></StackPanel>
+                </Button>
+            </UniformGrid>
+        </Border>
+    </Grid>
+</UserControl>

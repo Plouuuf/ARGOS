@@ -12,6 +12,12 @@ public static class EfibiWindows
     {
         var key = "efibi:" + id;
         return new WindowSpec(key, $"eFiBi - Fiche bilan n° {id}", Icon,
-            () => new EfibiRecordView { DataContext = new EfibiRecordViewModel(desktop, id, key) }, 980, 820);
+            () =>
+            {
+                var vm = new EfibiRecordViewModel(desktop, id, key);
+                return desktop.IsCompactLayout
+                    ? (Avalonia.Controls.Control)new Argos.Views.Mobile.Efibi.EfibiRecordMobileView { DataContext = vm }
+                    : new EfibiRecordView { DataContext = vm };
+            }, 980, 820);
     }
 }

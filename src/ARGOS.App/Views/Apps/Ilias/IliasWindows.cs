@@ -13,12 +13,24 @@ public static class IliasWindows
 
     public static WindowSpec Formation(DesktopViewModel desktop, string id)
         => new("ilias-formation:" + id, "ILIAS - Formation", Icon,
-            () => new FormationView { DataContext = new FormationViewModel(desktop, id, DocumentOpener) }, 900, 760);
+            () =>
+            {
+                var vm = new FormationViewModel(desktop, id, DocumentOpener);
+                return desktop.IsCompactLayout
+                    ? (Avalonia.Controls.Control)new Argos.Views.Mobile.Ilias.FormationMobileView { DataContext = vm }
+                    : new FormationView { DataContext = vm };
+            }, 900, 760);
 
     public static WindowSpec Quiz(DesktopViewModel desktop, string id)
     {
         var key = "ilias-quiz:" + id;
         return new WindowSpec(key, "ILIAS - Questionnaire", Icon,
-            () => new QuizView { DataContext = new QuizRunViewModel(desktop, id, key) }, 860, 780);
+            () =>
+            {
+                var vm = new QuizRunViewModel(desktop, id, key);
+                return desktop.IsCompactLayout
+                    ? (Avalonia.Controls.Control)new Argos.Views.Mobile.Ilias.QuizMobileView { DataContext = vm }
+                    : new QuizView { DataContext = vm };
+            }, 860, 780);
     }
 }

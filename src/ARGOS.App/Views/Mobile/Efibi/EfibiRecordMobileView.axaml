@@ -1,0 +1,185 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:m="using:Argos.Views.Mobile"
+             x:Class="Argos.Views.Mobile.Efibi.EfibiRecordMobileView"
+             Classes="ios"
+             m:MobilePage.IsNative="True"
+             m:MobilePage.Accent="#0B5394">
+    <!-- Fiche bilan eFiBi sur iPhone, en lecture seule (même modèle que la version bureau : EfibiRecordViewModel). -->
+    <UserControl.Resources>
+        <SolidColorBrush x:Key="AppAccent" Color="#0B5394"/>
+    </UserControl.Resources>
+
+    <Grid RowDefinitions="Auto,*">
+        <Border Classes="banner" IsVisible="{Binding HasError}">
+            <TextBlock Text="{Binding Error}"/>
+        </Border>
+
+        <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Disabled">
+            <StackPanel Margin="0,0,0,24">
+                <TextBlock Classes="large" Text="{Binding Title}"/>
+                <StackPanel Orientation="Horizontal" Spacing="8" Margin="16,0,16,4">
+                    <Border Classes="badge" Background="#FF3B30">
+                        <TextBlock Text="LECTURE SEULE"/>
+                    </Border>
+                    <Border Classes="badge" Background="{Binding StatusBrush}">
+                        <TextBlock Text="{Binding Status}"/>
+                    </Border>
+                </StackPanel>
+
+                <Border Classes="group" Margin="16,8,16,0" IsVisible="{Binding Loading}">
+                    <Border Classes="row">
+                        <TextBlock Classes="value" Text="Chargement de la fiche…"/>
+                    </Border>
+                </Border>
+
+                <StackPanel IsVisible="{Binding HasRecord}">
+                    <!-- En-tête de la fiche -->
+                    <TextBlock Classes="section" Text="INTERVENTION"/>
+                    <Border Classes="group">
+                        <StackPanel>
+                            <Border Classes="row">
+                                <Grid ColumnDefinitions="Auto,*">
+                                    <TextBlock Classes="label" Text="N° d'intervention"/>
+                                    <SelectableTextBlock Grid.Column="1" Classes="value" Text="{Binding Intervention}" TextAlignment="Right" FontSize="15" Margin="12,0,0,0" VerticalAlignment="Center"/>
+                                </Grid>
+                            </Border>
+                            <Border Classes="row">
+                                <Grid ColumnDefinitions="Auto,*">
+                                    <TextBlock Classes="label" Text="Date / heure"/>
+                                    <TextBlock Grid.Column="1" Classes="value" Text="{Binding DisplayTimestamp}" TextAlignment="Right" Margin="12,0,0,0"/>
+                                </Grid>
+                            </Border>
+                            <Border Classes="row">
+                                <Grid ColumnDefinitions="Auto,*">
+                                    <TextBlock Classes="label" Text="Auteur"/>
+                                    <TextBlock Grid.Column="1" Classes="value" Text="{Binding Author}" TextAlignment="Right" Margin="12,0,0,0"/>
+                                </Grid>
+                            </Border>
+                            <Border Classes="row">
+                                <Grid ColumnDefinitions="Auto,*">
+                                    <TextBlock Classes="label" Text="Identifiant FiveM"/>
+                                    <TextBlock Grid.Column="1" Classes="value" Text="{Binding CitizenId}" TextAlignment="Right" Margin="12,0,0,0"/>
+                                </Grid>
+                            </Border>
+                            <Border Classes="row">
+                                <Grid ColumnDefinitions="Auto,*">
+                                    <TextBlock Classes="label" Text="Victime"/>
+                                    <TextBlock Grid.Column="1" Classes="value" Text="{Binding Victim}" TextAlignment="Right" FontWeight="SemiBold" Margin="12,0,0,0"/>
+                                </Grid>
+                            </Border>
+                            <Border Classes="row">
+                                <StackPanel Spacing="3">
+                                    <TextBlock Classes="caption" Text="Circonstances"/>
+                                    <SelectableTextBlock Text="{Binding Circumstances}" TextWrapping="Wrap" FontSize="15"/>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Informations de transmission -->
+                    <TextBlock Classes="section" Text="INFORMATIONS DE TRANSMISSION"/>
+                    <Border Classes="group">
+                        <StackPanel>
+                            <Border Classes="row">
+                                <Grid ColumnDefinitions="Auto,*">
+                                    <TextBlock Classes="label" Text="Statut"/>
+                                    <TextBlock Grid.Column="1" Classes="value" Text="{Binding Status}" Foreground="{Binding StatusBrush}" FontWeight="SemiBold"
+                                               TextAlignment="Right" Margin="12,0,0,0"/>
+                                </Grid>
+                            </Border>
+                            <Border Classes="row">
+                                <Grid ColumnDefinitions="Auto,*">
+                                    <TextBlock Classes="label" Text="Transmission"/>
+                                    <TextBlock Grid.Column="1" Classes="value" TextAlignment="Right" Margin="12,0,0,0">
+                                        <Run Text="{Binding TransmissionDate}"/><Run Text=" "/><Run Text="{Binding TransmissionTime}"/>
+                                    </TextBlock>
+                                </Grid>
+                            </Border>
+                            <Border Classes="row">
+                                <Grid ColumnDefinitions="Auto,*">
+                                    <TextBlock Classes="label" Text="Prise en charge"/>
+                                    <TextBlock Grid.Column="1" Classes="value" Text="{Binding Started}" TextAlignment="Right" Margin="12,0,0,0"/>
+                                </Grid>
+                            </Border>
+                            <Border Classes="row">
+                                <Grid ColumnDefinitions="Auto,*">
+                                    <TextBlock Classes="label" Text="Fiche créée"/>
+                                    <TextBlock Grid.Column="1" Classes="value" Text="{Binding Created}" TextAlignment="Right" Margin="12,0,0,0"/>
+                                </Grid>
+                            </Border>
+                            <Border Classes="row">
+                                <Grid ColumnDefinitions="Auto,*">
+                                    <TextBlock Classes="label" Text="Mise à jour"/>
+                                    <TextBlock Grid.Column="1" Classes="value" Text="{Binding Updated}" TextAlignment="Right" Margin="12,0,0,0"/>
+                                </Grid>
+                            </Border>
+                            <Border Classes="row">
+                                <Grid ColumnDefinitions="Auto,*">
+                                    <TextBlock Classes="label" Text="Code de partage"/>
+                                    <SelectableTextBlock Grid.Column="1" Text="{Binding ShareCode}" Foreground="#8E8E93" FontSize="15" TextAlignment="Right"
+                                                         VerticalAlignment="Center" Margin="12,0,0,0"/>
+                                </Grid>
+                            </Border>
+                            <Border Classes="row">
+                                <Grid ColumnDefinitions="Auto,*">
+                                    <TextBlock Classes="label" Text="Erreurs et historique"/>
+                                    <TextBlock Grid.Column="1" Classes="value" Text="Non renseigné (absent de la base)" TextAlignment="Right" Margin="12,0,0,0"/>
+                                </Grid>
+                            </Border>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Rubriques du bilan -->
+                    <ItemsControl ItemsSource="{Binding Sections}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel>
+                                    <TextBlock Classes="section" Text="{Binding Title}" TextWrapping="Wrap"/>
+                                    <Border Classes="group">
+                                        <StackPanel>
+                                            <ItemsControl ItemsSource="{Binding Fields}">
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <Border Classes="row">
+                                                            <StackPanel Spacing="2">
+                                                                <TextBlock Classes="caption" Text="{Binding Label}" TextWrapping="Wrap" TextTrimming="None"/>
+                                                                <SelectableTextBlock Text="{Binding Value}" TextWrapping="Wrap" FontSize="15"/>
+                                                            </StackPanel>
+                                                        </Border>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                            <ItemsControl ItemsSource="{Binding Lists}">
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <Border Classes="row">
+                                                            <StackPanel Spacing="2">
+                                                                <TextBlock Classes="caption" Text="{Binding Name}" TextWrapping="Wrap" TextTrimming="None"/>
+                                                                <ItemsControl ItemsSource="{Binding Items}">
+                                                                    <ItemsControl.ItemTemplate>
+                                                                        <DataTemplate>
+                                                                            <SelectableTextBlock Text="{Binding}" TextWrapping="Wrap" FontSize="15"/>
+                                                                        </DataTemplate>
+                                                                    </ItemsControl.ItemTemplate>
+                                                                </ItemsControl>
+                                                                <TextBlock Classes="value" Text="Non renseigné" IsVisible="{Binding !Items.Count}"/>
+                                                            </StackPanel>
+                                                        </Border>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </StackPanel>
+                                    </Border>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <TextBlock Classes="footnote" Margin="32,14,16,0"
+                               Text="Consultation en lecture seule · données issues de la base eFIBI, aucune modification possible."/>
+                </StackPanel>
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</UserControl>

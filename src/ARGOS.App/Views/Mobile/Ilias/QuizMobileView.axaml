@@ -1,0 +1,113 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:m="using:Argos.Views.Mobile"
+             x:Class="Argos.Views.Mobile.Ilias.QuizMobileView"
+             Classes="ios"
+             m:MobilePage.IsNative="True"
+             m:MobilePage.Accent="#0C3C78">
+    <!-- Questionnaire ILIAS sur iPhone (même modèle que la version bureau : QuizRunViewModel). -->
+    <UserControl.Resources>
+        <SolidColorBrush x:Key="AppAccent" Color="#0C3C78"/>
+    </UserControl.Resources>
+    <UserControl.Styles>
+        <Style Selector="RadioButton.ans">
+            <Setter Property="FontSize" Value="15.5"/>
+            <Setter Property="Margin" Value="0"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+        </Style>
+    </UserControl.Styles>
+
+    <Grid RowDefinitions="*,Auto">
+        <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+            <StackPanel Margin="0,0,0,24">
+                <Grid ColumnDefinitions="*,Auto" Margin="0,0,16,0">
+                    <StackPanel>
+                        <TextBlock Classes="footnote" Text="QUESTIONNAIRE" FontWeight="SemiBold" Margin="16,10,16,0"/>
+                        <TextBlock Classes="large" Text="{Binding Title}" Margin="16,2,16,6"/>
+                    </StackPanel>
+                    <Border Grid.Column="1" Classes="badge" Background="#FF3B30" IsVisible="{Binding HasTimer}" Padding="10,4" CornerRadius="10">
+                        <TextBlock Text="{Binding TimeLeft}" FontSize="17" FontWeight="Bold" FontFamily="Menlo, Consolas, monospace"/>
+                    </Border>
+                </Grid>
+                <TextBlock Classes="footnote" Text="{Binding Rules}" Margin="16,0,16,4"/>
+
+                <!-- Résultat -->
+                <StackPanel IsVisible="{Binding IsFinished}">
+                    <TextBlock Classes="section" Text="RÉSULTAT"/>
+                    <Border Classes="group">
+                        <Border Classes="row">
+                            <StackPanel Spacing="2">
+                                <Panel>
+                                    <TextBlock Text="{Binding ResultTitle}" FontSize="20" FontWeight="Bold" Foreground="#34C759" IsVisible="{Binding Passed}"/>
+                                    <TextBlock Text="{Binding ResultTitle}" FontSize="20" FontWeight="Bold" Foreground="#FF3B30" IsVisible="{Binding !Passed}"/>
+                                </Panel>
+                                <TextBlock Classes="subtitle" Text="{Binding ResultScore}" FontSize="16"/>
+                            </StackPanel>
+                        </Border>
+                    </Border>
+
+                    <TextBlock Classes="section" Text="CORRECTIONS"/>
+                    <ItemsControl ItemsSource="{Binding Corrections}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Classes="group" Margin="16,0,16,10">
+                                    <Border Classes="row">
+                                        <Grid ColumnDefinitions="Auto,*">
+                                            <Panel VerticalAlignment="Top" Margin="0,2,12,0">
+                                                <PathIcon Data="{StaticResource TabCheck}" Width="18" Height="18" Foreground="#34C759" IsVisible="{Binding Right}"/>
+                                                <TextBlock Text="✕" FontSize="16" FontWeight="Bold" Foreground="#FF3B30" IsVisible="{Binding !Right}"/>
+                                            </Panel>
+                                            <StackPanel Grid.Column="1" Spacing="3">
+                                                <TextBlock Text="{Binding Question}" FontWeight="SemiBold" FontSize="15" TextWrapping="Wrap"/>
+                                                <TextBlock FontSize="14" TextWrapping="Wrap"><Run Text="Votre réponse : "/><Run Text="{Binding Given}" FontWeight="SemiBold"/></TextBlock>
+                                                <TextBlock FontSize="14" TextWrapping="Wrap" IsVisible="{Binding !Right}"><Run Text="Réponse attendue : "/><Run Text="{Binding Expected}" FontWeight="SemiBold"/></TextBlock>
+                                                <TextBlock Classes="caption" Text="{Binding Explanation}" TextWrapping="Wrap" TextTrimming="None"
+                                                           IsVisible="{Binding Explanation, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+                                            </StackPanel>
+                                        </Grid>
+                                    </Border>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+
+                <!-- Questions -->
+                <StackPanel IsVisible="{Binding IsRunning}">
+                    <TextBlock Classes="footnote" Text="{Binding Description}" Margin="16,4,16,4"
+                               IsVisible="{Binding Description, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+                    <ItemsControl ItemsSource="{Binding Questions}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel>
+                                    <TextBlock Classes="section" Text="{Binding Title}"/>
+                                    <Border Classes="group">
+                                        <StackPanel>
+                                            <Border Classes="row">
+                                                <TextBlock Text="{Binding Text}" FontSize="16" FontWeight="SemiBold" TextWrapping="Wrap"/>
+                                            </Border>
+                                            <ItemsControl ItemsSource="{Binding Options}" Tag="{Binding Group}">
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <Border Classes="row">
+                                                            <RadioButton Classes="ans" Content="{Binding Text}" IsChecked="{Binding Selected}"
+                                                                         GroupName="{Binding $parent[ItemsControl].Tag}"/>
+                                                        </Border>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </StackPanel>
+                                    </Border>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </StackPanel>
+        </ScrollViewer>
+
+        <Border Grid.Row="1" Classes="tabbar" IsVisible="{Binding IsRunning}">
+            <Button Classes="primary" Content="Valider mes réponses" Command="{Binding SubmitCommand}" Margin="16,4"/>
+        </Border>
+    </Grid>
+</UserControl>

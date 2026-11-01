@@ -1,0 +1,187 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:m="using:Argos.Views.Mobile"
+             x:Class="Argos.Views.Mobile.Efibi.EfibiMobileView"
+             Classes="ios"
+             m:MobilePage.IsNative="True"
+             m:MobilePage.Accent="#0B5394">
+    <!-- eFiBi sur iPhone : registre des fiches bilans en lecture seule (même modèle que la version bureau : EfibiAppViewModel). -->
+    <UserControl.Resources>
+        <SolidColorBrush x:Key="AppAccent" Color="#0B5394"/>
+    </UserControl.Resources>
+
+    <Grid RowDefinitions="Auto,*,Auto">
+        <Border Classes="banner" IsVisible="{Binding HasError}">
+            <Grid ColumnDefinitions="*,Auto">
+                <TextBlock Text="{Binding Error}"/>
+                <Button Grid.Column="1" Classes="plain" Foreground="White" Content="Réessayer" Command="{Binding RefreshCommand}"/>
+            </Grid>
+        </Border>
+
+        <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Disabled">
+            <StackPanel Margin="0,0,0,24">
+                <Grid ColumnDefinitions="*,Auto" Margin="0,0,16,0">
+                    <TextBlock Classes="large" Text="eFiBi"/>
+                    <Border Grid.Column="1" Classes="badge" Background="#FF3B30">
+                        <TextBlock Text="LECTURE SEULE"/>
+                    </Border>
+                </Grid>
+                <TextBlock Classes="footnote" Text="Fiches bilans numériques · consultation" Margin="16,-4,16,4"/>
+
+                <!-- Recherche -->
+                <Border Classes="searchbar">
+                    <Grid ColumnDefinitions="Auto,*">
+                        <PathIcon Data="{StaticResource TabSearch}" Width="16" Height="16" Foreground="#8E8E93"/>
+                        <TextBox Grid.Column="1" Classes="field" Text="{Binding Text}"
+                                 Watermark="N° d'intervention, victime, identifiant, code" Margin="6,0,0,0"/>
+                    </Grid>
+                </Border>
+
+                <Border Classes="group">
+                    <StackPanel>
+                        <Border Classes="row">
+                            <Grid ColumnDefinitions="Auto,*">
+                                <TextBlock Classes="label" Text="Statut"/>
+                                <ComboBox Grid.Column="1" Classes="field" ItemsSource="{Binding Statuses}" SelectedItem="{Binding Status}"
+                                          HorizontalContentAlignment="Right" Margin="12,0,0,0"/>
+                            </Grid>
+                        </Border>
+                        <Button Classes="row" Command="{Binding ToggleAdvancedCommand}">
+                            <Grid ColumnDefinitions="Auto,*,Auto">
+                                <PathIcon Data="{StaticResource TabSearch}" Width="18" Height="18" Foreground="{DynamicResource AppAccent}" Margin="0,0,12,0"/>
+                                <TextBlock Grid.Column="1" Classes="label" Text="Recherche avancée"/>
+                                <ToggleSwitch Grid.Column="2" IsChecked="{Binding Advanced}" OnContent="" OffContent="" IsHitTestVisible="False"
+                                              VerticalAlignment="Center" MinWidth="0"/>
+                            </Grid>
+                        </Button>
+                        <Button Classes="row" Command="{Binding RefreshCommand}">
+                            <Grid ColumnDefinitions="Auto,*">
+                                <PathIcon Data="{StaticResource TabClock}" Width="18" Height="18" Foreground="{DynamicResource AppAccent}" Margin="0,0,12,0"/>
+                                <TextBlock Grid.Column="1" Classes="label" Text="Actualiser" Foreground="{DynamicResource AppAccent}"/>
+                            </Grid>
+                        </Button>
+                    </StackPanel>
+                </Border>
+
+                <!-- Recherche avancée -->
+                <StackPanel IsVisible="{Binding Advanced}">
+                    <TextBlock Classes="section" Text="RECHERCHE AVANCÉE"/>
+                    <Border Classes="group">
+                        <StackPanel>
+                            <Border Classes="row">
+                                <Grid ColumnDefinitions="Auto,*">
+                                    <TextBlock Classes="label" Text="N° d'intervention"/>
+                                    <TextBox Grid.Column="1" Classes="field" Text="{Binding Intervention}" HorizontalContentAlignment="Right" Margin="12,0,0,0"/>
+                                </Grid>
+                            </Border>
+                            <Border Classes="row">
+                                <Grid ColumnDefinitions="Auto,*">
+                                    <TextBlock Classes="label" Text="Victime"/>
+                                    <TextBox Grid.Column="1" Classes="field" Text="{Binding Victim}" Watermark="Nom ou prénom"
+                                             HorizontalContentAlignment="Right" Margin="12,0,0,0"/>
+                                </Grid>
+                            </Border>
+                            <Border Classes="row">
+                                <Grid ColumnDefinitions="Auto,*">
+                                    <TextBlock Classes="label" Text="Identifiant"/>
+                                    <TextBox Grid.Column="1" Classes="field" Text="{Binding Identifier}" HorizontalContentAlignment="Right" Margin="12,0,0,0"/>
+                                </Grid>
+                            </Border>
+                            <Border Classes="row">
+                                <Grid ColumnDefinitions="Auto,*">
+                                    <TextBlock Classes="label" Text="Code de partage"/>
+                                    <TextBox Grid.Column="1" Classes="field" Text="{Binding ShareCode}" HorizontalContentAlignment="Right" Margin="12,0,0,0"/>
+                                </Grid>
+                            </Border>
+                            <Border Classes="row">
+                                <Grid ColumnDefinitions="Auto,*">
+                                    <TextBlock Classes="label" Text="Du"/>
+                                    <CalendarDatePicker Grid.Column="1" SelectedDate="{Binding From}" SelectedDateFormat="Custom" CustomDateFormatString="dd/MM/yyyy"
+                                                        Watermark="jj/mm/aaaa" HorizontalAlignment="Right" BorderThickness="0" Background="Transparent"/>
+                                </Grid>
+                            </Border>
+                            <Border Classes="row">
+                                <Grid ColumnDefinitions="Auto,*">
+                                    <TextBlock Classes="label" Text="Au"/>
+                                    <CalendarDatePicker Grid.Column="1" SelectedDate="{Binding To}" SelectedDateFormat="Custom" CustomDateFormatString="dd/MM/yyyy"
+                                                        Watermark="jj/mm/aaaa" HorizontalAlignment="Right" BorderThickness="0" Background="Transparent"/>
+                                </Grid>
+                            </Border>
+                            <Border Classes="row">
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <TextBlock Classes="label" Text="Plus anciennes d'abord"/>
+                                    <ToggleSwitch Grid.Column="1" IsChecked="{Binding OldestFirst}" OnContent="" OffContent="" MinWidth="0" VerticalAlignment="Center"/>
+                                </Grid>
+                            </Border>
+                        </StackPanel>
+                    </Border>
+                    <Button Classes="primary" Content="Rechercher" Command="{Binding SearchCommand}" Margin="16,12,16,6"/>
+                    <Button Classes="secondary" Content="Réinitialiser" Command="{Binding ResetCommand}"/>
+                </StackPanel>
+
+                <!-- Tri -->
+                <TextBlock Classes="section" Text="TRIER PAR (UN SECOND APPUI INVERSE L'ORDRE)"/>
+                <Border Classes="segments">
+                    <UniformGrid Columns="3">
+                        <Button Classes="seg" Content="Date" Command="{Binding SortCommand}" CommandParameter="date"/>
+                        <Button Classes="seg" Content="N° interv." Command="{Binding SortCommand}" CommandParameter="intervention"/>
+                        <Button Classes="seg" Content="Statut" Command="{Binding SortCommand}" CommandParameter="status"/>
+                        <Button Classes="seg" Content="Auteur" Command="{Binding SortCommand}" CommandParameter="author"/>
+                        <Button Classes="seg" Content="Victime" Command="{Binding SortCommand}" CommandParameter="victim"/>
+                        <Button Classes="seg" Content="Circonst." Command="{Binding SortCommand}" CommandParameter="circumstances"/>
+                    </UniformGrid>
+                </Border>
+
+                <!-- Registre -->
+                <TextBlock Classes="section" Text="{Binding ResultLabel}"/>
+                <Border Classes="group">
+                    <StackPanel>
+                        <ItemsControl ItemsSource="{Binding Items}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Button Classes="row" Command="{Binding OpenCommand}">
+                                        <Grid ColumnDefinitions="*,Auto">
+                                            <StackPanel Spacing="2">
+                                                <Grid ColumnDefinitions="*,Auto">
+                                                    <TextBlock Classes="title" Text="{Binding Intervention}"/>
+                                                    <TextBlock Grid.Column="1" Classes="caption" Margin="8,0,0,0">
+                                                        <Run Text="{Binding Date}"/><Run Text=" "/><Run Text="{Binding Time}" FontWeight="SemiBold"/>
+                                                    </TextBlock>
+                                                </Grid>
+                                                <TextBlock Classes="subtitle" Text="{Binding Victim}" FontWeight="SemiBold"/>
+                                                <TextBlock Classes="caption" Text="{Binding Circumstances}" TextWrapping="Wrap" TextTrimming="None" MaxLines="2"/>
+                                                <TextBlock Classes="caption">
+                                                    <Run Text="{Binding Author}"/><Run Text="  ·  n° "/><Run Text="{Binding Id}"/><Run Text="  ·  "/><Run Text="{Binding ShareCode}"/>
+                                                </TextBlock>
+                                                <Border Classes="badge" Background="{Binding StatusBrush}" HorizontalAlignment="Left" Margin="0,3,0,0">
+                                                    <TextBlock Text="{Binding Status}"/>
+                                                </Border>
+                                            </StackPanel>
+                                            <TextBlock Grid.Column="1" Classes="chevron"/>
+                                        </Grid>
+                                    </Button>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <Border Classes="row" IsVisible="{Binding IsEmpty}">
+                            <TextBlock Classes="value" Text="Aucune fiche bilan ne correspond."/>
+                        </Border>
+                        <Border Classes="row" IsVisible="{Binding Loading}">
+                            <TextBlock Classes="value" Text="Chargement…"/>
+                        </Border>
+                    </StackPanel>
+                </Border>
+                <TextBlock Classes="footnote" Text="Consultation en lecture seule : aucune modification possible."/>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- Pagination -->
+        <Border Grid.Row="2" Classes="tabbar">
+            <Grid ColumnDefinitions="Auto,*,Auto" Margin="8,0">
+                <Button Classes="plain" Content="‹ Précédente" Command="{Binding PreviousCommand}"/>
+                <TextBlock Grid.Column="1" Classes="caption" Text="{Binding PageLabel}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                <Button Grid.Column="2" Classes="plain" Content="Suivante ›" Command="{Binding NextCommand}"/>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>
