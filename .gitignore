@@ -18,3 +18,4 @@ argos.local.json
 # Signature Android
 *.keystore
 *.jks
+src/ARGOS.Setup/Resources/payload.zip

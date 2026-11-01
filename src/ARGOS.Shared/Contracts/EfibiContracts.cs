@@ -54,6 +54,10 @@ public sealed class EfibiField
 {
     public string Label { get; set; } = string.Empty;
     public string Value { get; set; } = string.Empty;
+
+    /// <summary>Valeur absente (« Non renseigné ») : affichage atténué. Calculé côté client, non transmis.</summary>
+    [System.Text.Json.Serialization.JsonIgnore]
+    public bool IsEmpty => string.IsNullOrWhiteSpace(Value) || Value == EfibiText.NonRenseigne;
 }
 
 public sealed class EfibiList
@@ -82,6 +86,10 @@ public sealed class EfibiRecord
 public static class EfibiText
 {
     public const string NonRenseigne = "Non renseigné";
+
+    /// <summary>Code fiche affiché : code de partage eFiBi (identifiant alphanumérique de la fiche), sinon n° interne.</summary>
+    public static string FicheCode(long id, string? shareCode)
+        => string.IsNullOrWhiteSpace(shareCode) ? $"Fiche n° {id}" : shareCode.Trim();
 
     /// <summary>Ordre d'affichage des rubriques (même ordre que CORTEX) ; les autres suivent.</summary>
     public static readonly IReadOnlyList<string> SectionOrder =

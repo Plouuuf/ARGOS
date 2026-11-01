@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Installateur Windows d'ARGOS (ARGOS-Setup.exe), sur le modèle de SIMCALL.
+    Le paquet ARGOS-windows.zip est intégré (Resources/payload.zip, déposé par la CI avant la publication).
+    Hors solution : compilé seulement par la CI (dotnet publish -r win-x64).
+  -->
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+    <AssemblyName>ARGOS-Setup</AssemblyName>
+    <RootNamespace>Argos.Setup</RootNamespace>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <AvaloniaUseCompiledBindingsByDefault>false</AvaloniaUseCompiledBindingsByDefault>
+    <NoWarn>$(NoWarn);CA1416</NoWarn>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="$([MSBuild]::IsOSPlatform('Windows'))">
+    <ApplicationIcon>..\ARGOS.Desktop\Assets\ARGOS.ico</ApplicationIcon>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Avalonia.Desktop" Version="$(AvaloniaVersion)" />
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="$(AvaloniaVersion)" />
+    <PackageReference Include="Avalonia.Fonts.Inter" Version="$(AvaloniaVersion)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AvaloniaResource Include="..\ARGOS.App\Assets\argos-icon.png" Link="Assets\argos-icon.png" />
+    <EmbeddedResource Include="Resources\payload.zip" LogicalName="ARGOS.Setup.payload.zip" Condition="Exists('Resources\payload.zip')" />
+  </ItemGroup>
+</Project>

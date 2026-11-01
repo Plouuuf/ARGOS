@@ -5,10 +5,53 @@
              Classes="ios"
              m:MobilePage.IsNative="True"
              m:MobilePage.Accent="#0B5394">
-    <!-- eFiBi sur iPhone : registre des fiches bilans en lecture seule (même modèle que la version bureau : EfibiAppViewModel). -->
+    <!-- eFiBi sur iPhone : registre des fiches bilans (même modèle que la version bureau : EfibiAppViewModel). -->
     <UserControl.Resources>
         <SolidColorBrush x:Key="AppAccent" Color="#0B5394"/>
+        <CornerRadius x:Key="ControlCornerRadius">0</CornerRadius>
+        <CornerRadius x:Key="OverlayCornerRadius">0</CornerRadius>
     </UserControl.Resources>
+
+    <!-- Surcharge locale du style iOS commun : aucun arrondi dans eFiBi. -->
+    <UserControl.Styles>
+        <Style Selector=".ios Border.group, .ios Border.tile, .ios Border.searchbar, .ios Border.badge, .ios Border.banner, .ios Border.segments">
+            <Setter Property="CornerRadius" Value="0"/>
+        </Style>
+        <Style Selector=".ios Border.group">
+            <Setter Property="BorderBrush" Value="#D1D5DB"/>
+            <Setter Property="BorderThickness" Value="0,0.5"/>
+        </Style>
+        <Style Selector=".ios Button.primary, .ios Button.secondary, .ios Button.destructive, .ios Button.seg, .ios Button.row, .ios Button.plain">
+            <Setter Property="CornerRadius" Value="0"/>
+        </Style>
+        <Style Selector=".ios Button.secondary">
+            <Setter Property="BorderBrush" Value="#C9D3DD"/>
+            <Setter Property="BorderThickness" Value="1"/>
+        </Style>
+        <Style Selector=".ios Button.seg">
+            <Setter Property="FontSize" Value="12.5"/>
+            <Setter Property="Padding" Value="2,7"/>
+        </Style>
+        <Style Selector=".ios TextBox, .ios ComboBox, .ios CalendarDatePicker, .ios ToggleSwitch">
+            <Setter Property="CornerRadius" Value="0"/>
+        </Style>
+        <Style Selector=".ios Border.status">
+            <Setter Property="CornerRadius" Value="0"/>
+            <Setter Property="Padding" Value="8,3"/>
+            <Setter Property="HorizontalAlignment" Value="Left"/>
+        </Style>
+        <Style Selector=".ios Border.status TextBlock">
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+        </Style>
+        <Style Selector=".ios TextBlock.code">
+            <Setter Property="FontFamily" Value="Menlo, Consolas, DejaVu Sans Mono, monospace"/>
+            <Setter Property="FontSize" Value="12.5"/>
+            <Setter Property="Foreground" Value="#6B7A89"/>
+            <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+        </Style>
+    </UserControl.Styles>
 
     <Grid RowDefinitions="Auto,*,Auto">
         <Border Classes="banner" IsVisible="{Binding HasError}">
@@ -20,13 +63,8 @@
 
         <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Disabled">
             <StackPanel Margin="0,0,0,24">
-                <Grid ColumnDefinitions="*,Auto" Margin="0,0,16,0">
-                    <TextBlock Classes="large" Text="eFiBi"/>
-                    <Border Grid.Column="1" Classes="badge" Background="#FF3B30">
-                        <TextBlock Text="LECTURE SEULE"/>
-                    </Border>
-                </Grid>
-                <TextBlock Classes="footnote" Text="Fiches bilans numériques · consultation" Margin="16,-4,16,4"/>
+                <TextBlock Classes="large" Text="eFiBi"/>
+                <TextBlock Classes="footnote" Text="Fiches bilans numériques · Registre des fiches" Margin="16,-4,16,4"/>
 
                 <!-- Recherche -->
                 <Border Classes="searchbar">
@@ -119,20 +157,19 @@
                     <Button Classes="secondary" Content="Réinitialiser" Command="{Binding ResetCommand}"/>
                 </StackPanel>
 
-                <!-- Tri -->
+                <!-- Tri : mêmes colonnes que le registre bureau -->
                 <TextBlock Classes="section" Text="TRIER PAR (UN SECOND APPUI INVERSE L'ORDRE)"/>
                 <Border Classes="segments">
-                    <UniformGrid Columns="3">
-                        <Button Classes="seg" Content="Date" Command="{Binding SortCommand}" CommandParameter="date"/>
+                    <UniformGrid Columns="5">
                         <Button Classes="seg" Content="N° interv." Command="{Binding SortCommand}" CommandParameter="intervention"/>
-                        <Button Classes="seg" Content="Statut" Command="{Binding SortCommand}" CommandParameter="status"/>
+                        <Button Classes="seg" Content="Date" Command="{Binding SortCommand}" CommandParameter="date"/>
                         <Button Classes="seg" Content="Auteur" Command="{Binding SortCommand}" CommandParameter="author"/>
-                        <Button Classes="seg" Content="Victime" Command="{Binding SortCommand}" CommandParameter="victim"/>
-                        <Button Classes="seg" Content="Circonst." Command="{Binding SortCommand}" CommandParameter="circumstances"/>
+                        <Button Classes="seg" Content="Bilan" Command="{Binding SortCommand}" CommandParameter="circumstances"/>
+                        <Button Classes="seg" Content="Statut" Command="{Binding SortCommand}" CommandParameter="status"/>
                     </UniformGrid>
                 </Border>
 
-                <!-- Registre -->
+                <!-- Registre : n° d'intervention + code fiche, date + heure, auteur, bilan circonstanciel, statut -->
                 <TextBlock Classes="section" Text="{Binding ResultLabel}"/>
                 <Border Classes="group">
                     <StackPanel>
@@ -141,19 +178,21 @@
                                 <DataTemplate>
                                     <Button Classes="row" Command="{Binding OpenCommand}">
                                         <Grid ColumnDefinitions="*,Auto">
-                                            <StackPanel Spacing="2">
-                                                <Grid ColumnDefinitions="*,Auto">
-                                                    <TextBlock Classes="title" Text="{Binding Intervention}"/>
-                                                    <TextBlock Grid.Column="1" Classes="caption" Margin="8,0,0,0">
-                                                        <Run Text="{Binding Date}"/><Run Text=" "/><Run Text="{Binding Time}" FontWeight="SemiBold"/>
-                                                    </TextBlock>
+                                            <StackPanel Spacing="3">
+                                                <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto">
+                                                    <TextBlock Classes="title" Text="{Binding Intervention}" Foreground="{DynamicResource AppAccent}" FontWeight="Bold"/>
+                                                    <TextBlock Grid.Column="1" Classes="caption" Text="{Binding Date}" Foreground="#3C3C43"
+                                                               HorizontalAlignment="Right" Margin="8,0,0,0" VerticalAlignment="Center"/>
+                                                    <TextBlock Grid.Row="1" Classes="code" Text="{Binding FicheCode}"/>
+                                                    <TextBlock Grid.Row="1" Grid.Column="1" Classes="caption" Text="{Binding Time}" FontWeight="SemiBold"
+                                                               Foreground="#3C3C43" HorizontalAlignment="Right" Margin="8,0,0,0"/>
                                                 </Grid>
-                                                <TextBlock Classes="subtitle" Text="{Binding Victim}" FontWeight="SemiBold"/>
-                                                <TextBlock Classes="caption" Text="{Binding Circumstances}" TextWrapping="Wrap" TextTrimming="None" MaxLines="2"/>
-                                                <TextBlock Classes="caption">
-                                                    <Run Text="{Binding Author}"/><Run Text="  ·  n° "/><Run Text="{Binding Id}"/><Run Text="  ·  "/><Run Text="{Binding ShareCode}"/>
+                                                <TextBlock Classes="subtitle" Margin="0,2,0,0">
+                                                    <Run Text="Auteur : " Foreground="#8E8E93"/><Run Text="{Binding Author, Mode=OneWay}" FontWeight="SemiBold"/>
                                                 </TextBlock>
-                                                <Border Classes="badge" Background="{Binding StatusBrush}" HorizontalAlignment="Left" Margin="0,3,0,0">
+                                                <TextBlock Classes="caption" Text="{Binding Circumstances}" Foreground="#3C3C43" FontSize="13.5"
+                                                           TextWrapping="Wrap" MaxLines="3"/>
+                                                <Border Classes="status" Background="{Binding StatusBrush}" Margin="0,3,0,0">
                                                     <TextBlock Text="{Binding Status}"/>
                                                 </Border>
                                             </StackPanel>
@@ -171,7 +210,6 @@
                         </Border>
                     </StackPanel>
                 </Border>
-                <TextBlock Classes="footnote" Text="Consultation en lecture seule : aucune modification possible."/>
             </StackPanel>
         </ScrollViewer>
 
@@ -179,7 +217,8 @@
         <Border Grid.Row="2" Classes="tabbar">
             <Grid ColumnDefinitions="Auto,*,Auto" Margin="8,0">
                 <Button Classes="plain" Content="‹ Précédente" Command="{Binding PreviousCommand}"/>
-                <TextBlock Grid.Column="1" Classes="caption" Text="{Binding PageLabel}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                <TextBlock Grid.Column="1" Classes="caption" Text="{Binding PageLabel}" HorizontalAlignment="Center" VerticalAlignment="Center"
+                           FontWeight="SemiBold" Foreground="#3C3C43"/>
                 <Button Grid.Column="2" Classes="plain" Content="Suivante ›" Command="{Binding NextCommand}"/>
             </Grid>
         </Border>

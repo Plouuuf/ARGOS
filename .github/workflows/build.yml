@@ -1,7 +1,11 @@
 # Compilation d'ARGOS sur les serveurs GitHub.
 # Résultats : onglet « Actions » du dépôt › dernière exécution › « Artifacts » :
 #   ARGOS-macos    ARGOS.app (Apple Silicon), à décompresser puis ouvrir (clic droit › Ouvrir la première fois)
+#   ARGOS-Setup    installateur Windows (raccourcis Bureau / menu Démarrer, désinstallation)
 #   ARGOS-windows  ARGOS.exe autonome (Windows 64 bits)
+#   ARGOS-macos-dmg  image disque macOS (glisser ARGOS dans Applications)
+#   ARGOS-android  APK Android
+#   Liens stables : https://github.com/<dépôt>/releases/latest/download/ARGOS-Setup.exe (ARGOS-macos.dmg, ARGOS-android.apk)
 #   ARGOS-server   serveur ARGOS pour Windows (à compléter avec appsettings.Local.json, voir README)
 #
 #   ARGOS-ios      (compilation iPhone vérifiée à chaque fois ; envoi TestFlight si les secrets Apple sont présents)
@@ -145,6 +149,17 @@ jobs:
             -o artifacts/windows
           (cd artifacts/windows && zip -qr "../ARGOS-$VERSION-windows.zip" ARGOS.exe)
 
+      - name: Installateur Windows (ARGOS-Setup.exe)
+        run: |
+          set -e
+          # Le paquet Windows est intégré à l'installateur (comme SIMCALL).
+          cp "artifacts/ARGOS-$VERSION-windows.zip" src/ARGOS.Setup/Resources/payload.zip
+          dotnet publish src/ARGOS.Setup/ARGOS.Setup.csproj -c Release -r win-x64 --self-contained true \
+            -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:EnableCompressionInSingleFile=true \
+            -o artifacts/setup
+          cp artifacts/setup/ARGOS-Setup.exe artifacts/ARGOS-Setup.exe
+          ls -la artifacts/ARGOS-Setup.exe
+
       - name: Publication du serveur (Windows)
         run: |
           set -e
@@ -168,6 +183,12 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
+          name: ARGOS-Setup
+          path: artifacts/ARGOS-Setup.exe
+          if-no-files-found: error
+
+      - uses: actions/upload-artifact@v4
+        with:
           name: ARGOS-server
           path: artifacts/server/
           if-no-files-found: error
@@ -182,7 +203,7 @@ jobs:
           cp artifacts/ARGOS-*-windows.zip artifacts/ARGOS-windows.zip
           cp artifacts/ARGOS-*-macos.zip artifacts/ARGOS-macos.zip
           gh release create "build-${{ github.run_number }}" \
-            artifacts/ARGOS-server.zip artifacts/ARGOS-windows.zip artifacts/ARGOS-macos.zip \
+            artifacts/ARGOS-server.zip artifacts/ARGOS-windows.zip artifacts/ARGOS-macos.zip artifacts/ARGOS-Setup.exe \
             --repo "${{ github.repository }}" --target "${{ github.sha }}" --latest \
             --title "ARGOS $VERSION (build ${{ github.run_number }})" \
             --notes "$(git log -1 --pretty=%B)"
@@ -190,6 +211,106 @@ jobs:
           gh release list --repo "${{ github.repository }}" --limit 100 --json tagName -q '.[].tagName' \
             | grep '^build-' | sort -t- -k2 -n -r | tail -n +9 \
             | xargs -r -I{} gh release delete {} --repo "${{ github.repository }}" --yes --cleanup-tag
+
+  # Image disque macOS (.dmg) : ARGOS.app + raccourci « Applications », à glisser-déposer.
+  macos-dmg:
+    name: macOS (.dmg)
+    needs: desktop-server
+    runs-on: macos-15
+    timeout-minutes: 15
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: ARGOS-macos
+          path: in
+      - name: Création de ARGOS-macos.dmg
+        run: |
+          set -e
+          mkdir -p dmg out
+          ditto -x -k in/ARGOS-*-macos.zip dmg
+          ln -s /Applications dmg/Applications
+          cat > "dmg/Première ouverture.txt" <<'TXT'
+          ARGOS — installation sur Mac
+          1. Glissez ARGOS dans le dossier Applications.
+          2. Première ouverture : clic droit sur ARGOS › Ouvrir › Ouvrir.
+             Si macOS indique que l'app est « endommagée », ouvrez le Terminal et tapez :
+             xattr -cr /Applications/ARGOS.app
+          Ensuite, ARGOS se met à jour tout seul depuis le serveur ARGOS.
+          TXT
+          hdiutil create -volname "ARGOS" -srcfolder dmg -ov -format UDZO out/ARGOS-macos.dmg
+          ls -la out
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ARGOS-macos-dmg
+          path: out/ARGOS-macos.dmg
+          if-no-files-found: error
+      - name: Ajout à la publication
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release upload "build-${{ github.run_number }}" out/ARGOS-macos.dmg --repo "${{ github.repository }}" --clobber
+
+  # Android : APK (téléphone + tablette), même méthode que SIMCALL.
+  # Secrets facultatifs : ARGOS_ANDROID_KEYSTORE (base64) et ARGOS_ANDROID_KEYSTORE_PASSWORD (alias « argos »).
+  android:
+    name: Android (APK)
+    needs: desktop-server
+    runs-on: macos-15
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "9.0.x"
+      - name: Workload Android
+        run: |
+          set -o pipefail
+          if ! dotnet workload install android 2>&1 | tee workload.log; then
+            tail -20 workload.log | while read -r line; do echo "::error::$line"; done
+            exit 1
+          fi
+      - name: Version et adresse du serveur
+        run: |
+          VERSION=$(sed -n 's:.*<Version>\(.*\)</Version>.*:\1:p' Directory.Build.props | head -1)
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+          printf '{\n  "ServerUrl": "%s"\n}\n' "$SERVER_URL" > src/ARGOS.App/client.defaults.json
+      - name: Compilation APK
+        env:
+          KEYSTORE_B64: ${{ secrets.ARGOS_ANDROID_KEYSTORE }}
+          KEYSTORE_PASSWORD: ${{ secrets.ARGOS_ANDROID_KEYSTORE_PASSWORD }}
+        run: |
+          set -o pipefail
+          SIGN_ARGS=()
+          if [ -n "$KEYSTORE_B64" ] && [ -n "$KEYSTORE_PASSWORD" ]; then
+            printf '%s' "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/argos.keystore"
+            SIGN_ARGS=(-p:AndroidKeyStore=true -p:AndroidSigningKeyStore="$RUNNER_TEMP/argos.keystore" -p:AndroidSigningKeyAlias=argos -p:AndroidSigningKeyPass=env:KEYSTORE_PASSWORD -p:AndroidSigningStorePass=env:KEYSTORE_PASSWORD)
+          else
+            echo "::warning::Pas de keystore Android : APK signé avec la clé de test (installation manuelle)."
+          fi
+          dotnet publish src/ARGOS.Android/ARGOS.Android.csproj -c Release -f net9.0-android -o artifacts/android "${SIGN_ARGS[@]}" 2>&1 | tee build-android.log || {
+            grep -E "error [A-Z]+[0-9]+" build-android.log | sort -u | head -30 | while read -r line; do echo "::error::$line"; done
+            exit 1
+          }
+          rm -f "$RUNNER_TEMP/argos.keystore"
+          apk=$(ls artifacts/android/*-Signed.apk | head -1)
+          [ -n "$apk" ] || { echo "::error::APK signé introuvable : $(ls artifacts/android)"; exit 1; }
+          mkdir -p out
+          cp "$apk" out/ARGOS-android.apk
+          ls -la out
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ARGOS-android
+          path: out/ARGOS-android.apk
+          if-no-files-found: error
+      - name: Ajout à la publication
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release upload "build-${{ github.run_number }}" out/ARGOS-android.apk --repo "${{ github.repository }}" --clobber
 
   ios:
     name: iPhone (vérification + TestFlight)

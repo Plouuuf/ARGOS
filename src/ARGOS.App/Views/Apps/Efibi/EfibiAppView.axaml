@@ -1,197 +1,337 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="Argos.Views.Apps.Efibi.EfibiAppView"
-             Background="#F3F6F9"
+             Background="#F2F4F7"
              FontFamily="Segoe UI, Helvetica Neue, Arial, Liberation Sans"
              Foreground="#1C2733">
-    <!-- eFiBi : registre des fiches bilans (lecture seule). -->
+    <!-- eFiBi : registre des fiches bilans (consultation). Aucun arrondi : présentation rectiligne façon logiciel métier. -->
+    <UserControl.Resources>
+        <!-- Neutralise les arrondis du thème (champs, listes déroulantes, calendrier, info-bulles) dans toute la vue. -->
+        <CornerRadius x:Key="ControlCornerRadius">0</CornerRadius>
+        <CornerRadius x:Key="OverlayCornerRadius">0</CornerRadius>
+    </UserControl.Resources>
+
     <UserControl.Styles>
+        <!-- En-têtes de colonnes (tri) -->
         <Style Selector="Button.sort">
-            <Setter Property="Background" Value="Transparent"/><Setter Property="Foreground" Value="#173D5A"/><Setter Property="FontSize" Value="10"/>
-            <Setter Property="FontWeight" Value="Bold"/><Setter Property="BorderThickness" Value="0,0,1,0"/><Setter Property="BorderBrush" Value="#C3D1DB"/>
-            <Setter Property="CornerRadius" Value="0"/><Setter Property="HorizontalAlignment" Value="Stretch"/><Setter Property="VerticalAlignment" Value="Stretch"/>
-            <Setter Property="HorizontalContentAlignment" Value="Center"/><Setter Property="Padding" Value="4,8"/><Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="#2F3E4C"/>
+            <Setter Property="BorderThickness" Value="0,0,1,0"/>
+            <Setter Property="BorderBrush" Value="#D3DCE5"/>
+            <Setter Property="CornerRadius" Value="0"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+            <Setter Property="VerticalAlignment" Value="Stretch"/>
+            <Setter Property="HorizontalContentAlignment" Value="Left"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Padding" Value="10,7"/>
+            <Setter Property="Cursor" Value="Hand"/>
         </Style>
-        <Style Selector="Button.sort:pointerover /template/ ContentPresenter#PART_ContentPresenter"><Setter Property="Background" Value="#D2DFE8"/></Style>
+        <Style Selector="Button.sort:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="#E1E9F1"/>
+            <Setter Property="Foreground" Value="#0B5394"/>
+        </Style>
+        <Style Selector="Button.sort:pressed /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="#D3E0EC"/>
+        </Style>
+        <Style Selector="Button.sort TextBlock.h1">
+            <Setter Property="FontSize" Value="10.5"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+        </Style>
+        <Style Selector="Button.sort TextBlock.h2">
+            <Setter Property="FontSize" Value="9.5"/>
+            <Setter Property="Foreground" Value="#7A8896"/>
+        </Style>
+        <Style Selector="Button.sort TextBlock.arrow">
+            <Setter Property="FontSize" Value="8"/>
+            <Setter Property="Foreground" Value="#8C99A6"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="Margin" Value="6,0,0,0"/>
+        </Style>
+
+        <!-- Champs -->
         <Style Selector="TextBox.ef">
             <Setter Property="Background" Value="White"/>
-            <Setter Property="BorderBrush" Value="#C7D2DE"/>
-            <Setter Property="CornerRadius" Value="4"/>
+            <Setter Property="BorderBrush" Value="#B9C5D1"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="0"/>
             <Setter Property="FontSize" Value="13"/>
-            <Setter Property="MinHeight" Value="30"/>
+            <Setter Property="MinHeight" Value="32"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
             <Setter Property="Foreground" Value="#1C2733"/>
         </Style>
         <Style Selector="ComboBox.ef">
             <Setter Property="Background" Value="White"/>
-            <Setter Property="BorderBrush" Value="#C7D2DE"/>
-            <Setter Property="CornerRadius" Value="4"/>
+            <Setter Property="BorderBrush" Value="#B9C5D1"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="0"/>
             <Setter Property="FontSize" Value="13"/>
-            <Setter Property="MinHeight" Value="30"/>
+            <Setter Property="MinHeight" Value="32"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
             <Setter Property="HorizontalAlignment" Value="Stretch"/>
         </Style>
+        <Style Selector="CalendarDatePicker.ef">
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="BorderBrush" Value="#B9C5D1"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="0"/>
+            <Setter Property="MinHeight" Value="32"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+        </Style>
+        <Style Selector="CheckBox">
+            <Setter Property="CornerRadius" Value="0"/>
+        </Style>
+
+        <!-- Boutons -->
         <Style Selector="Button.ef">
-            <Setter Property="Background" Value="#0B5A8C"/>
+            <Setter Property="Background" Value="#0B5394"/>
             <Setter Property="Foreground" Value="White"/>
-            <Setter Property="CornerRadius" Value="4"/>
-            <Setter Property="Padding" Value="14,6"/>
+            <Setter Property="BorderBrush" Value="#0B5394"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="0"/>
+            <Setter Property="Padding" Value="14,0"/>
+            <Setter Property="MinHeight" Value="32"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="FontSize" Value="12.5"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="Cursor" Value="Hand"/>
         </Style>
         <Style Selector="Button.ef:pointerover /template/ ContentPresenter#PART_ContentPresenter">
-            <Setter Property="Background" Value="#1270AA"/>
+            <Setter Property="Background" Value="#0E64B0"/>
+            <Setter Property="BorderBrush" Value="#0E64B0"/>
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+        <Style Selector="Button.ef:pressed /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="#08406F"/>
             <Setter Property="Foreground" Value="White"/>
         </Style>
         <Style Selector="Button.ef.light">
             <Setter Property="Background" Value="White"/>
-            <Setter Property="Foreground" Value="#0B5A8C"/>
-            <Setter Property="BorderBrush" Value="#0B5A8C"/>
-            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Foreground" Value="#0B5394"/>
+            <Setter Property="BorderBrush" Value="#B9C5D1"/>
         </Style>
         <Style Selector="Button.ef.light:pointerover /template/ ContentPresenter#PART_ContentPresenter">
-            <Setter Property="Background" Value="#E8F2F9"/>
-            <Setter Property="Foreground" Value="#0B5A8C"/>
+            <Setter Property="Background" Value="#EAF1F8"/>
+            <Setter Property="BorderBrush" Value="#0B5394"/>
+            <Setter Property="Foreground" Value="#0B5394"/>
         </Style>
+        <Style Selector="Button.ef.light:pressed /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="#DCE7F2"/>
+            <Setter Property="Foreground" Value="#0B5394"/>
+        </Style>
+        <Style Selector="Button.ef:disabled /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="#F2F4F7"/>
+            <Setter Property="BorderBrush" Value="#D3DCE5"/>
+            <Setter Property="Foreground" Value="#A3AEB9"/>
+        </Style>
+
         <Style Selector="TextBlock.lbl">
-            <Setter Property="FontSize" Value="11"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FontSize" Value="10.5"/>
+            <Setter Property="FontWeight" Value="Bold"/>
             <Setter Property="Foreground" Value="#5B6B7B"/>
-            <Setter Property="Margin" Value="0,0,0,3"/>
+            <Setter Property="Margin" Value="0,0,0,4"/>
         </Style>
-        <Style Selector="TextBlock.cell">
-            <Setter Property="FontSize" Value="12.5"/>
-            <Setter Property="VerticalAlignment" Value="Center"/>
-            <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
-            <Setter Property="Margin" Value="0,0,10,0"/>
-        </Style>
+
+        <!-- Lignes du registre : fond transparent (alternance portée par le conteneur), survol bleu pâle -->
         <Style Selector="Button.row">
-            <Setter Property="Background" Value="White"/>
-            <Setter Property="BorderBrush" Value="#E5EAF0"/>
+            <Setter Property="Background" Value="Transparent"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="CornerRadius" Value="0"/>
             <Setter Property="Padding" Value="0"/>
             <Setter Property="HorizontalAlignment" Value="Stretch"/>
             <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            <Setter Property="VerticalContentAlignment" Value="Stretch"/>
             <Setter Property="Foreground" Value="#1C2733"/>
             <Setter Property="Cursor" Value="Hand"/>
         </Style>
         <Style Selector="Button.row:pointerover /template/ ContentPresenter#PART_ContentPresenter">
-            <Setter Property="Background" Value="#EAF4FB"/>
+            <Setter Property="Background" Value="#E8F1FA"/>
             <Setter Property="Foreground" Value="#1C2733"/>
+        </Style>
+        <Style Selector="Button.row:pressed /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="#D7E6F4"/>
+            <Setter Property="Foreground" Value="#1C2733"/>
+        </Style>
+        <Style Selector="ItemsControl.reg ContentPresenter:nth-child(2n)">
+            <Setter Property="Background" Value="#F6F8FA"/>
+        </Style>
+        <Style Selector="TextBlock.cell">
+            <Setter Property="FontSize" Value="12.5"/>
+            <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+        </Style>
+        <Style Selector="TextBlock.sub">
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="Foreground" Value="#6B7A89"/>
+            <Setter Property="Margin" Value="0,2,0,0"/>
+            <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
         </Style>
     </UserControl.Styles>
 
     <DockPanel>
         <!-- Bandeau -->
-        <Border DockPanel.Dock="Top" Background="#0B5A8C" Padding="16,10">
+        <Border DockPanel.Dock="Top" Background="#0B5394" BorderBrush="#083F70" BorderThickness="0,0,0,1" Padding="18,10">
             <Grid ColumnDefinitions="Auto,12,*,Auto">
-                <Border Background="White" CornerRadius="6" Padding="4">
-                    <Image Source="avares://ARGOS.App/Assets/Icons/efibi.png" Width="30" Height="30"/>
+                <Border Background="White" Padding="4" VerticalAlignment="Center">
+                    <Image Source="avares://ARGOS.App/Assets/Icons/efibi.png" Width="28" Height="28"/>
                 </Border>
                 <StackPanel Grid.Column="2" VerticalAlignment="Center">
-                    <TextBlock Text="eFiBi" Foreground="White" FontSize="19" FontWeight="Bold"/>
-                    <TextBlock Text="Fiches bilans numériques · consultation" Foreground="#BFD9EC" FontSize="11"/>
+                    <TextBlock Text="eFiBi" Foreground="White" FontSize="18" FontWeight="Bold"/>
+                    <TextBlock Text="Fiches bilans numériques · Registre des fiches" Foreground="#C9DCEE" FontSize="11.5"/>
                 </StackPanel>
-                <Border Grid.Column="3" Background="#C62828" CornerRadius="3" Padding="8,3" VerticalAlignment="Center">
-                    <TextBlock Text="LECTURE SEULE" Foreground="White" FontSize="11" FontWeight="Bold"/>
-                </Border>
+                <TextBlock Grid.Column="3" Text="{Binding ResultLabel}" Foreground="#C9DCEE" FontSize="12" FontWeight="SemiBold"
+                           VerticalAlignment="Center"/>
             </Grid>
         </Border>
-        <Border DockPanel.Dock="Top" Background="#C62828" IsVisible="{Binding HasError}" Padding="16,8">
+        <Border DockPanel.Dock="Top" Background="#B3261E" IsVisible="{Binding HasError}" Padding="18,8">
             <TextBlock Text="{Binding Error}" Foreground="White" FontWeight="SemiBold" TextWrapping="Wrap"/>
         </Border>
 
-        <!-- Recherche -->
-        <StackPanel DockPanel.Dock="Top" Margin="18,14,18,8" Spacing="8">
-            <Grid ColumnDefinitions="*,10,200,10,Auto,8,Auto">
-                <TextBox Classes="ef" Text="{Binding Text}"
-                         Watermark="Rechercher : n° d'intervention, nom ou prénom de la victime, identifiant, code de partage"/>
-                <ComboBox Grid.Column="2" Classes="ef" ItemsSource="{Binding Statuses}" SelectedItem="{Binding Status}"/>
-                <Button Grid.Column="4" Classes="ef light" Content="Recherche avancée" Command="{Binding ToggleAdvancedCommand}"/>
-                <Button Grid.Column="6" Classes="ef light" Content="Actualiser" Command="{Binding RefreshCommand}"/>
-            </Grid>
-            <Border Background="White" BorderBrush="#C7D2DE" BorderThickness="1" CornerRadius="6" Padding="14,12" IsVisible="{Binding Advanced}">
-                <StackPanel Spacing="10">
-                    <Grid ColumnDefinitions="*,10,*,10,110,10,110">
-                        <StackPanel>
-                            <TextBlock Classes="lbl" Text="N° D'INTERVENTION"/>
-                            <TextBox Classes="ef" Text="{Binding Intervention}"/>
-                        </StackPanel>
-                        <StackPanel Grid.Column="2">
-                            <TextBlock Classes="lbl" Text="IDENTITÉ DE LA VICTIME"/>
-                            <TextBox Classes="ef" Text="{Binding Victim}"/>
-                        </StackPanel>
-                        <StackPanel Grid.Column="4">
-                            <TextBlock Classes="lbl" Text="IDENTIFIANT"/>
-                            <TextBox Classes="ef" Text="{Binding Identifier}"/>
-                        </StackPanel>
-                        <StackPanel Grid.Column="6">
-                            <TextBlock Classes="lbl" Text="CODE DE PARTAGE"/>
-                            <TextBox Classes="ef" Text="{Binding ShareCode}"/>
-                        </StackPanel>
-                    </Grid>
-                    <Grid ColumnDefinitions="170,10,170,16,Auto,*,Auto,8,Auto">
-                        <StackPanel>
-                            <TextBlock Classes="lbl" Text="DU"/>
-                            <CalendarDatePicker SelectedDate="{Binding From}" HorizontalAlignment="Stretch" SelectedDateFormat="Custom"
-                                                CustomDateFormatString="dd/MM/yyyy" Watermark="jj/mm/aaaa" Background="White"/>
-                        </StackPanel>
-                        <StackPanel Grid.Column="2">
-                            <TextBlock Classes="lbl" Text="AU"/>
-                            <CalendarDatePicker SelectedDate="{Binding To}" HorizontalAlignment="Stretch" SelectedDateFormat="Custom"
-                                                CustomDateFormatString="dd/MM/yyyy" Watermark="jj/mm/aaaa" Background="White"/>
-                        </StackPanel>
-                        <CheckBox Grid.Column="4" Content="Plus anciennes d'abord" IsChecked="{Binding OldestFirst}" VerticalAlignment="Bottom"/>
-                        <Button Grid.Column="6" Classes="ef light" Content="Réinitialiser" Command="{Binding ResetCommand}" VerticalAlignment="Bottom"/>
-                        <Button Grid.Column="8" Classes="ef" Content="Rechercher" Command="{Binding SearchCommand}" VerticalAlignment="Bottom"/>
-                    </Grid>
-                </StackPanel>
-            </Border>
-        </StackPanel>
+        <!-- Recherche et filtres -->
+        <Border DockPanel.Dock="Top" Background="White" BorderBrush="#D3DCE5" BorderThickness="0,0,0,1" Padding="18,12">
+            <StackPanel Spacing="12">
+                <Grid ColumnDefinitions="*,10,210,10,Auto,8,Auto">
+                    <TextBox Classes="ef" Text="{Binding Text}"
+                             Watermark="Rechercher : n° d'intervention, nom ou prénom de la victime, identifiant, code de partage"/>
+                    <ComboBox Grid.Column="2" Classes="ef" ItemsSource="{Binding Statuses}" SelectedItem="{Binding Status}"/>
+                    <Button Grid.Column="4" Classes="ef light" Content="Recherche avancée" Command="{Binding ToggleAdvancedCommand}"/>
+                    <Button Grid.Column="6" Classes="ef light" Content="Actualiser" Command="{Binding RefreshCommand}"/>
+                </Grid>
+                <Border Background="#F7F9FB" BorderBrush="#D3DCE5" BorderThickness="1" Padding="14,12" IsVisible="{Binding Advanced}">
+                    <StackPanel Spacing="12">
+                        <TextBlock Text="RECHERCHE AVANCÉE" FontSize="11" FontWeight="Bold" Foreground="#0B5394"/>
+                        <Grid ColumnDefinitions="*,10,*,10,120,10,120">
+                            <StackPanel>
+                                <TextBlock Classes="lbl" Text="N° D'INTERVENTION"/>
+                                <TextBox Classes="ef" Text="{Binding Intervention}"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Classes="lbl" Text="IDENTITÉ DE LA VICTIME"/>
+                                <TextBox Classes="ef" Text="{Binding Victim}"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="4">
+                                <TextBlock Classes="lbl" Text="IDENTIFIANT"/>
+                                <TextBox Classes="ef" Text="{Binding Identifier}"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="6">
+                                <TextBlock Classes="lbl" Text="CODE DE PARTAGE"/>
+                                <TextBox Classes="ef" Text="{Binding ShareCode}"/>
+                            </StackPanel>
+                        </Grid>
+                        <Grid ColumnDefinitions="170,10,170,16,Auto,*,Auto,8,Auto">
+                            <StackPanel>
+                                <TextBlock Classes="lbl" Text="DU"/>
+                                <CalendarDatePicker Classes="ef" SelectedDate="{Binding From}" SelectedDateFormat="Custom"
+                                                    CustomDateFormatString="dd/MM/yyyy" Watermark="jj/mm/aaaa"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Classes="lbl" Text="AU"/>
+                                <CalendarDatePicker Classes="ef" SelectedDate="{Binding To}" SelectedDateFormat="Custom"
+                                                    CustomDateFormatString="dd/MM/yyyy" Watermark="jj/mm/aaaa"/>
+                            </StackPanel>
+                            <CheckBox Grid.Column="4" Content="Plus anciennes d'abord" IsChecked="{Binding OldestFirst}" VerticalAlignment="Bottom"/>
+                            <Button Grid.Column="6" Classes="ef light" Content="Réinitialiser" Command="{Binding ResetCommand}" VerticalAlignment="Bottom"/>
+                            <Button Grid.Column="8" Classes="ef" Content="Rechercher" Command="{Binding SearchCommand}" VerticalAlignment="Bottom"/>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </Border>
 
         <!-- Pagination -->
-        <Grid DockPanel.Dock="Bottom" ColumnDefinitions="*,Auto,10,Auto,10,Auto" Margin="18,6,18,12">
-            <TextBlock Text="{Binding ResultLabel}" FontSize="12.5" FontWeight="SemiBold" VerticalAlignment="Center" Foreground="#5B6B7B"/>
-            <Button Grid.Column="1" Classes="ef light" Content="◀" Padding="10,4" Command="{Binding PreviousCommand}"/>
-            <TextBlock Grid.Column="3" Text="{Binding PageLabel}" FontSize="12.5" VerticalAlignment="Center"/>
-            <Button Grid.Column="5" Classes="ef light" Content="▶" Padding="10,4" Command="{Binding NextCommand}"/>
-        </Grid>
+        <Border DockPanel.Dock="Bottom" Background="White" BorderBrush="#D3DCE5" BorderThickness="0,1,0,0" Padding="18,8">
+            <Grid ColumnDefinitions="*,Auto,Auto,Auto">
+                <TextBlock Text="{Binding ResultLabel}" FontSize="12.5" FontWeight="SemiBold" VerticalAlignment="Center" Foreground="#5B6B7B"/>
+                <Button Grid.Column="1" Classes="ef light" Content="◀  Précédente" Command="{Binding PreviousCommand}"/>
+                <Border Grid.Column="2" BorderBrush="#B9C5D1" BorderThickness="0,1" MinHeight="32" MinWidth="120" Background="#F7F9FB">
+                    <TextBlock Text="{Binding PageLabel}" FontSize="12.5" FontWeight="SemiBold" Foreground="#2F3E4C"
+                               HorizontalAlignment="Center" VerticalAlignment="Center" Margin="12,0"/>
+                </Border>
+                <Button Grid.Column="3" Classes="ef light" Content="Suivante  ▶" Command="{Binding NextCommand}"/>
+            </Grid>
+        </Border>
 
         <!-- Registre -->
-        <Border Margin="18,0" Background="White" BorderBrush="#D5DEE7" BorderThickness="1" CornerRadius="6" ClipToBounds="True">
+        <Border Margin="18,14,18,12" Background="White" BorderBrush="#C9D3DD" BorderThickness="1" ClipToBounds="True">
             <DockPanel>
-                <Border DockPanel.Dock="Top" Background="#E3EBF1" BorderBrush="#9CB2C1" BorderThickness="0,0,0,1">
-                    <Grid ColumnDefinitions="135,105,160,180,*,130">
-                        <Button Classes="sort" Command="{Binding SortCommand}" CommandParameter="intervention" Content="N° INTERVENTION  ▲▼"/>
-                        <Button Grid.Column="1" Classes="sort" Command="{Binding SortCommand}" CommandParameter="date" Content="DATE / HEURE  ▲▼"/>
-                        <Button Grid.Column="2" Classes="sort" Command="{Binding SortCommand}" CommandParameter="author" Content="AUTEUR  ▲▼"/>
-                        <Button Grid.Column="3" Classes="sort" Command="{Binding SortCommand}" CommandParameter="victim" Content="VICTIME  ▲▼"/>
-                        <Button Grid.Column="4" Classes="sort" Command="{Binding SortCommand}" CommandParameter="circumstances" Content="CIRCONSTANCES  ▲▼"/>
-                        <Button Grid.Column="5" Classes="sort" Command="{Binding SortCommand}" CommandParameter="status" Content="STATUT  ▲▼"/>
+                <Border DockPanel.Dock="Top" Background="#EEF2F6" BorderBrush="#0B5394" BorderThickness="0,0,0,2">
+                    <Grid ColumnDefinitions="160,115,180,*,150">
+                        <Button Classes="sort" Command="{Binding SortCommand}" CommandParameter="intervention" ToolTip.Tip="Trier par n° d'intervention">
+                            <Grid ColumnDefinitions="*,Auto">
+                                <StackPanel>
+                                    <TextBlock Classes="h1" Text="N° INTERVENTION"/>
+                                    <TextBlock Classes="h2" Text="Code fiche"/>
+                                </StackPanel>
+                                <TextBlock Grid.Column="1" Classes="arrow" Text="▲▼"/>
+                            </Grid>
+                        </Button>
+                        <Button Grid.Column="1" Classes="sort" Command="{Binding SortCommand}" CommandParameter="date" ToolTip.Tip="Trier par horodatage">
+                            <Grid ColumnDefinitions="*,Auto">
+                                <StackPanel>
+                                    <TextBlock Classes="h1" Text="HORODATAGE"/>
+                                    <TextBlock Classes="h2" Text="Date · heure"/>
+                                </StackPanel>
+                                <TextBlock Grid.Column="1" Classes="arrow" Text="▲▼"/>
+                            </Grid>
+                        </Button>
+                        <Button Grid.Column="2" Classes="sort" Command="{Binding SortCommand}" CommandParameter="author" ToolTip.Tip="Trier par auteur">
+                            <Grid ColumnDefinitions="*,Auto">
+                                <StackPanel>
+                                    <TextBlock Classes="h1" Text="AUTEUR"/>
+                                    <TextBlock Classes="h2" Text="Chef d'agrès"/>
+                                </StackPanel>
+                                <TextBlock Grid.Column="1" Classes="arrow" Text="▲▼"/>
+                            </Grid>
+                        </Button>
+                        <Button Grid.Column="3" Classes="sort" Command="{Binding SortCommand}" CommandParameter="circumstances" ToolTip.Tip="Trier par bilan circonstanciel">
+                            <Grid ColumnDefinitions="*,Auto">
+                                <StackPanel>
+                                    <TextBlock Classes="h1" Text="BILAN CIRCONSTANCIEL"/>
+                                    <TextBlock Classes="h2" Text="Observations"/>
+                                </StackPanel>
+                                <TextBlock Grid.Column="1" Classes="arrow" Text="▲▼"/>
+                            </Grid>
+                        </Button>
+                        <Button Grid.Column="4" Classes="sort" BorderThickness="0" Command="{Binding SortCommand}" CommandParameter="status" ToolTip.Tip="Trier par statut">
+                            <Grid ColumnDefinitions="*,Auto">
+                                <StackPanel>
+                                    <TextBlock Classes="h1" Text="STATUT"/>
+                                    <TextBlock Classes="h2" Text="Transmission"/>
+                                </StackPanel>
+                                <TextBlock Grid.Column="1" Classes="arrow" Text="▲▼"/>
+                            </Grid>
+                        </Button>
                     </Grid>
                 </Border>
                 <Panel>
-                    <ScrollViewer>
-                        <ItemsControl ItemsSource="{Binding Items}">
+                    <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+                        <ItemsControl Classes="reg" ItemsSource="{Binding Items}">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
                                     <Button Classes="row" Command="{Binding OpenCommand}">
-                                        <Border BorderBrush="#D0DBE2" BorderThickness="0,0,0,1" MinHeight="52">
-                                            <Grid ColumnDefinitions="135,105,160,180,*,130">
-                                                <StackPanel Margin="7,0" VerticalAlignment="Center">
-                                                    <TextBlock Text="{Binding Intervention}" FontWeight="Bold" Foreground="#173D5A" FontSize="13"/>
-                                                    <TextBlock FontSize="10.5" Foreground="#6B7D89"><Run Text="n° "/><Run Text="{Binding Id}"/><Run Text=" · "/><Run Text="{Binding ShareCode}"/></TextBlock>
+                                        <Border BorderBrush="#E1E7ED" BorderThickness="0,0,0,1" MinHeight="54" Padding="0,8">
+                                            <Grid ColumnDefinitions="160,115,180,*,150">
+                                                <!-- N° intervention / code fiche -->
+                                                <StackPanel Margin="10,0" VerticalAlignment="Center">
+                                                    <TextBlock Classes="cell" Text="{Binding Intervention}" FontWeight="Bold" Foreground="#0B5394" FontSize="13"/>
+                                                    <TextBlock Classes="sub" Text="{Binding FicheCode}" FontFamily="Consolas, Menlo, DejaVu Sans Mono, monospace"
+                                                               ToolTip.Tip="{Binding FicheTooltip}"/>
                                                 </StackPanel>
-                                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                                    <TextBlock Text="{Binding Date}" HorizontalAlignment="Center" FontSize="12.5"/>
-                                                    <TextBlock Text="{Binding Time}" HorizontalAlignment="Center" FontWeight="SemiBold" FontSize="12.5"/>
+                                                <!-- Date / heure -->
+                                                <StackPanel Grid.Column="1" Margin="10,0" VerticalAlignment="Center">
+                                                    <TextBlock Classes="cell" Text="{Binding Date}"/>
+                                                    <TextBlock Classes="sub" Text="{Binding Time}" FontWeight="SemiBold" Foreground="#2F3E4C"/>
                                                 </StackPanel>
-                                                <TextBlock Grid.Column="2" Text="{Binding Author}" Margin="7,0" VerticalAlignment="Center" FontSize="12.5" TextTrimming="CharacterEllipsis"/>
-                                                <TextBlock Grid.Column="3" Text="{Binding Victim}" Margin="7,0" VerticalAlignment="Center" FontWeight="SemiBold" FontSize="12.5" TextTrimming="CharacterEllipsis"/>
-                                                <TextBlock Grid.Column="4" Text="{Binding Circumstances}" Margin="7,0" VerticalAlignment="Center" FontSize="12.5"
-                                                           TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Circumstances}"/>
-                                                <Border Grid.Column="5" Margin="7,9" Background="{Binding StatusBrush}" MinHeight="26">
-                                                    <TextBlock Text="{Binding Status}" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"
-                                                               FontWeight="Bold" TextAlignment="Center" TextWrapping="Wrap" FontSize="10.5"/>
+                                                <!-- Auteur -->
+                                                <TextBlock Grid.Column="2" Classes="cell" Text="{Binding Author}" Margin="10,0" VerticalAlignment="Center"
+                                                           TextWrapping="Wrap" MaxLines="2" ToolTip.Tip="{Binding Author}"/>
+                                                <!-- Bilan circonstanciel -->
+                                                <TextBlock Grid.Column="3" Classes="cell" Text="{Binding Circumstances}" Margin="10,0" VerticalAlignment="Center"
+                                                           TextWrapping="Wrap" MaxLines="2" Foreground="#2F3E4C" ToolTip.Tip="{Binding Circumstances}"/>
+                                                <!-- Statut -->
+                                                <Border Grid.Column="4" Margin="10,0" Background="{Binding StatusBrush}" Padding="8,5"
+                                                        VerticalAlignment="Center" HorizontalAlignment="Stretch">
+                                                    <TextBlock Text="{Binding Status}" Foreground="White" HorizontalAlignment="Center" TextAlignment="Center"
+                                                               FontWeight="Bold" TextWrapping="Wrap" FontSize="10.5"/>
                                                 </Border>
                                             </Grid>
                                         </Border>
@@ -200,8 +340,8 @@
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
                     </ScrollViewer>
-                    <TextBlock Text="Aucune fiche bilan ne correspond." Foreground="#5B6B7B" Margin="14" IsVisible="{Binding IsEmpty}"/>
-                    <TextBlock Text="Chargement…" Foreground="#5B6B7B" Margin="14" IsVisible="{Binding Loading}"/>
+                    <TextBlock Text="Aucune fiche bilan ne correspond aux critères." Foreground="#6B7A89" Margin="14" IsVisible="{Binding IsEmpty}"/>
+                    <TextBlock Text="Chargement…" Foreground="#6B7A89" Margin="14" IsVisible="{Binding Loading}"/>
                 </Panel>
             </DockPanel>
         </Border>

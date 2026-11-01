@@ -1,112 +1,290 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="Argos.Views.Apps.Efibi.EfibiRecordView"
-             Background="#D7E1E9"
+             Background="#F2F4F7"
              FontFamily="Segoe UI, Helvetica Neue, Arial, Liberation Sans"
-             Foreground="#1F2D36">
-    <!-- Fiche bilan en lecture seule, même présentation que CORTEX (bandeau bleu, rubriques en cartes, champs sur deux colonnes). -->
-    <Grid Margin="8" RowDefinitions="Auto,Auto,*,42">
-        <Border Background="#0D5B89" BorderBrush="#073B5B" BorderThickness="1" Padding="12" MinHeight="112">
-            <Grid ColumnDefinitions="*,330">
-                <StackPanel>
-                    <StackPanel Orientation="Horizontal" Spacing="10">
-                        <TextBlock Text="FICHE BILAN eFIBI" Foreground="White" FontWeight="Bold" FontSize="20"/>
-                        <Border Background="#C43B31" Padding="6,2" VerticalAlignment="Center">
-                            <TextBlock Text="LECTURE SEULE" Foreground="White" FontSize="10.5" FontWeight="Bold"/>
-                        </Border>
-                    </StackPanel>
-                    <TextBlock Foreground="#D8EAF5" Margin="0,6,0,0" TextWrapping="Wrap">
-                        <Run Text="Intervention : "/><Run Text="{Binding Intervention, Mode=OneWay}" FontWeight="Bold"/><Run Text="   •   Auteur : "/><Run Text="{Binding Author, Mode=OneWay}" FontWeight="Bold"/>
-                    </TextBlock>
-                    <TextBlock Foreground="#D8EAF5" Margin="0,4,0,0" TextWrapping="Wrap">
-                        <Run Text="Victime : "/><Run Text="{Binding Victim, Mode=OneWay}" FontWeight="SemiBold"/><Run Text="   •   Circonstances : "/><Run Text="{Binding Circumstances, Mode=OneWay}"/>
-                    </TextBlock>
-                    <TextBlock Foreground="#A9CBE0" Margin="0,4,0,0" FontSize="11.5" TextWrapping="Wrap">
-                        <Run Text="Fiche n° "/><Run Text="{Binding Id, Mode=OneWay}"/><Run Text="   •   Identifiant FiveM du rédacteur : "/><Run Text="{Binding CitizenId, Mode=OneWay}"/>
+             Foreground="#1C2733">
+    <!-- Consultation d'une fiche bilan : en-tête d'identification, puis rubriques en deux colonnes libellé / valeur. Aucun arrondi. -->
+    <UserControl.Resources>
+        <CornerRadius x:Key="ControlCornerRadius">0</CornerRadius>
+        <CornerRadius x:Key="OverlayCornerRadius">0</CornerRadius>
+    </UserControl.Resources>
+
+    <UserControl.Styles>
+        <!-- Bande d'identification -->
+        <Style Selector="Border.idcell">
+            <Setter Property="BorderBrush" Value="#D3DCE5"/>
+            <Setter Property="BorderThickness" Value="0,0,1,0"/>
+            <Setter Property="Padding" Value="14,10"/>
+        </Style>
+        <Style Selector="TextBlock.idlabel">
+            <Setter Property="FontSize" Value="10"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Foreground" Value="#6B7A89"/>
+            <Setter Property="Margin" Value="0,0,0,3"/>
+        </Style>
+        <Style Selector="SelectableTextBlock.idvalue">
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="#1C2733"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+        </Style>
+        <Style Selector="TextBlock.idsub">
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="Foreground" Value="#6B7A89"/>
+            <Setter Property="Margin" Value="0,2,0,0"/>
+            <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+        </Style>
+
+        <!-- Rubriques -->
+        <Style Selector="Border.card">
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="BorderBrush" Value="#C9D3DD"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Margin" Value="0,0,0,14"/>
+        </Style>
+        <Style Selector="Border.cardhead">
+            <Setter Property="Background" Value="#F3F6F9"/>
+            <Setter Property="BorderBrush" Value="#0B5394"/>
+            <Setter Property="BorderThickness" Value="0,0,0,2"/>
+            <Setter Property="Padding" Value="14,8"/>
+        </Style>
+        <Style Selector="TextBlock.cardtitle">
+            <Setter Property="Foreground" Value="#0B5394"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="FontSize" Value="12.5"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+        </Style>
+        <Style Selector="Border.frow">
+            <Setter Property="BorderBrush" Value="#E6EBF0"/>
+            <Setter Property="BorderThickness" Value="0,0,0,1"/>
+        </Style>
+        <Style Selector="Border.fcell">
+            <Setter Property="Background" Value="#F7F9FB"/>
+            <Setter Property="BorderBrush" Value="#E6EBF0"/>
+            <Setter Property="BorderThickness" Value="0,0,1,0"/>
+            <Setter Property="Padding" Value="14,7"/>
+        </Style>
+        <Style Selector="TextBlock.flabel">
+            <Setter Property="Foreground" Value="#4A5968"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+            <Setter Property="VerticalAlignment" Value="Top"/>
+        </Style>
+        <Style Selector="SelectableTextBlock.fvalue">
+            <Setter Property="Margin" Value="14,7"/>
+            <Setter Property="Foreground" Value="#1C2733"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="VerticalAlignment" Value="Top"/>
+        </Style>
+        <Style Selector="SelectableTextBlock.fvalue.empty">
+            <Setter Property="Foreground" Value="#A0ABB6"/>
+            <Setter Property="FontStyle" Value="Italic"/>
+            <Setter Property="FontSize" Value="12"/>
+        </Style>
+
+        <!-- Bouton -->
+        <Style Selector="Button.ef">
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="Foreground" Value="#0B5394"/>
+            <Setter Property="BorderBrush" Value="#B9C5D1"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="0"/>
+            <Setter Property="Padding" Value="14,0"/>
+            <Setter Property="MinHeight" Value="30"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="FontSize" Value="12.5"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        <Style Selector="Button.ef:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="#EAF1F8"/>
+            <Setter Property="BorderBrush" Value="#0B5394"/>
+            <Setter Property="Foreground" Value="#0B5394"/>
+        </Style>
+        <Style Selector="Button.ef:pressed /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="#DCE7F2"/>
+            <Setter Property="Foreground" Value="#0B5394"/>
+        </Style>
+    </UserControl.Styles>
+
+    <Grid RowDefinitions="Auto,Auto,Auto,*,Auto">
+        <!-- Titre -->
+        <Border Background="#0B5394" BorderBrush="#083F70" BorderThickness="0,0,0,1" Padding="18,10">
+            <Grid ColumnDefinitions="*,Auto">
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock Text="FICHE BILAN" Foreground="#C9DCEE" FontSize="11" FontWeight="Bold"/>
+                    <TextBlock Foreground="White" FontSize="20" FontWeight="Bold" TextWrapping="Wrap">
+                        <Run Text="Intervention n° "/><Run Text="{Binding Intervention, Mode=OneWay}"/>
                     </TextBlock>
                 </StackPanel>
-                <StackPanel Grid.Column="1" HorizontalAlignment="Right">
-                    <TextBlock Text="{Binding DisplayTimestamp}" Foreground="White" FontWeight="Bold" HorizontalAlignment="Right"/>
-                    <Border Background="{Binding StatusBrush}" BorderBrush="White" BorderThickness="1" Padding="10,5" Margin="0,7,0,0"
-                            HorizontalAlignment="Right" MinWidth="145">
-                        <TextBlock Text="{Binding Status}" Foreground="White" FontWeight="Bold" TextAlignment="Center"/>
-                    </Border>
-                    <TextBlock Foreground="#D8EAF5" HorizontalAlignment="Right" Margin="0,6,0,0">
-                        <Run Text="Code partage : "/><Run Text="{Binding ShareCode, Mode=OneWay}" FontWeight="SemiBold"/>
-                    </TextBlock>
-                </StackPanel>
+                <TextBlock Grid.Column="1" Foreground="#C9DCEE" FontSize="12" VerticalAlignment="Center">
+                    <Run Text="Fiche n° "/><Run Text="{Binding Id, Mode=OneWay}" FontWeight="SemiBold"/>
+                </TextBlock>
             </Grid>
         </Border>
 
-        <Border Grid.Row="1" Background="#C43B31" IsVisible="{Binding HasError}" Padding="12,8" Margin="0,8,0,0">
+        <!-- Bande d'identification : n° d'intervention, code fiche, horodatage, auteur, statut -->
+        <Border Grid.Row="1" Background="White" BorderBrush="#C9D3DD" BorderThickness="0,0,0,1">
+            <Grid ColumnDefinitions="*,*,*,1.4*,Auto">
+                <Border Classes="idcell">
+                    <StackPanel>
+                        <TextBlock Classes="idlabel" Text="N° D'INTERVENTION"/>
+                        <SelectableTextBlock Classes="idvalue" Text="{Binding Intervention}" Foreground="#0B5394" FontWeight="Bold"/>
+                    </StackPanel>
+                </Border>
+                <Border Grid.Column="1" Classes="idcell">
+                    <StackPanel>
+                        <TextBlock Classes="idlabel" Text="CODE FICHE"/>
+                        <SelectableTextBlock Classes="idvalue" Text="{Binding FicheCode}" FontFamily="Consolas, Menlo, DejaVu Sans Mono, monospace"/>
+                    </StackPanel>
+                </Border>
+                <Border Grid.Column="2" Classes="idcell">
+                    <StackPanel>
+                        <TextBlock Classes="idlabel" Text="HORODATAGE"/>
+                        <SelectableTextBlock Classes="idvalue" Text="{Binding DisplayDate}"/>
+                        <TextBlock Classes="idsub" Text="{Binding DisplayTime}" FontWeight="SemiBold" Foreground="#2F3E4C"/>
+                    </StackPanel>
+                </Border>
+                <Border Grid.Column="3" Classes="idcell">
+                    <StackPanel>
+                        <TextBlock Classes="idlabel" Text="AUTEUR"/>
+                        <SelectableTextBlock Classes="idvalue" Text="{Binding Author}"/>
+                        <TextBlock Classes="idsub">
+                            <Run Text="Identifiant FiveM : "/><Run Text="{Binding CitizenId, Mode=OneWay}"/>
+                        </TextBlock>
+                    </StackPanel>
+                </Border>
+                <Border Grid.Column="4" Classes="idcell" BorderThickness="0" MinWidth="170">
+                    <StackPanel>
+                        <TextBlock Classes="idlabel" Text="STATUT"/>
+                        <Border Background="{Binding StatusBrush}" Padding="12,5" HorizontalAlignment="Stretch">
+                            <TextBlock Text="{Binding Status}" Foreground="White" FontWeight="Bold" FontSize="12" TextAlignment="Center"
+                                       HorizontalAlignment="Center" TextWrapping="Wrap"/>
+                        </Border>
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </Border>
+
+        <Border Grid.Row="2" Background="#B3261E" IsVisible="{Binding HasError}" Padding="18,8">
             <TextBlock Text="{Binding Error}" Foreground="White" FontWeight="SemiBold" TextWrapping="Wrap"/>
         </Border>
 
-        <Panel Grid.Row="2">
-            <TextBlock Text="Chargement de la fiche…" Margin="8" Foreground="#5B6B7B" IsVisible="{Binding Loading}"/>
+        <Panel Grid.Row="3">
+            <TextBlock Text="Chargement de la fiche…" Margin="18,14" Foreground="#6B7A89" IsVisible="{Binding Loading}"/>
             <ScrollViewer IsVisible="{Binding HasRecord}" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-                <WrapPanel Margin="0,8,0,0">
-                    <!-- Informations de transmission -->
-                    <Border Width="565" Background="White" BorderBrush="#93A9B8" BorderThickness="1" Margin="0,0,8,8" VerticalAlignment="Top">
+                <StackPanel Margin="18,14,18,4">
+                    <!-- Synthèse -->
+                    <Border Classes="card">
                         <StackPanel>
-                            <Border Background="#021BB0" BorderBrush="#02127A" BorderThickness="0,0,0,1" Padding="10,7">
-                                <TextBlock Text="INFORMATIONS DE TRANSMISSION" Foreground="White" FontWeight="Bold" FontSize="12.5" HorizontalAlignment="Center"/>
+                            <Border Classes="cardhead"><TextBlock Classes="cardtitle" Text="SYNTHÈSE"/></Border>
+                            <Border Classes="frow">
+                                <Grid ColumnDefinitions="240,*">
+                                    <Border Classes="fcell"><TextBlock Classes="flabel" Text="Victime"/></Border>
+                                    <SelectableTextBlock Grid.Column="1" Classes="fvalue" Text="{Binding Victim}" FontWeight="SemiBold"/>
+                                </Grid>
                             </Border>
-                            <UniformGrid Columns="2" Margin="7">
-                                <Border Classes="field"><Grid RowDefinitions="24,*"><Border Classes="flabel"><TextBlock Classes="flabel" Text="Statut"/></Border>
-                                    <SelectableTextBlock Grid.Row="1" Classes="fvalue" Text="{Binding Status}"/></Grid></Border>
-                                <Border Classes="field"><Grid RowDefinitions="24,*"><Border Classes="flabel"><TextBlock Classes="flabel" Text="Date et heure de transmission"/></Border>
-                                    <SelectableTextBlock Grid.Row="1" Classes="fvalue"><Run Text="{Binding TransmissionDate}"/><Run Text=" "/><Run Text="{Binding TransmissionTime}"/></SelectableTextBlock></Grid></Border>
-                                <Border Classes="field"><Grid RowDefinitions="24,*"><Border Classes="flabel"><TextBlock Classes="flabel" Text="Prise en charge"/></Border>
-                                    <SelectableTextBlock Grid.Row="1" Classes="fvalue" Text="{Binding Started}"/></Grid></Border>
-                                <Border Classes="field"><Grid RowDefinitions="24,*"><Border Classes="flabel"><TextBlock Classes="flabel" Text="Fiche créée / mise à jour"/></Border>
-                                    <SelectableTextBlock Grid.Row="1" Classes="fvalue"><Run Text="{Binding Created}"/><Run Text="&#10;"/><Run Text="{Binding Updated}"/></SelectableTextBlock></Grid></Border>
-                                <Border Classes="field"><Grid RowDefinitions="24,*"><Border Classes="flabel"><TextBlock Classes="flabel" Text="Code de partage"/></Border>
-                                    <SelectableTextBlock Grid.Row="1" Classes="fvalue" Text="{Binding ShareCode}"/></Grid></Border>
-                                <Border Classes="field"><Grid RowDefinitions="24,*"><Border Classes="flabel"><TextBlock Classes="flabel" Text="Erreurs et historique"/></Border>
-                                    <SelectableTextBlock Grid.Row="1" Classes="fvalue" Text="Non renseigné (absent de la base)" Foreground="#8A97A5"/></Grid></Border>
-                            </UniformGrid>
+                            <Border Classes="frow" BorderThickness="0">
+                                <Grid ColumnDefinitions="240,*">
+                                    <Border Classes="fcell"><TextBlock Classes="flabel" Text="Bilan circonstanciel"/></Border>
+                                    <SelectableTextBlock Grid.Column="1" Classes="fvalue" Text="{Binding Circumstances}"/>
+                                </Grid>
+                            </Border>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Informations de transmission -->
+                    <Border Classes="card">
+                        <StackPanel>
+                            <Border Classes="cardhead"><TextBlock Classes="cardtitle" Text="INFORMATIONS DE TRANSMISSION"/></Border>
+                            <Border Classes="frow">
+                                <Grid ColumnDefinitions="240,*">
+                                    <Border Classes="fcell"><TextBlock Classes="flabel" Text="Statut"/></Border>
+                                    <SelectableTextBlock Grid.Column="1" Classes="fvalue" Text="{Binding Status}" Foreground="{Binding StatusBrush}" FontWeight="SemiBold"/>
+                                </Grid>
+                            </Border>
+                            <Border Classes="frow">
+                                <Grid ColumnDefinitions="240,*">
+                                    <Border Classes="fcell"><TextBlock Classes="flabel" Text="Date et heure de transmission"/></Border>
+                                    <SelectableTextBlock Grid.Column="1" Classes="fvalue">
+                                        <Run Text="{Binding TransmissionDate, Mode=OneWay}"/><Run Text=" "/><Run Text="{Binding TransmissionTime, Mode=OneWay}"/>
+                                    </SelectableTextBlock>
+                                </Grid>
+                            </Border>
+                            <Border Classes="frow">
+                                <Grid ColumnDefinitions="240,*">
+                                    <Border Classes="fcell"><TextBlock Classes="flabel" Text="Prise en charge"/></Border>
+                                    <SelectableTextBlock Grid.Column="1" Classes="fvalue" Text="{Binding Started}"/>
+                                </Grid>
+                            </Border>
+                            <Border Classes="frow">
+                                <Grid ColumnDefinitions="240,*">
+                                    <Border Classes="fcell"><TextBlock Classes="flabel" Text="Création de la fiche"/></Border>
+                                    <SelectableTextBlock Grid.Column="1" Classes="fvalue" Text="{Binding Created}"/>
+                                </Grid>
+                            </Border>
+                            <Border Classes="frow">
+                                <Grid ColumnDefinitions="240,*">
+                                    <Border Classes="fcell"><TextBlock Classes="flabel" Text="Dernière mise à jour"/></Border>
+                                    <SelectableTextBlock Grid.Column="1" Classes="fvalue" Text="{Binding Updated}"/>
+                                </Grid>
+                            </Border>
+                            <Border Classes="frow">
+                                <Grid ColumnDefinitions="240,*">
+                                    <Border Classes="fcell"><TextBlock Classes="flabel" Text="Code de partage"/></Border>
+                                    <SelectableTextBlock Grid.Column="1" Classes="fvalue" Text="{Binding ShareCode}" FontFamily="Consolas, Menlo, DejaVu Sans Mono, monospace"/>
+                                </Grid>
+                            </Border>
+                            <Border Classes="frow" BorderThickness="0">
+                                <Grid ColumnDefinitions="240,*">
+                                    <Border Classes="fcell"><TextBlock Classes="flabel" Text="Erreurs et historique"/></Border>
+                                    <SelectableTextBlock Grid.Column="1" Classes="fvalue empty" Text="Non renseigné (absent de la base)"/>
+                                </Grid>
+                            </Border>
                         </StackPanel>
                     </Border>
 
                     <!-- Rubriques du bilan -->
                     <ItemsControl ItemsSource="{Binding Sections}">
-                        <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                                <Border Width="565" Background="White" BorderBrush="#93A9B8" BorderThickness="1" Margin="0,0,8,8" VerticalAlignment="Top">
+                                <Border Classes="card">
                                     <StackPanel>
-                                        <Border Background="#021BB0" BorderBrush="#02127A" BorderThickness="0,0,0,1" Padding="10,7">
-                                            <TextBlock Text="{Binding Title}" Foreground="White" FontWeight="Bold" FontSize="12.5"
-                                                       HorizontalAlignment="Center" TextAlignment="Center"/>
-                                        </Border>
-                                        <ItemsControl ItemsSource="{Binding Fields}" Margin="7,7,7,0">
-                                            <ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="2"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                                        <Border Classes="cardhead"><TextBlock Classes="cardtitle" Text="{Binding Title}"/></Border>
+                                        <ItemsControl ItemsSource="{Binding Fields}">
                                             <ItemsControl.ItemTemplate>
                                                 <DataTemplate>
-                                                    <Border Classes="field">
-                                                        <Grid RowDefinitions="24,*">
-                                                            <Border Classes="flabel"><TextBlock Classes="flabel" Text="{Binding Label}"/></Border>
-                                                            <SelectableTextBlock Grid.Row="1" Classes="fvalue" Text="{Binding Value}"/>
+                                                    <Border Classes="frow">
+                                                        <Grid ColumnDefinitions="240,*">
+                                                            <Border Classes="fcell"><TextBlock Classes="flabel" Text="{Binding Label}"/></Border>
+                                                            <SelectableTextBlock Grid.Column="1" Classes="fvalue" Classes.empty="{Binding IsEmpty}" Text="{Binding Value}"/>
                                                         </Grid>
                                                     </Border>
                                                 </DataTemplate>
                                             </ItemsControl.ItemTemplate>
                                         </ItemsControl>
-                                        <ItemsControl ItemsSource="{Binding Lists}" Margin="7,0,7,7">
-                                            <ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="2"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                                        <ItemsControl ItemsSource="{Binding Lists}">
                                             <ItemsControl.ItemTemplate>
                                                 <DataTemplate>
-                                                    <Border Classes="field">
-                                                        <Grid RowDefinitions="24,*">
-                                                            <Border Classes="flabel"><TextBlock Classes="flabel" Text="{Binding Name}"/></Border>
-                                                            <StackPanel Grid.Row="1" Margin="7,6">
+                                                    <Border Classes="frow">
+                                                        <Grid ColumnDefinitions="240,*">
+                                                            <Border Classes="fcell"><TextBlock Classes="flabel" Text="{Binding Name}"/></Border>
+                                                            <StackPanel Grid.Column="1" Margin="14,7" Spacing="3">
                                                                 <ItemsControl ItemsSource="{Binding Items}">
                                                                     <ItemsControl.ItemTemplate>
-                                                                        <DataTemplate><SelectableTextBlock Text="{Binding}" TextWrapping="Wrap" FontSize="12.5"/></DataTemplate>
+                                                                        <DataTemplate>
+                                                                            <Grid ColumnDefinitions="16,*" Margin="0,1">
+                                                                                <TextBlock Text="•" Foreground="#0B5394" FontWeight="Bold" FontSize="13"/>
+                                                                                <SelectableTextBlock Grid.Column="1" Text="{Binding}" TextWrapping="Wrap" FontSize="13" Foreground="#1C2733"/>
+                                                                            </Grid>
+                                                                        </DataTemplate>
                                                                     </ItemsControl.ItemTemplate>
                                                                 </ItemsControl>
-                                                                <TextBlock Text="Non renseigné" Foreground="#8A97A5" FontSize="12.5" IsVisible="{Binding !Items.Count}"/>
+                                                                <TextBlock Text="Non renseigné" Foreground="#A0ABB6" FontStyle="Italic" FontSize="12"
+                                                                           IsVisible="{Binding !Items.Count}"/>
                                                             </StackPanel>
                                                         </Grid>
                                                     </Border>
@@ -118,36 +296,20 @@
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
-                </WrapPanel>
+                    <TextBlock Text="Aucune rubrique n'est enregistrée dans cette fiche." Foreground="#6B7A89" FontStyle="Italic"
+                               Margin="0,0,0,14" IsVisible="{Binding HasNoSections}"/>
+                </StackPanel>
             </ScrollViewer>
         </Panel>
 
-        <Border Grid.Row="3" Background="#E7EEF3" BorderBrush="#93A9B8" BorderThickness="1">
+        <!-- Pied -->
+        <Border Grid.Row="4" Background="White" BorderBrush="#C9D3DD" BorderThickness="0,1,0,0" Padding="18,7">
             <Grid ColumnDefinitions="*,Auto">
-                <TextBlock Text="Consultation en lecture seule • données issues de la base eFIBI, aucune modification possible"
-                           Foreground="#6B7D89" VerticalAlignment="Center" Margin="8,0" TextTrimming="CharacterEllipsis"/>
-                <Button Grid.Column="1" Content="REVENIR AU REGISTRE" Height="27" Margin="8,0" Padding="12,0"
-                        VerticalContentAlignment="Center" Command="{Binding CloseCommand}"/>
+                <TextBlock Foreground="#6B7A89" FontSize="12" VerticalAlignment="Center" TextTrimming="CharacterEllipsis">
+                    <Run Text="Source : base eFiBi  ·  Fiche n° "/><Run Text="{Binding Id, Mode=OneWay}"/><Run Text="  ·  Code fiche "/><Run Text="{Binding FicheCode, Mode=OneWay}"/>
+                </TextBlock>
+                <Button Grid.Column="1" Classes="ef" Content="Revenir au registre" Command="{Binding CloseCommand}"/>
             </Grid>
         </Border>
     </Grid>
-
-    <UserControl.Styles>
-        <Style Selector="Border.field">
-            <Setter Property="BorderBrush" Value="#D0D9E0"/><Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Margin" Value="2"/><Setter Property="MinHeight" Value="58"/><Setter Property="Background" Value="#FAFBFC"/>
-        </Style>
-        <Style Selector="Border.flabel">
-            <Setter Property="Background" Value="#E6E8EA"/><Setter Property="BorderBrush" Value="#D0D9E0"/>
-            <Setter Property="BorderThickness" Value="0,0,0,1"/><Setter Property="Padding" Value="6,3"/>
-        </Style>
-        <Style Selector="TextBlock.flabel">
-            <Setter Property="Foreground" Value="#173D5A"/><Setter Property="FontWeight" Value="Bold"/>
-            <Setter Property="FontSize" Value="9.5"/><Setter Property="TextWrapping" Value="Wrap"/>
-        </Style>
-        <Style Selector="SelectableTextBlock.fvalue">
-            <Setter Property="Margin" Value="7,6"/><Setter Property="Foreground" Value="#1F2D36"/>
-            <Setter Property="TextWrapping" Value="Wrap"/><Setter Property="FontSize" Value="12.5"/>
-        </Style>
-    </UserControl.Styles>
 </UserControl>

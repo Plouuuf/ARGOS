@@ -16,6 +16,14 @@ public sealed record EfibiRow(long Id, string ShareCode, string Intervention, st
     public string Circumstances { get; init; } = string.Empty;
     public string StatusColor => EfibiText.StatusColor(Status);
     public Avalonia.Media.IBrush StatusBrush => Avalonia.Media.SolidColorBrush.Parse(StatusColor);
+
+    /// <summary>Code de la fiche affiché sous le n° d'intervention : code de partage eFiBi, sinon n° interne de la fiche.</summary>
+    public string FicheCode => EfibiText.FicheCode(Id, ShareCode);
+
+    /// <summary>Info-bulle du code fiche : n° interne et code de partage.</summary>
+    public string FicheTooltip => string.IsNullOrWhiteSpace(ShareCode)
+        ? $"Fiche n° {Id}"
+        : $"Fiche n° {Id} · code de partage {ShareCode}";
 }
 
 /// <summary>eFiBi : registre des fiches bilans et recherche avancée (lecture seule).</summary>
@@ -246,6 +254,24 @@ public sealed class EfibiRecordViewModel : ViewModelBase
     public string TransmissionTime => _record?.Summary.TransmittedAt is { } t ? t.ToLocalTime().ToString("HH:mm:ss") : EfibiText.NonRenseigne;
     public bool Transmitted => _record?.Summary.TransmittedAt is not null;
 
+    /// <summary>Code fiche (code de partage eFiBi, sinon n° interne), comme dans le registre.</summary>
+    public string FicheCode => EfibiText.FicheCode(Id, _record?.Summary.ShareCode);
+
+    /// <summary>Horodatage de référence de la fiche (transmission, sinon prise en charge, sinon création), date et heure séparées.</summary>
+    public string DisplayDate => ReferenceTime is { } at ? at.ToLocalTime().ToString("dd/MM/yyyy") : EfibiText.NonRenseigne;
+    public string DisplayTime => ReferenceTime is { } at ? at.ToLocalTime().ToString("HH:mm") : string.Empty;
+
+    private DateTimeOffset? ReferenceTime
+    {
+        get
+        {
+            if (_record is null) return null;
+            var s = _record.Summary;
+            var at = s.TransmittedAt ?? s.StartedAt ?? s.CreatedAt;
+            return at > DateTimeOffset.MinValue ? at : null;
+        }
+    }
+
     /// <summary>Destination : rubriques de régulation et de transmission de la fiche.</summary>
     public IReadOnlyList<EfibiField> Destination => _record?.Sections
         .Where(s => s.Key is "regulationForm" or "transmissionForm")
@@ -253,6 +279,7 @@ public sealed class EfibiRecordViewModel : ViewModelBase
     public bool HasDestination => Destination.Count > 0;
 
     public IReadOnlyList<EfibiSection> Sections => _record?.Sections ?? [];
+    public bool HasNoSections => HasRecord && Sections.Count == 0;
 
     private async Task LoadAsync()
     {
@@ -268,11 +295,7 @@ public sealed class EfibiRecordViewModel : ViewModelBase
             Error = ex.Message.Contains("403") ? "Accès refusé : le rôle Discord eFIBI est nécessaire." : "Fiche indisponible : " + ex.Message;
         }
         Loading = false;
-        foreach (var n in new[] { nameof(HasRecord), nameof(Victim), nameof(Intervention), nameof(ShareCode), nameof(Status), nameof(Author),
-                                  nameof(Created), nameof(Started), nameof(Updated), nameof(TransmissionDate), nameof(TransmissionTime),
-                                  nameof(Transmitted), nameof(Destination), nameof(HasDestination), nameof(Sections),
-                                  nameof(CitizenId), nameof(Circumstances), nameof(StatusColor), nameof(StatusBrush), nameof(DisplayTimestamp) })
-            OnPropertyChanged(n);
+        NotifyRecord();
     }
 
     /// <summary>Chargement direct d'une fiche (captures d'écran de test).</summary>
@@ -281,10 +304,16 @@ public sealed class EfibiRecordViewModel : ViewModelBase
         _record = record;
         Error = record.Error;
         Loading = false;
+        NotifyRecord();
+    }
+
+    private void NotifyRecord()
+    {
         foreach (var n in new[] { nameof(HasRecord), nameof(Victim), nameof(Intervention), nameof(ShareCode), nameof(Status), nameof(Author),
                                   nameof(Created), nameof(Started), nameof(Updated), nameof(TransmissionDate), nameof(TransmissionTime),
                                   nameof(Transmitted), nameof(Destination), nameof(HasDestination), nameof(Sections),
-                                  nameof(CitizenId), nameof(Circumstances), nameof(StatusColor), nameof(StatusBrush), nameof(DisplayTimestamp) })
+                                  nameof(CitizenId), nameof(Circumstances), nameof(StatusColor), nameof(StatusBrush), nameof(DisplayTimestamp),
+                                  nameof(FicheCode), nameof(DisplayDate), nameof(DisplayTime), nameof(HasNoSections) })
             OnPropertyChanged(n);
     }
 
