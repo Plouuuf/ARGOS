@@ -37,6 +37,7 @@ public static class AppContentFactory
         ArgosApps.AdagioRemise => new Argos.Views.Mobile.Remise.RemiseMobileView { DataContext = new RemiseAppViewModel(desktop) },
         ArgosApps.Efibi => new Argos.Views.Mobile.Efibi.EfibiMobileView { DataContext = new EfibiAppViewModel(desktop) },
         ArgosApps.Ilias => new Argos.Views.Mobile.Ilias.IliasMobileView { DataContext = new IliasAppViewModel(desktop) },
+        ArgosApps.Sigtao => new Argos.Views.Mobile.Sigtao.SigtaoMobileView { DataContext = new SigtaoAppViewModel(desktop) },
         _ => null
     };
 

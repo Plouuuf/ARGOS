@@ -1,0 +1,177 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:m="using:Argos.Views.Mobile"
+             x:Class="Argos.Views.Mobile.Accessoires.BlocNotesMobileView"
+             Classes="ios"
+             m:MobilePage.IsNative="True"
+             m:MobilePage.Accent="#0078D7">
+    <!-- Bloc-notes sur iPhone, façon app Notes (même modèle que la version bureau : BlocNotesViewModel). -->
+    <UserControl.Resources>
+        <SolidColorBrush x:Key="AppAccent" Color="#0078D7"/>
+    </UserControl.Resources>
+    <UserControl.Styles>
+        <Style Selector=".ios TextBlock.status.err">
+            <Setter Property="Foreground" Value="{StaticResource IosRed}"/>
+        </Style>
+        <Style Selector=".ios ToggleButton.more">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{DynamicResource AppAccent}"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Padding" Value="10,6"/>
+            <Setter Property="CornerRadius" Value="16"/>
+        </Style>
+        <Style Selector=".ios ToggleButton.more:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{DynamicResource AppAccent}"/>
+        </Style>
+        <Style Selector=".ios ToggleButton.more:checked /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource AppAccent}"/>
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+    </UserControl.Styles>
+
+    <Grid RowDefinitions="Auto,Auto,*,Auto,Auto">
+        <!-- En-tête -->
+        <Grid ColumnDefinitions="*,Auto,Auto" Margin="16,6,10,2">
+            <TextBlock Text="{Binding Title}" FontSize="20" FontWeight="Bold" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+            <Button Grid.Column="1" Classes="plain" Content="Enregistrer" Command="{Binding SaveCommand}"/>
+            <ToggleButton Name="MenuToggle" Grid.Column="2" Classes="more" Content="•••" ToolTip.Tip="Plus d'actions"/>
+        </Grid>
+
+        <!-- Panneaux : enregistrer les modifications ? / ouvrir / enregistrer sous -->
+        <StackPanel Grid.Row="1">
+            <StackPanel IsVisible="{Binding ConfirmDiscard}">
+                <TextBlock Classes="footnote" Foreground="Black" FontSize="14.5" Margin="16,8,16,4">
+                    <Run Text="Voulez-vous enregistrer les modifications de "/><Run Text="{Binding Title}" FontWeight="SemiBold"/><Run Text=" ?"/>
+                </TextBlock>
+                <Button Classes="primary" Content="Enregistrer" Command="{Binding SaveThenCommand}"/>
+                <Grid ColumnDefinitions="*,*">
+                    <Button Classes="destructive" Margin="16,0,6,8" Content="Ne pas enregistrer" Command="{Binding DiscardCommand}"/>
+                    <Button Grid.Column="1" Classes="secondary" Margin="6,0,16,8" Content="Annuler" Command="{Binding CancelPanelCommand}"/>
+                </Grid>
+            </StackPanel>
+
+            <StackPanel IsVisible="{Binding ShowOpen}">
+                <TextBlock Classes="section" Margin="32,10,16,7" Text="OUVRIR UN FICHIER TEXTE"/>
+                <Border Classes="group">
+                    <Border Classes="row">
+                        <ComboBox Classes="field" ItemsSource="{Binding TextFiles}" SelectedItem="{Binding OpenChoice}"/>
+                    </Border>
+                </Border>
+                <Grid ColumnDefinitions="*,*" Margin="0,4,0,4">
+                    <Button Classes="primary" Margin="16,6,6,6" Content="Ouvrir" Command="{Binding ConfirmOpenCommand}"/>
+                    <Button Grid.Column="1" Classes="secondary" Margin="6,6,16,6" Content="Annuler" Command="{Binding CancelPanelCommand}"/>
+                </Grid>
+            </StackPanel>
+
+            <StackPanel IsVisible="{Binding ShowSaveAs}">
+                <TextBlock Classes="section" Margin="32,10,16,7" Text="ENREGISTRER SOUS"/>
+                <Border Classes="group">
+                    <StackPanel>
+                        <Border Classes="row">
+                            <Grid ColumnDefinitions="90,*">
+                                <TextBlock Classes="label" Text="Nom"/>
+                                <TextBox Grid.Column="1" Classes="field" Text="{Binding SaveAsName}" HorizontalContentAlignment="Right"/>
+                            </Grid>
+                        </Border>
+                        <Border Classes="row">
+                            <Grid ColumnDefinitions="90,*">
+                                <TextBlock Classes="label" Text="Dans"/>
+                                <ComboBox Grid.Column="1" Classes="field" HorizontalContentAlignment="Right" ItemsSource="{Binding Folders}" SelectedItem="{Binding SaveAsFolder}">
+                                    <ComboBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding Name}"/></DataTemplate></ComboBox.ItemTemplate>
+                                </ComboBox>
+                            </Grid>
+                        </Border>
+                    </StackPanel>
+                </Border>
+                <Grid ColumnDefinitions="*,*" Margin="0,4,0,4">
+                    <Button Classes="primary" Margin="16,6,6,6" Content="Enregistrer" Command="{Binding ConfirmSaveAsCommand}"/>
+                    <Button Grid.Column="1" Classes="secondary" Margin="6,6,16,6" Content="Annuler" Command="{Binding CancelPanelCommand}"/>
+                </Grid>
+            </StackPanel>
+
+            <TextBlock Classes="footnote status" Classes.err="{Binding StatusIsError}" Margin="16,2,16,4" Text="{Binding Status}"
+                       IsVisible="{Binding Status, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+        </StackPanel>
+
+        <!-- Texte (plein écran) et menu « ••• » par-dessus -->
+        <Panel Grid.Row="2">
+            <Border Background="White" CornerRadius="12" Margin="10,4,10,6">
+                <TextBox Name="Editor" Text="{Binding Text}" IsUndoEnabled="True" CaretIndex="{Binding Caret}" AcceptsReturn="True" AcceptsTab="True"
+                         TextWrapping="{Binding Wrapping}" FontSize="{Binding FontSize}" Watermark="Commencez à écrire…"
+                         Classes="field" Padding="12,10" VerticalContentAlignment="Top"
+                         ScrollViewer.HorizontalScrollBarVisibility="Auto" ScrollViewer.VerticalScrollBarVisibility="Auto"/>
+            </Border>
+
+            <ScrollViewer Name="MenuPanel" Background="{StaticResource IosBack}" IsVisible="{Binding #MenuToggle.IsChecked}">
+                <StackPanel Margin="0,0,0,24">
+                    <TextBlock Classes="section" Text="FICHIER"/>
+                    <Border Classes="group">
+                        <StackPanel>
+                            <Button Classes="row" Command="{Binding NewCommand}"><TextBlock Classes="label" Text="Nouveau"/></Button>
+                            <Button Classes="row" Command="{Binding OpenCommand}"><TextBlock Classes="label" Text="Ouvrir…"/></Button>
+                            <Button Classes="row" Command="{Binding SaveCommand}"><TextBlock Classes="label" Text="Enregistrer"/></Button>
+                            <Button Classes="row" Command="{Binding SaveAsCommand}"><TextBlock Classes="label" Text="Enregistrer sous…"/></Button>
+                            <Button Classes="row" Command="{Binding CloseCommand}"><TextBlock Classes="label" Text="Quitter"/></Button>
+                        </StackPanel>
+                    </Border>
+
+                    <TextBlock Classes="section" Text="ÉDITION"/>
+                    <Border Classes="group">
+                        <StackPanel>
+                            <Button Name="UndoItem" Classes="row"><TextBlock Classes="label" Text="Annuler"/></Button>
+                            <Button Name="RedoItem" Classes="row"><TextBlock Classes="label" Text="Rétablir"/></Button>
+                            <Button Name="CutItem" Classes="row"><TextBlock Classes="label" Text="Couper"/></Button>
+                            <Button Name="CopyItem" Classes="row"><TextBlock Classes="label" Text="Copier"/></Button>
+                            <Button Name="PasteItem" Classes="row"><TextBlock Classes="label" Text="Coller"/></Button>
+                            <Button Name="DeleteItem" Classes="row"><TextBlock Classes="label" Text="Supprimer la sélection"/></Button>
+                            <Button Name="SelectAllItem" Classes="row"><TextBlock Classes="label" Text="Tout sélectionner"/></Button>
+                            <Button Name="DateItem" Classes="row"><TextBlock Classes="label" Text="Insérer l'heure et la date"/></Button>
+                        </StackPanel>
+                    </Border>
+
+                    <TextBlock Classes="section" Text="FORMAT ET AFFICHAGE"/>
+                    <Border Classes="group">
+                        <StackPanel>
+                            <Border Classes="row">
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <TextBlock Classes="label" Text="Retour automatique à la ligne"/>
+                                    <ToggleSwitch Grid.Column="1" IsChecked="{Binding WordWrap}" OnContent="" OffContent="" MinWidth="0"/>
+                                </Grid>
+                            </Border>
+                            <Border Classes="row">
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <TextBlock Classes="label" Text="Zoom"/>
+                                    <TextBlock Grid.Column="1" Classes="value" Text="{Binding Zoom}"/>
+                                </Grid>
+                            </Border>
+                            <Button Classes="row" Command="{Binding ZoomInCommand}"><TextBlock Classes="label" Text="Zoom avant"/></Button>
+                            <Button Classes="row" Command="{Binding ZoomOutCommand}"><TextBlock Classes="label" Text="Zoom arrière"/></Button>
+                            <Button Classes="row" Command="{Binding ZoomResetCommand}"><TextBlock Classes="label" Text="Rétablir le zoom par défaut"/></Button>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
+        </Panel>
+
+        <!-- Position, taille, zoom -->
+        <TextBlock Grid.Row="3" Classes="caption" HorizontalAlignment="Center" Margin="0,0,0,4">
+            <Run Text="{Binding Position}"/><Run Text="  ·  "/><Run Text="{Binding Count}"/><Run Text="  ·  "/><Run Text="{Binding Zoom}"/>
+        </TextBlock>
+
+        <!-- Barre d'outils -->
+        <Border Grid.Row="4" Classes="tabbar">
+            <UniformGrid Columns="5">
+                <Button Name="UndoTool" Classes="plain" HorizontalAlignment="Center" Content="↶" FontSize="22" ToolTip.Tip="Annuler"/>
+                <Button Name="RedoTool" Classes="plain" HorizontalAlignment="Center" Content="↷" FontSize="22" ToolTip.Tip="Rétablir"/>
+                <Button Name="DateTool" Classes="plain" HorizontalAlignment="Center" ToolTip.Tip="Insérer l'heure et la date">
+                    <PathIcon Data="{StaticResource TabClock}" Width="22" Height="22"/>
+                </Button>
+                <Button Classes="plain" HorizontalAlignment="Center" Content="A−" Command="{Binding ZoomOutCommand}" ToolTip.Tip="Zoom arrière"/>
+                <Button Classes="plain" HorizontalAlignment="Center" Content="A+" Command="{Binding ZoomInCommand}" ToolTip.Tip="Zoom avant"/>
+            </UniformGrid>
+        </Border>
+    </Grid>
+</UserControl>
