@@ -149,17 +149,6 @@ jobs:
             -o artifacts/windows
           (cd artifacts/windows && zip -qr "../ARGOS-$VERSION-windows.zip" ARGOS.exe)
 
-      - name: Installateur Windows (ARGOS-Setup.exe)
-        run: |
-          set -e
-          # Le paquet Windows est intégré à l'installateur (comme SIMCALL).
-          cp "artifacts/ARGOS-$VERSION-windows.zip" src/ARGOS.Setup/Resources/payload.zip
-          dotnet publish src/ARGOS.Setup/ARGOS.Setup.csproj -c Release -r win-x64 --self-contained true \
-            -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:EnableCompressionInSingleFile=true \
-            -o artifacts/setup
-          cp artifacts/setup/ARGOS-Setup.exe artifacts/ARGOS-Setup.exe
-          ls -la artifacts/ARGOS-Setup.exe
-
       - name: Publication du serveur (Windows)
         run: |
           set -e
@@ -183,12 +172,6 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: ARGOS-Setup
-          path: artifacts/ARGOS-Setup.exe
-          if-no-files-found: error
-
-      - uses: actions/upload-artifact@v4
-        with:
           name: ARGOS-server
           path: artifacts/server/
           if-no-files-found: error
@@ -203,7 +186,7 @@ jobs:
           cp artifacts/ARGOS-*-windows.zip artifacts/ARGOS-windows.zip
           cp artifacts/ARGOS-*-macos.zip artifacts/ARGOS-macos.zip
           gh release create "build-${{ github.run_number }}" \
-            artifacts/ARGOS-server.zip artifacts/ARGOS-windows.zip artifacts/ARGOS-macos.zip artifacts/ARGOS-Setup.exe \
+            artifacts/ARGOS-server.zip artifacts/ARGOS-windows.zip artifacts/ARGOS-macos.zip \
             --repo "${{ github.repository }}" --target "${{ github.sha }}" --latest \
             --title "ARGOS $VERSION (build ${{ github.run_number }})" \
             --notes "$(git log -1 --pretty=%B)"
@@ -211,6 +194,52 @@ jobs:
           gh release list --repo "${{ github.repository }}" --limit 100 --json tagName -q '.[].tagName' \
             | grep '^build-' | sort -t- -k2 -n -r | tail -n +9 \
             | xargs -r -I{} gh release delete {} --repo "${{ github.repository }}" --yes --cleanup-tag
+
+  # Installateur Windows (Inno Setup), compilé sur Windows : ARGOS-Setup.exe.
+  windows-setup:
+    name: Windows (installateur)
+    needs: desktop-server
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: ARGOS-windows
+          path: in
+      - name: Création de ARGOS-Setup.exe
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $zip = Get-ChildItem in -Filter 'ARGOS-*-windows.zip' | Select-Object -First 1
+          Expand-Archive $zip.FullName -DestinationPath payload -Force
+          $version = (Select-Xml -Path Directory.Build.props -XPath '//Version').Node.InnerText
+          $iscc = Get-Command iscc.exe -ErrorAction SilentlyContinue
+          if (-not $iscc) {
+            $candidates = @("${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe", "$env:ProgramFiles\Inno Setup 6\ISCC.exe")
+            $path = $candidates | Where-Object { Test-Path $_ } | Select-Object -First 1
+            if (-not $path) {
+              choco install innosetup -y --no-progress | Out-Null
+              $path = $candidates | Where-Object { Test-Path $_ } | Select-Object -First 1
+            }
+          } else { $path = $iscc.Source }
+          $exe = (Resolve-Path payload\ARGOS.exe).Path
+          New-Item -ItemType Directory -Force out | Out-Null
+          $outDir = (Resolve-Path out).Path
+          & $path "/DAppVersion=$version" "/DAppBuild=${{ github.run_number }}" "/DSourceExe=$exe" "/DOutputDir=$outDir" deployment\windows\ARGOS.iss
+          if ($LASTEXITCODE -ne 0) { throw "Inno Setup : échec ($LASTEXITCODE)" }
+          Get-Item out\ARGOS-Setup.exe | Format-List Name, Length
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ARGOS-Setup
+          path: out/ARGOS-Setup.exe
+          if-no-files-found: error
+      - name: Ajout à la publication
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: gh release upload "build-${{ github.run_number }}" out/ARGOS-Setup.exe --repo "${{ github.repository }}" --clobber
 
   # Image disque macOS (.dmg) : ARGOS.app + raccourci « Applications », à glisser-déposer.
   macos-dmg:
