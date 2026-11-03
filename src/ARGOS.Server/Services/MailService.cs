@@ -21,7 +21,7 @@ public sealed class MailService(OdeDatabase db, RealtimeHub hub)
     public MailProfile Profile(ArgosUserDto user)
     {
         var existing = db.GetDoc<MailProfile>(RemiseTables.MailProfiles, user.UserId);
-        var record = db.Docs<MilitaryRecord>(RemiseTables.Military).FirstOrDefault(r => r.DiscordUserId == user.UserId);
+        var record = ProfileService.DossierOf(db, user);
         var identity = db.GetDoc<UserIdentity>(RemiseTables.Identities, user.UserId);
         var address = record is null ? string.Empty : RecordAddress(record);
         var name = record is not null && !string.IsNullOrWhiteSpace(record.Nom) ? record.FullName
@@ -47,6 +47,13 @@ public sealed class MailService(OdeDatabase db, RealtimeHub hub)
     public UserIdentity Identity(ArgosUserDto user)
     {
         var identity = db.GetDoc<UserIdentity>(RemiseTables.Identities, user.UserId) ?? new UserIdentity();
+        // Profil relié à un dossier SIGTAO nommé : l'identité est celle du dossier (pas de formulaire).
+        if (!identity.Complete && ProfileService.DossierOf(db, user) is { } dossier
+            && !string.IsNullOrWhiteSpace(dossier.Prenom) && !string.IsNullOrWhiteSpace(dossier.Nom))
+        {
+            identity.Prenom = UserIdentity.FormatPrenom(dossier.Prenom);
+            identity.Nom = UserIdentity.FormatNom(dossier.Nom);
+        }
         identity.Email = Profile(user).Address;
         return identity;
     }
@@ -60,15 +67,17 @@ public sealed class MailService(OdeDatabase db, RealtimeHub hub)
         if (prenom.Length > 40 || nom.Length > 40) return new(false, "Prénom ou NOM trop long.");
         var identity = new UserIdentity { Prenom = prenom, Nom = nom };
         db.SaveDoc(RemiseTables.Identities, user.UserId, DateTimeOffset.UtcNow, identity);
-        foreach (var r in db.Docs<MilitaryRecord>(RemiseTables.Military).Where(r => r.DiscordUserId == user.UserId))
+        if (ProfileService.DossierOf(db, user) is { } r)
         {
             var changed = false;
             if (string.IsNullOrWhiteSpace(r.Prenom)) { r.Prenom = prenom; changed = true; }
             if (string.IsNullOrWhiteSpace(r.Nom)) { r.Nom = nom; changed = true; }
-            if (!changed) continue;
-            r.UpdatedAt = DateTimeOffset.UtcNow;
-            r.UpdatedBy = "ARGOS";
-            db.SaveDoc(RemiseTables.Military, r.Id, r.UpdatedAt, r);
+            if (changed)
+            {
+                r.UpdatedAt = DateTimeOffset.UtcNow;
+                r.UpdatedBy = "ARGOS";
+                db.SaveDoc(RemiseTables.Military, r.Id, r.UpdatedAt, r);
+            }
         }
         Profile(user);
         await hub.BroadcastAsync(new RealtimeMessage(RealtimeTypes.MailChanged));
@@ -95,9 +104,11 @@ public sealed class MailService(OdeDatabase db, RealtimeHub hub)
     public Dictionary<string, string> Resolver()
     {
         var map = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        // Plusieurs personnages sur un même compte Discord : chacun a sa boîte (profil).
+        var owners = ProfileService.UserIdsByDossier(db);
         foreach (var r in db.Docs<MilitaryRecord>(RemiseTables.Military))
             if (!string.IsNullOrWhiteSpace(r.DiscordUserId) && RecordAddress(r) is { Length: > 0 } a)
-                map.TryAdd(a, r.DiscordUserId);
+                map.TryAdd(a, owners.TryGetValue(r.Id, out var owner) ? owner : r.DiscordUserId);
         foreach (var p in db.Docs<MailProfile>(RemiseTables.MailProfiles))
             if (p.Address.Length > 0)
                 map.TryAdd(p.Address, p.UserId);

@@ -520,7 +520,7 @@ public sealed class OdeService(OdeDatabase db, RealtimeHub hub, ILogger<OdeServi
         if (existing is not null)
             return existing;
         var call = await CreateCallAsync(operatorUser, message.CallerNumber, message.SimcallCallId, message.AnsweredAt, message.OperatorName);
-        await hub.SendToUserAsync(message.DiscordUserId, new RealtimeMessage(RealtimeTypes.OpenCall, Text: call.Id));
+        await hub.SendToUserAsync(message.DiscordUserId, new RealtimeMessage(RealtimeTypes.OpenCall, Text: call.Id), allProfiles: true);
         return call;
     }
 

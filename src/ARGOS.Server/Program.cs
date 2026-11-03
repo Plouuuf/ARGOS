@@ -36,6 +36,7 @@ public static class Program
         builder.Services.Configure<DiscordOAuthOptions>(builder.Configuration.GetSection("Discord"));
         builder.Services.AddSingleton<AuthSessionStore>();
         builder.Services.AddSingleton<PersistentDiscordSessionStore>();
+        builder.Services.AddSingleton<ProfileService>();
         builder.Services.AddSingleton<DiscordOAuthService>();
         builder.Services.AddSingleton<RealtimeHub>();
         builder.Services.AddSingleton(_ => new OdeDatabase());
@@ -509,6 +510,20 @@ public static class Program
 
         // ===== Messagerie =====
 
+        // ===== Profils (personnages) : choix à la connexion =====
+        app.MapGet("/api/me/profiles", async (HttpContext context, DiscordOAuthService oauth, ProfileService profiles) =>
+        {
+            var user = await AuthenticateAsync(context, oauth);
+            return user is null ? Results.Unauthorized() : Results.Ok(profiles.List(BearerToken(context)!, user));
+        });
+        app.MapPost("/api/me/profile", async (SelectProfileRequest request, HttpContext context, DiscordOAuthService oauth, ProfileService profiles) =>
+        {
+            var user = await AuthenticateAsync(context, oauth);
+            if (user is null) return Results.Unauthorized();
+            var updated = profiles.Select(BearerToken(context)!, user, (request.Id ?? string.Empty).Trim());
+            return updated is null ? Results.BadRequest(new OdeResult(false, "Ce profil n'est pas relié à ton compte Discord.")) : Results.Ok(updated);
+        });
+
         // ===== Identité (première connexion) =====
         app.MapGet("/api/me/identity", async (HttpContext context, DiscordOAuthService oauth, MailService service) =>
         {
@@ -724,7 +739,7 @@ public static class Program
             var userId = context.Request.Query["userId"].ToString();
             var sent = string.IsNullOrWhiteSpace(userId)
                 ? await hub.BroadcastAsync(notification, context.RequestAborted)
-                : await hub.SendToUserAsync(userId, notification, context.RequestAborted);
+                : await hub.SendToUserAsync(userId, notification, context.RequestAborted, allProfiles: true);
             return Results.Ok(new { sent });
         });
 
@@ -785,12 +800,18 @@ public static class Program
         _ => appId
     };
 
-    private static async Task<ArgosUserDto?> AuthenticateAsync(HttpContext context, DiscordOAuthService oauth)
+    private static string? BearerToken(HttpContext context)
     {
         var header = context.Request.Headers.Authorization.ToString();
-        if (!header.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+        return header.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase) ? header["Bearer ".Length..].Trim() : null;
+    }
+
+    private static async Task<ArgosUserDto?> AuthenticateAsync(HttpContext context, DiscordOAuthService oauth)
+    {
+        var token = BearerToken(context);
+        if (string.IsNullOrEmpty(token))
             return null;
-        var result = await oauth.ValidateAppTokenAsync(header["Bearer ".Length..].Trim(), forceRoleCheck: false);
+        var result = await oauth.ValidateAppTokenAsync(token, forceRoleCheck: false);
         return result.Valid ? result.User : null;
     }
 

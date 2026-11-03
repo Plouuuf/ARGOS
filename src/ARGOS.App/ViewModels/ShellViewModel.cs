@@ -20,7 +20,7 @@ public enum ShellScreen
 /// Enchaînement des écrans, comme sous Windows 10 : verrouillage → connexion → « Bienvenue » → bureau.
 /// La connexion passe par Discord (whitelist par rôle, vérifiée par le serveur ARGOS).
 /// </summary>
-public sealed class ShellViewModel : ViewModelBase
+public sealed partial class ShellViewModel : ViewModelBase
 {
     private static readonly CultureInfo French = CultureInfo.GetCultureInfo("fr-FR");
     private static readonly TimeSpan RevalidationInterval = TimeSpan.FromMinutes(5);
@@ -58,6 +58,8 @@ public sealed class ShellViewModel : ViewModelBase
         CancelSignInCommand = new RelayCommand(CancelSignIn);
         UseOtherAccountCommand = new RelayCommand(() => _ = UseOtherAccountAsync(), () => !IsBusy);
         QuitCommand = new RelayCommand(() => App.Quit());
+        ChooseProfileCommand = new RelayCommand(p => _ = ChooseProfileAsync(p as ProfileChoice), _ => !IsBusy);
+        CancelProfileCommand = new RelayCommand(CancelProfile);
 
         _realtime.ConnectionChanged += connected => Dispatcher.UIThread.Post(() =>
         {
@@ -321,6 +323,7 @@ public sealed class ShellViewModel : ViewModelBase
             if (!SetProperty(ref _isBusy, value)) return;
             SignInCommand.RaiseCanExecuteChanged();
             UseOtherAccountCommand.RaiseCanExecuteChanged();
+            ChooseProfileCommand.RaiseCanExecuteChanged();
         }
     }
 
@@ -419,7 +422,7 @@ public sealed class ShellViewModel : ViewModelBase
                 _sessionReady = await _auth.TryResumeAsync(ct);
                 if (_sessionReady && _auth.User is not null)
                 {
-                    await EnterDesktopAsync();
+                    await ContinueWithProfileAsync(ct);
                     return;
                 }
                 ResetIdentity();
@@ -438,7 +441,7 @@ public sealed class ShellViewModel : ViewModelBase
             if (result.Status == "approved" && _auth.User is not null)
             {
                 _sessionReady = true;
-                await EnterDesktopAsync();
+                await ContinueWithProfileAsync(ct);
                 return;
             }
 

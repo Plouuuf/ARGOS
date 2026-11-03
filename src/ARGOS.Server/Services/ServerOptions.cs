@@ -31,4 +31,10 @@ public sealed class DiscordOAuthOptions
 
     /// <summary>Rôle(s) Discord « Accès RH/ADMIN ».</summary>
     public string RhAdminRoleIds { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Identifiant(s) Discord des développeurs d'ARGOS (séparés par des virgules) : accès à tout,
+    /// sans les rôles Discord habituels (il faut seulement être membre du Discord VDMS).
+    /// </summary>
+    public string DeveloperUserIds { get; set; } = string.Empty;
 }

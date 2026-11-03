@@ -28,7 +28,7 @@ public static class SigtaoAccess
         if (user.Levels.Contains(AccessLevels.Administration))
             return true;
         var accounts = Accounts(db).Select(a => a.Account).ToList();
-        var mine = accounts.FirstOrDefault(a => a.DiscordUserId == user.UserId);
+        var mine = accounts.FirstOrDefault(a => a.DiscordUserId == user.DiscordId);
         if (mine is { Active: true } && mine.Habilitations.Contains(habilitation))
             return true;
         if (mine is { Active: false })
@@ -68,11 +68,11 @@ public sealed class SigtaoService(OdeDatabase db, RealtimeHub hub)
     {
         var rights = Rights(user);
         var accounts = SigtaoAccess.Accounts(db).Select(a => a.Account).ToList();
-        var mine = accounts.FirstOrDefault(a => a.DiscordUserId == user.UserId);
+        var mine = accounts.FirstOrDefault(a => a.DiscordUserId == user.DiscordId);
         var military = db.Docs<MilitaryRecord>(RemiseTables.Military).ToList();
 
         // Dossier importé sans nom : le nom de famille est repris du pseudo Discord à la première connexion.
-        foreach (var m in military.Where(m => m.DiscordUserId == user.UserId && string.IsNullOrWhiteSpace(m.Nom)))
+        foreach (var m in military.Where(m => m.DiscordUserId == user.DiscordId && string.IsNullOrWhiteSpace(m.Nom)))
         {
             var nom = RosterImport.NameFromNickname(user.DisplayName);
             if (nom.Length == 0) continue;
@@ -83,14 +83,16 @@ public sealed class SigtaoService(OdeDatabase db, RealtimeHub hub)
             Journal(user, SigtaoJournal.DossierModifie, m.FullName, "nom repris du pseudo Discord");
         }
         // Photo par défaut : l'avatar Discord du joueur, mis à jour à chaque connexion.
-        foreach (var m in military.Where(m => m.DiscordUserId == user.UserId && !string.IsNullOrWhiteSpace(user.AvatarUrl)
+        foreach (var m in military.Where(m => m.DiscordUserId == user.DiscordId && !string.IsNullOrWhiteSpace(user.AvatarUrl)
                                               && m.AvatarUrl != user.AvatarUrl))
         {
             m.AvatarUrl = user.AvatarUrl!;
             db.SaveDoc(RemiseTables.Military, m.Id, DateTimeOffset.UtcNow, m);
         }
         military = military.OrderBy(m => GradeRank(m.Grade)).ThenBy(m => m.Nom).ThenBy(m => m.Prenom).ToList();
-        var myDossier = military.FirstOrDefault(m => m.Id == mine?.DossierId) ?? military.FirstOrDefault(m => m.DiscordUserId == user.UserId);
+        // Profil choisi à la connexion (personnage), sinon dossier principal du joueur.
+        var myDossierId = ProfileService.DossierOf(db, user)?.Id;
+        var myDossier = military.FirstOrDefault(m => m.Id == myDossierId);
 
         // Rubriques du dossier (carrière, sanctions, entretiens) : gestion de la compagnie ou intéressé seulement.
         if (!rights.ManageCompany)
@@ -104,7 +106,7 @@ public sealed class SigtaoService(OdeDatabase db, RealtimeHub hub)
         return new SigtaoSnapshot
         {
             Military = military,
-            Accounts = rights.ManageAccounts ? accounts : accounts.Where(a => a.DiscordUserId == user.UserId).ToList(),
+            Accounts = rights.ManageAccounts ? accounts : accounts.Where(a => a.DiscordUserId == user.DiscordId).ToList(),
             Reports = reports,
             Gardes = Gardes(DateTime.Today.AddDays(-62), DateTime.Today.AddDays(62)),
             Rights = rights,
@@ -264,7 +266,7 @@ public sealed class SigtaoService(OdeDatabase db, RealtimeHub hub)
             var existing = all.FirstOrDefault(a => a.Account.Id == incoming.Id);
             var now = DateTimeOffset.UtcNow;
             // Garde-fou : on ne retire pas sa propre habilitation SADMIN (ni ne désactive son compte).
-            if (existing?.Account.DiscordUserId == user.UserId && existing.Account.Habilitations.Contains(Habilitations.Sadmin)
+            if (existing?.Account.DiscordUserId == user.DiscordId && existing.Account.Habilitations.Contains(Habilitations.Sadmin)
                 && (!incoming.Habilitations.Contains(Habilitations.Sadmin) || !incoming.Active)
                 && !user.Levels.Contains(AccessLevels.Administration))
                 return new(false, "Tu ne peux pas retirer ta propre habilitation SADMIN ni désactiver ton compte.");
@@ -545,10 +547,7 @@ public sealed class SigtaoService(OdeDatabase db, RealtimeHub hub)
         await _gate.WaitAsync();
         try
         {
-            var accounts = SigtaoAccess.Accounts(db).Select(a => a.Account).ToList();
-            var mine = accounts.FirstOrDefault(a => a.DiscordUserId == user.UserId);
-            var military = db.Docs<MilitaryRecord>(RemiseTables.Military);
-            var me = military.FirstOrDefault(m => m.Id == mine?.DossierId) ?? military.FirstOrDefault(m => m.DiscordUserId == user.UserId);
+            var me = ProfileService.DossierOf(db, user);
             if (me is null) return new(false, "Aucun dossier militaire n'est relié à ton compte Discord : demande à l'encadrement de le créer.");
             if (me.Status != MilitaryStatuses.Actif) return new(false, "Ton dossier n'est pas en activité.");
             var name = $"{BsppGrades.Short(me.Grade)} {me.Nom.ToUpperInvariant()} {me.Prenom}".Trim();

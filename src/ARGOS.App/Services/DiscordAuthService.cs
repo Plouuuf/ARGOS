@@ -118,6 +118,34 @@ public sealed class DiscordAuthService
         return new AuthStatusResponse("expired", "La demande de connexion a expiré.", null, null);
     }
 
+    /// <summary>Profils (personnages SIGTAO) du compte Discord connecté.</summary>
+    public async Task<ProfilesResponse> GetProfilesAsync(CancellationToken ct = default)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Get, new Uri(BaseUri, "api/me/profiles"));
+        request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", SessionToken);
+        using var response = await _http.SendAsync(request, ct);
+        if (!response.IsSuccessStatusCode)
+            return new ProfilesResponse(); // Serveur plus ancien : un seul profil.
+        return await response.Content.ReadFromJsonAsync<ProfilesResponse>(JsonOptions, ct) ?? new ProfilesResponse();
+    }
+
+    /// <summary>Choisit le profil de cette session ; l'utilisateur renvoyé devient celui du poste.</summary>
+    public async Task<bool> SelectProfileAsync(string profileId, CancellationToken ct = default)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Post, new Uri(BaseUri, "api/me/profile"))
+        {
+            Content = JsonContent.Create(new SelectProfileRequest { Id = profileId }, options: JsonOptions)
+        };
+        request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", SessionToken);
+        using var response = await _http.SendAsync(request, ct);
+        if (!response.IsSuccessStatusCode) return false;
+        var user = await response.Content.ReadFromJsonAsync<ArgosUserDto>(JsonOptions, ct);
+        if (user is null || SessionToken is null) return false;
+        User = user;
+        SaveSession(new SavedSession(SessionToken, user));
+        return true;
+    }
+
     /// <summary>Oublie le compte enregistré sur l'appareil (« Utiliser un autre compte »).</summary>
     public Task ForgetAsync()
     {

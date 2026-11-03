@@ -91,10 +91,13 @@ public sealed class RealtimeHub(DiscordOAuthService oauth, ILogger<RealtimeHub> 
     }
 
     /// <summary>Envoie un message à tous les postes ouverts par ce compte Discord. Retourne le nombre de postes atteints.</summary>
-    public async Task<int> SendToUserAsync(string userId, RealtimeMessage message, CancellationToken ct = default)
+    /// <param name="allProfiles">Vrai : tous les profils (personnages) du compte Discord, pas seulement ce profil.</param>
+    public async Task<int> SendToUserAsync(string userId, RealtimeMessage message, CancellationToken ct = default, bool allProfiles = false)
     {
         var sent = 0;
-        foreach (var connection in _connections.Values.Where(c => c.UserId == userId))
+        var discord = ArgosUserDto.DiscordOf(userId);
+        foreach (var connection in _connections.Values.Where(c => c.UserId == userId
+                     || (allProfiles && ArgosUserDto.DiscordOf(c.UserId) == discord)))
         {
             if (await connection.TrySendAsync(message, ct))
                 sent++;

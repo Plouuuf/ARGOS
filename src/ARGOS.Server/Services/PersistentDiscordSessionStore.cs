@@ -82,6 +82,26 @@ public sealed class PersistentDiscordSessionStore
         }
     }
 
+    /// <summary>Profil choisi à la connexion pour ce jeton (null : profil principal).</summary>
+    public string? GetProfile(string appToken)
+    {
+        var hash = HashToken(appToken);
+        lock (_sync)
+            return _sessions.TryGetValue(hash, out var current) ? current.ProfileId : null;
+    }
+
+    public bool SetProfile(string appToken, string? profileId)
+    {
+        var hash = HashToken(appToken);
+        lock (_sync)
+        {
+            if (!_sessions.TryGetValue(hash, out var current)) return false;
+            current.ProfileId = profileId;
+            PersistLocked();
+            return true;
+        }
+    }
+
     public void Revoke(string appToken)
     {
         var hash = HashToken(appToken);
@@ -164,5 +184,7 @@ public sealed class PersistentDiscordSessionStore
         public DateTimeOffset CreatedAt { get; set; }
         public DateTimeOffset LastValidatedAt { get; set; }
         public DateTimeOffset ExpiresAt { get; set; }
+        /// <summary>Profil (dossier SIGTAO) choisi à la connexion sur ce poste.</summary>
+        public string? ProfileId { get; set; }
     }
 }

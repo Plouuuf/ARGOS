@@ -16,7 +16,8 @@ public sealed class DiscordOAuthService(
     IOptionsMonitor<DiscordOAuthOptions> options,
     AuthSessionStore sessions,
     PersistentDiscordSessionStore persistentSessions,
-    ILogger<DiscordOAuthService> logger)
+    ILogger<DiscordOAuthService> logger,
+    ProfileService? profiles = null)
 {
     private static readonly HttpClient Http = new() { Timeout = TimeSpan.FromSeconds(15) };
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web) { PropertyNameCaseInsensitive = true };
@@ -98,6 +99,15 @@ public sealed class DiscordOAuthService(
     /// (sauf vérification de moins de 5 minutes) : un rôle retiré ferme la session.
     /// </summary>
     public async Task<AppTokenValidationResult> ValidateAppTokenAsync(string? appToken, bool forceRoleCheck = true)
+    {
+        var result = await ValidateCoreAsync(appToken, forceRoleCheck);
+        // Profil (personnage) choisi à la connexion sur ce poste.
+        return result is { Valid: true, User: not null } && !string.IsNullOrWhiteSpace(appToken)
+            ? result with { User = profiles?.Apply(appToken, result.User) ?? result.User }
+            : result;
+    }
+
+    private async Task<AppTokenValidationResult> ValidateCoreAsync(string? appToken, bool forceRoleCheck)
     {
         if (string.IsNullOrWhiteSpace(appToken))
             return new(false, true, "Connexion Discord requise.", null);
@@ -234,7 +244,7 @@ public sealed class DiscordOAuthService(
             return new(false, false, "Réponse Discord invalide.", null);
 
         var display = FirstNonEmpty(member.Nick, discordUser.GlobalName, discordUser.Username) ?? "Utilisateur Discord";
-        var levels = ComputeLevels(member.Roles);
+        var levels = IsDeveloper(discordUser.Id) ? DeveloperLevels() : ComputeLevels(member.Roles);
         var user = new ArgosUserDto(discordUser.Id, display, BuildAvatarUrl(discordUser), levels);
 
         if (!levels.Contains(AccessLevels.Sapeur))
@@ -245,6 +255,25 @@ public sealed class DiscordOAuthService(
 
         _users[discordUser.Id] = user;
         return new(true, false, "OK", user);
+    }
+
+    private bool IsDeveloper(string discordId)
+        => (Options.DeveloperUserIds ?? string.Empty)
+            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Contains(discordId, StringComparer.Ordinal);
+
+    /// <summary>Développeur : tous les niveaux et toutes les applications, quels que soient ses rôles Discord.</summary>
+    private List<string> DeveloperLevels()
+    {
+        var apps = new[] { ArgosApps.AdagioOde, ArgosApps.AdagioRemise, ArgosApps.Efibi, ArgosApps.Ilias, ArgosApps.Mail, ArgosApps.Mco, ArgosApps.Sigtao }
+            .Concat(Options.AppRoles.Keys.Select(k => k.ToLowerInvariant()))
+            .Select(AccessLevels.App);
+        return new[]
+            {
+                AccessLevels.Sapeur, AccessLevels.Operateur, AccessLevels.Encadrement, AccessLevels.Administration,
+                AccessLevels.RhAdmin, AccessLevels.Developpeur
+            }
+            .Concat(apps).Distinct().ToList();
     }
 
     private List<string> ComputeLevels(string[] roles)

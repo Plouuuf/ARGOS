@@ -26,6 +26,7 @@
     <!-- Voile sombre sur le fond flouté, comme Windows 10. -->
     <Grid Background="#4D000000">
         <StackPanel Classes.compact="{Binding IsCompact}"
+                    IsVisible="{Binding ShowSignIn}"
                     HorizontalAlignment="Center"
                     VerticalAlignment="Center"
                     Width="340"
@@ -94,6 +95,70 @@
                     IsVisible="{Binding HasKnownAccount}"
                     Margin="0,8,0,0"/>
         </StackPanel>
+
+        <!-- Choix du profil : plusieurs personnages (dossiers SIGTAO) sur le même compte Discord -->
+        <Grid IsVisible="{Binding IsChoosingProfile}"
+              HorizontalAlignment="Center"
+              VerticalAlignment="Center"
+              MaxWidth="420"
+              Margin="16"
+              RowDefinitions="Auto,Auto,*,Auto,Auto">
+            <TextBlock Text="Choisis ton profil"
+                       FontSize="30"
+                       FontWeight="Light"
+                       HorizontalAlignment="Center"/>
+            <TextBlock Grid.Row="1"
+                       Text="Ton compte Discord est relié à plusieurs personnages. Chacun a sa messagerie, ses comptes-rendus et ses gardes."
+                       FontSize="13"
+                       Opacity="0.85"
+                       TextWrapping="Wrap"
+                       TextAlignment="Center"
+                       Margin="0,8,0,16"/>
+            <ScrollViewer Grid.Row="2" MaxHeight="420" VerticalScrollBarVisibility="Auto">
+                <ItemsControl ItemsSource="{Binding Profiles}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Button Classes="flat"
+                                    HorizontalAlignment="Stretch"
+                                    HorizontalContentAlignment="Stretch"
+                                    Margin="0,0,0,8"
+                                    Padding="12,10"
+                                    Background="#66000000"
+                                    BorderBrush="#40FFFFFF"
+                                    BorderThickness="1"
+                                    Command="{Binding $parent[UserControl].DataContext.ChooseProfileCommand}"
+                                    CommandParameter="{Binding}">
+                                <Grid ColumnDefinitions="56,12,*">
+                                    <Border Width="56" Height="56" CornerRadius="28" ClipToBounds="True" Background="#33FFFFFF">
+                                        <Panel>
+                                            <TextBlock Text="{Binding Initials}" FontSize="20" FontWeight="SemiBold"
+                                                       HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                       IsVisible="{Binding !HasPhoto}"/>
+                                            <Image Source="{Binding Photo}" Stretch="UniformToFill" IsVisible="{Binding HasPhoto}"/>
+                                        </Panel>
+                                    </Border>
+                                    <StackPanel Grid.Column="2" VerticalAlignment="Center" Spacing="2">
+                                        <TextBlock Text="{Binding Name}" FontSize="17" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
+                                        <TextBlock Text="{Binding Details}" FontSize="12" Opacity="0.8" TextWrapping="Wrap"/>
+                                        <TextBlock Text="{Binding Badge}" FontSize="11" Foreground="#8FC3FF" IsVisible="{Binding HasBadge}"/>
+                                    </StackPanel>
+                                </Grid>
+                            </Button>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+            <StackPanel Grid.Row="3" Spacing="10" IsVisible="{Binding IsBusy}" HorizontalAlignment="Center" Margin="0,8,0,0">
+                <Arc Classes="spinner" Width="28" Height="28" HorizontalAlignment="Center"/>
+                <TextBlock Text="{Binding StatusText}" FontSize="13" TextAlignment="Center" TextWrapping="Wrap"/>
+            </StackPanel>
+            <StackPanel Grid.Row="4" Spacing="8" Margin="0,8,0,0">
+                <Border IsVisible="{Binding HasError}" Background="#B3000000" BorderBrush="#E81123" BorderThickness="0,0,0,2" Padding="12,10">
+                    <TextBlock Text="{Binding ErrorText}" FontSize="13" TextAlignment="Center" TextWrapping="Wrap"/>
+                </Border>
+                <Button Classes="flat link" Content="Retour" HorizontalAlignment="Center" Command="{Binding CancelProfileCommand}"/>
+            </StackPanel>
+        </Grid>
 
         <!-- Coin inférieur gauche : retour à l'écran de verrouillage -->
         <Button Classes="flat corner"

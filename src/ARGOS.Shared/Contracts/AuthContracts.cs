@@ -11,6 +11,9 @@ public static class AccessLevels
     public const string Encadrement = "encadrement";
     public const string Administration = "administration";
 
+    /// <summary>Développeur d'ARGOS (identifiant Discord dans la configuration du serveur) : accès à tout.</summary>
+    public const string Developpeur = "developpeur";
+
     /// <summary>Rôle Discord « Accès RH/ADMIN » : gestion de la compagnie dans SIGTAO, tous les comptes-rendus.</summary>
     public const string RhAdmin = "rh-admin";
 
@@ -28,10 +31,11 @@ public static class AccessLevels
         => levels is not null && (levels.Contains(RhAdmin) || levels.Contains(Administration));
 
     /// <summary>Du plus élevé au plus bas, pour afficher le niveau principal.</summary>
-    public static readonly IReadOnlyList<string> ByRank = [Administration, RhAdmin, Encadrement, Operateur, Sapeur];
+    public static readonly IReadOnlyList<string> ByRank = [Developpeur, Administration, RhAdmin, Encadrement, Operateur, Sapeur];
 
     public static string Label(string level) => level switch
     {
+        Developpeur => "Développeur",
         Administration => "Administration",
         RhAdmin => "RH / Administration",
         Encadrement => "Encadrement",
@@ -52,11 +56,63 @@ public static class AccessLevels
 }
 
 /// <summary>Joueur connecté, tel que le serveur le renvoie à l'application.</summary>
+/// <remarks>
+/// Profils : un même compte Discord peut avoir plusieurs personnages (dossiers SIGTAO).
+/// Le profil principal garde l'identifiant Discord ; un autre profil a l'identifiant « discord~dossier »,
+/// si bien que sa messagerie, ses comptes-rendus, ses fichiers… sont ceux d'un compte distinct.
+/// </remarks>
 public sealed record ArgosUserDto(
     string UserId,
     string DisplayName,
     string? AvatarUrl,
-    IReadOnlyList<string> Levels);
+    IReadOnlyList<string> Levels,
+    string? ProfileId = null)
+{
+    public const char ProfileSeparator = '~';
+
+    /// <summary>Identifiant Discord du joueur, quel que soit le profil.</summary>
+    [System.Text.Json.Serialization.JsonIgnore]
+    public string DiscordId => DiscordOf(UserId);
+
+    public static string DiscordOf(string userId)
+    {
+        var i = userId.IndexOf(ProfileSeparator);
+        return i < 0 ? userId : userId[..i];
+    }
+
+    public static string ProfileUserId(string discordId, string dossierId) => $"{discordId}{ProfileSeparator}{dossierId}";
+}
+
+/// <summary>Un profil (personnage) proposé à la connexion : un dossier SIGTAO relié au compte Discord.</summary>
+public sealed class ArgosProfile
+{
+    public string Id { get; set; } = string.Empty;
+    /// <summary>« SGT DUPONT Jean »</summary>
+    public string Name { get; set; } = string.Empty;
+    public string Grade { get; set; } = string.Empty;
+    public string Affectation { get; set; } = string.Empty;
+    public string Fonction { get; set; } = string.Empty;
+    public string PhotoData { get; set; } = string.Empty;
+    public bool Primary { get; set; }
+
+    public string Details => string.Join(" · ", new[] { Grade, Affectation, Fonction }.Where(s => !string.IsNullOrWhiteSpace(s)));
+}
+
+/// <summary>Réponse à GET /api/me/profiles.</summary>
+public sealed class ProfilesResponse
+{
+    public List<ArgosProfile> Profiles { get; set; } = [];
+    /// <summary>Dernier profil choisi sur ce poste.</summary>
+    public string? SelectedId { get; set; }
+    /// <summary>Plusieurs profils : le joueur choisit à la connexion.</summary>
+    public bool MustChoose { get; set; }
+}
+
+/// <summary>Corps de POST /api/me/profile.</summary>
+public sealed class SelectProfileRequest
+{
+    public string Id { get; set; } = string.Empty;
+}
 
 /// <summary>Réponse à POST /auth/discord/session.</summary>
 public sealed record AuthSessionStartResponse(string SessionId, string AuthorizeUrl, DateTimeOffset ExpiresUtc);
