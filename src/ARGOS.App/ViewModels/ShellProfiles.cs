@@ -50,6 +50,14 @@ public sealed class ProfileChoice
     }
 }
 
+/// <summary>Un profil dans la liste de l'écran de connexion (en bas à gauche).</summary>
+public sealed class LoginProfileItem(ProfileChoice choice) : ViewModelBase
+{
+    private bool _isSelected;
+    public ProfileChoice Choice { get; } = choice;
+    public bool IsSelected { get => _isSelected; set => SetProperty(ref _isSelected, value); }
+}
+
 /// <summary>
 /// Choix du profil à la connexion : un compte Discord relié à plusieurs dossiers SIGTAO (personnages)
 /// choisit celui qu'il prend. Chaque profil est un compte distinct (messagerie, comptes-rendus, gardes…).
@@ -67,6 +75,7 @@ public sealed partial class ShellViewModel
         {
             if (!SetProperty(ref _isChoosingProfile, value)) return;
             OnPropertyChanged(nameof(ShowSignIn));
+            OnPropertyChanged(nameof(ShowLoginProfiles));
         }
     }
 
@@ -75,6 +84,73 @@ public sealed partial class ShellViewModel
 
     public RelayCommand ChooseProfileCommand { get; }
     public RelayCommand CancelProfileCommand { get; }
+    public RelayCommand PickLoginProfileCommand { get; }
+
+    // ===== Écran de connexion : profils du compte enregistré, comme les comptes de Windows 10 (en bas à gauche) =====
+
+    private ProfileChoice? _loginProfile;
+
+    /// <summary>Profils du compte Discord enregistré sur l'appareil (affichés seulement s'il y en a plusieurs).</summary>
+    public ObservableCollection<LoginProfileItem> LoginProfiles { get; } = [];
+    public bool HasLoginProfiles => LoginProfiles.Count > 1;
+    public bool ShowLoginProfiles => HasLoginProfiles && !IsChoosingProfile;
+
+    /// <summary>Profil sélectionné sur l'écran de connexion : ouvert directement par « Se connecter ».</summary>
+    public ProfileChoice? LoginProfile
+    {
+        get => _loginProfile;
+        private set
+        {
+            if (!SetProperty(ref _loginProfile, value)) return;
+            foreach (var item in LoginProfiles) item.IsSelected = ReferenceEquals(item.Choice, value);
+        }
+    }
+
+    /// <summary>Charge les profils du compte enregistré (session déjà valide) pour l'écran de connexion.</summary>
+    private async Task LoadLoginProfilesAsync()
+    {
+        if (!HasKnownAccount || IsBusy) return;
+        ProfilesResponse response;
+        try
+        {
+            if (!_sessionReady || string.IsNullOrWhiteSpace(_auth.SessionToken))
+                _sessionReady = await _auth.TryResumeAsync();
+            if (!_sessionReady) return;
+            response = await _auth.GetProfilesAsync();
+        }
+        catch
+        {
+            return;
+        }
+
+        var keep = LoginProfile?.Profile.Id ?? response.SelectedId;
+        LoginProfiles.Clear();
+        if (response.Profiles.Count > 1)
+            foreach (var p in response.Profiles)
+                LoginProfiles.Add(new LoginProfileItem(ProfileChoice.From(p, p.Id == response.SelectedId)));
+        OnPropertyChanged(nameof(HasLoginProfiles));
+        OnPropertyChanged(nameof(ShowLoginProfiles));
+
+        var selected = LoginProfiles.FirstOrDefault(i => i.Choice.Profile.Id == keep) ?? LoginProfiles.FirstOrDefault();
+        _loginProfile = null;
+        if (selected is not null) ShowLoginProfile(selected.Choice);
+        else LoginProfile = null;
+    }
+
+    private void ShowLoginProfile(ProfileChoice choice)
+    {
+        LoginProfile = choice;
+        DisplayName = choice.Name;
+        Subtitle = string.IsNullOrWhiteSpace(choice.Details) ? "BSPP" : choice.Details;
+        if (choice.Photo is not null) Avatar = choice.Photo;
+    }
+
+    private void PickLoginProfile(object? parameter)
+    {
+        if (IsBusy || parameter is not LoginProfileItem item) return;
+        ErrorText = null;
+        ShowLoginProfile(item.Choice);
+    }
 
     /// <summary>Après la connexion Discord : choix du profil s'il y en a plusieurs, puis bureau.</summary>
     private async Task ContinueWithProfileAsync(CancellationToken ct)
@@ -94,6 +170,17 @@ public sealed partial class ShellViewModel
         {
             await EnterDesktopAsync();
             return;
+        }
+
+        // Profil déjà choisi sur l'écran de connexion : ouvert directement.
+        if (LoginProfile is { } picked && profiles.Profiles.Any(p => p.Id == picked.Profile.Id))
+        {
+            StatusText = $"Ouverture du profil {picked.Name}…";
+            if (await _auth.SelectProfileAsync(picked.Profile.Id, ct))
+            {
+                await EnterDesktopAsync();
+                return;
+            }
         }
 
         Profiles.Clear();

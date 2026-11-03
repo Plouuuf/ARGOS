@@ -160,6 +160,50 @@
             </StackPanel>
         </Grid>
 
+        <!-- Profils du compte (plusieurs dossiers SIGTAO), comme la liste des comptes de Windows 10 en bas à gauche -->
+        <ItemsControl ItemsSource="{Binding LoginProfiles}"
+                      IsVisible="{Binding ShowLoginProfiles}"
+                      HorizontalAlignment="Left"
+                      VerticalAlignment="Bottom"
+                      Margin="16,0,16,76"
+                      MaxWidth="320">
+            <ItemsControl.Styles>
+                <Style Selector="Button.profile">
+                    <Setter Property="Background" Value="Transparent"/>
+                </Style>
+                <Style Selector="Button.profile.selected">
+                    <Setter Property="Background" Value="#4DFFFFFF"/>
+                </Style>
+            </ItemsControl.Styles>
+            <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                    <Button Classes="flat profile"
+                            Classes.selected="{Binding IsSelected}"
+                            HorizontalAlignment="Stretch"
+                            HorizontalContentAlignment="Left"
+                            Padding="8,6"
+                            Margin="0,0,0,4"
+                            Command="{Binding $parent[UserControl].DataContext.PickLoginProfileCommand}"
+                            CommandParameter="{Binding}">
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <Border Width="40" Height="40" CornerRadius="20" ClipToBounds="True" Background="#33FFFFFF">
+                                <Panel>
+                                    <TextBlock Text="{Binding Choice.Initials}" FontSize="14" FontWeight="SemiBold"
+                                               HorizontalAlignment="Center" VerticalAlignment="Center"
+                                               IsVisible="{Binding !Choice.HasPhoto}"/>
+                                    <Image Source="{Binding Choice.Photo}" Stretch="UniformToFill" IsVisible="{Binding Choice.HasPhoto}"/>
+                                </Panel>
+                            </Border>
+                            <StackPanel VerticalAlignment="Center">
+                                <TextBlock Text="{Binding Choice.Name}" FontSize="14" TextTrimming="CharacterEllipsis"/>
+                                <TextBlock Text="{Binding Choice.Profile.Grade}" FontSize="11" Opacity="0.75"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Button>
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+        </ItemsControl>
+
         <!-- Coin inférieur gauche : retour à l'écran de verrouillage -->
         <Button Classes="flat corner"
                 HorizontalAlignment="Left"

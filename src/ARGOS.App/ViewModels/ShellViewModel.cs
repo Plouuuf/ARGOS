@@ -60,6 +60,7 @@ public sealed partial class ShellViewModel : ViewModelBase
         QuitCommand = new RelayCommand(() => App.Quit());
         ChooseProfileCommand = new RelayCommand(p => _ = ChooseProfileAsync(p as ProfileChoice), _ => !IsBusy);
         CancelProfileCommand = new RelayCommand(CancelProfile);
+        PickLoginProfileCommand = new RelayCommand(PickLoginProfile);
 
         _realtime.ConnectionChanged += connected => Dispatcher.UIThread.Post(() =>
         {
@@ -380,7 +381,10 @@ public sealed partial class ShellViewModel : ViewModelBase
         {
             _sessionReady = await _auth.TryResumeAsync();
             if (_auth.User is not null)
+            {
                 await ApplyUserAsync(_auth.User);
+                await LoadLoginProfilesAsync();
+            }
             else
                 ResetIdentity();
         }
@@ -397,6 +401,7 @@ public sealed partial class ShellViewModel : ViewModelBase
         if (Screen is not (ShellScreen.Lock or ShellScreen.Boot)) return;
         ErrorText = null;
         Screen = ShellScreen.Login;
+        _ = LoadLoginProfilesAsync();
     }
 
     private void BackToLock()
@@ -643,6 +648,10 @@ public sealed partial class ShellViewModel : ViewModelBase
     private void ResetIdentity()
     {
         HasKnownAccount = false;
+        LoginProfiles.Clear();
+        LoginProfile = null;
+        OnPropertyChanged(nameof(HasLoginProfiles));
+        OnPropertyChanged(nameof(ShowLoginProfiles));
         DisplayName = "ARGOS";
         Subtitle = "Brigade de sapeurs-pompiers de Paris";
         Avatar = null;
