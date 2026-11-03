@@ -70,7 +70,7 @@
                                 <ComboBox Classes="sg" ItemsSource="{Binding Grades}" SelectedItem="{Binding Record.Grade}"/>
                             </StackPanel>
                             <StackPanel Grid.Row="2" Grid.Column="2">
-                                <TextBlock Classes="label" Text="DATE DE PRISE DE GRADE"/>
+                                <TextBlock Classes="label" Text="DATE DE PREMIÈRE SESSION"/>
                                 <CalendarDatePicker SelectedDate="{Binding GradeDate}" HorizontalAlignment="Stretch" SelectedDateFormat="Custom"
                                                     CustomDateFormatString="dd/MM/yyyy" Watermark="jj/mm/aaaa" Background="White"/>
                             </StackPanel>

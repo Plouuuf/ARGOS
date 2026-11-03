@@ -79,7 +79,7 @@
                             </Border>
                             <Border Classes="row">
                                 <Grid ColumnDefinitions="Auto,*">
-                                    <TextBlock Classes="label" Text="Prise de grade"/>
+                                    <TextBlock Classes="label" Text="Première session"/>
                                     <CalendarDatePicker Grid.Column="1" SelectedDate="{Binding GradeDate}" SelectedDateFormat="Custom" CustomDateFormatString="dd/MM/yyyy"
                                                         Watermark="jj/mm/aaaa" HorizontalAlignment="Right" BorderThickness="0" Background="Transparent"/>
                                 </Grid>

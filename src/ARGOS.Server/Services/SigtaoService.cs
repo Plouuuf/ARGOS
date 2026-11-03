@@ -740,7 +740,7 @@ public sealed class SigtaoService(OdeDatabase db, RealtimeHub hub)
         Check("statut", a.Status, b.Status);
         Check("adresse électronique", a.Email, b.Email);
         Check("téléphone", a.Telephone, b.Telephone);
-        Check("prise de grade", a.GradeDate?.ToString("dd/MM/yyyy"), b.GradeDate?.ToString("dd/MM/yyyy"));
+        Check("date de première session", a.GradeDate?.ToString("dd/MM/yyyy"), b.GradeDate?.ToString("dd/MM/yyyy"));
         Check("arrivée", a.ArrivalDate?.ToString("dd/MM/yyyy"), b.ArrivalDate?.ToString("dd/MM/yyyy"));
         if (a.PhotoData != b.PhotoData) changes.Add("photo d'identité");
         if (a.DiscordUserId != b.DiscordUserId) changes.Add("joueur Discord associé");
