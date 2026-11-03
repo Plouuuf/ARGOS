@@ -1,4 +1,5 @@
 using Argos.Shared.Contracts;
+using static Argos.Server.Services.OdeDatabase;
 
 namespace Argos.Server.Services;
 
