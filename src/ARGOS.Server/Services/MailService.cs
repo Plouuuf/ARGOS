@@ -47,8 +47,9 @@ public sealed class MailService(OdeDatabase db, RealtimeHub hub)
     public UserIdentity Identity(ArgosUserDto user)
     {
         var identity = db.GetDoc<UserIdentity>(RemiseTables.Identities, user.UserId) ?? new UserIdentity();
-        // Profil relié à un dossier SIGTAO nommé : l'identité est celle du dossier (pas de formulaire).
-        if (!identity.Complete && ProfileService.DossierOf(db, user) is { } dossier
+        // Profil relié à un dossier SIGTAO nommé : l'identité est celle du dossier (pas de formulaire),
+        // comme l'adresse mail, pour que le nom et l'adresse affichés correspondent toujours.
+        if (ProfileService.DossierOf(db, user) is { } dossier
             && !string.IsNullOrWhiteSpace(dossier.Prenom) && !string.IsNullOrWhiteSpace(dossier.Nom))
         {
             identity.Prenom = UserIdentity.FormatPrenom(dossier.Prenom);

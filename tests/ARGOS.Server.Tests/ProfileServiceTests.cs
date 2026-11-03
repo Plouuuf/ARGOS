@@ -29,9 +29,9 @@ public sealed class ProfileServiceTests : IDisposable
         _mail = new MailService(_db, new RealtimeHub(oauth, NullLogger<RealtimeHub>.Instance));
 
         var t = DateTimeOffset.UtcNow;
-        Save(new MilitaryRecord { Id = "a", Nom = "Dupont", Prenom = "Jean", Grade = "Sergent", DiscordUserId = "42", CreatedAt = t.AddDays(-10) });
-        Save(new MilitaryRecord { Id = "b", Nom = "Martin", Prenom = "Léa", Grade = "Caporal", DiscordUserId = "42", CreatedAt = t });
-        Save(new MilitaryRecord { Id = "c", Nom = "Ancien", Prenom = "Paul", Grade = "Sapeur", DiscordUserId = "42", CreatedAt = t, Status = MilitaryStatuses.Parti });
+        Save(new MilitaryRecord { Id = "a", Nom = "Dupont", Prenom = "Jean", Grade = "Sergent", DiscordUserId = "42", CreatedAt = t.AddDays(-10), UpdatedAt = t });
+        Save(new MilitaryRecord { Id = "b", Nom = "Martin", Prenom = "Léa", Grade = "Caporal", DiscordUserId = "42", CreatedAt = t, UpdatedAt = t.AddDays(-1) });
+        Save(new MilitaryRecord { Id = "c", Nom = "Ancien", Prenom = "Paul", Grade = "Sapeur", DiscordUserId = "42", CreatedAt = t, UpdatedAt = t.AddDays(1), Status = MilitaryStatuses.Parti });
     }
 
     private void Save(MilitaryRecord r) => _db.SaveDoc(OdeDatabase.RemiseTables.Military, r.Id, DateTimeOffset.UtcNow, r);
@@ -68,6 +68,9 @@ public sealed class ProfileServiceTests : IDisposable
         Assert.Equal("42", resolver[mailA]);
         Assert.Equal("42~b", resolver[mailB]);
         Assert.True(_mail.Identity(second).Complete);
+
+        // Le nom affiché suit toujours le dossier, comme l'adresse.
+        Assert.Equal("Jean DUPONT", _mail.Identity(plain).FullName);
 
         // Retour au profil principal.
         Assert.Equal("42", _profiles.Select(_token, Joueur, "a")!.UserId);

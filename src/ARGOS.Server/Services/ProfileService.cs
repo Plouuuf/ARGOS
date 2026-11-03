@@ -29,12 +29,15 @@ public sealed class ProfileService(OdeDatabase db, PersistentDiscordSessionStore
         => PrimaryId(db.Docs<MilitaryRecord>(RemiseTables.Military).Where(r => r.DiscordUserId == discordId),
             SigtaoAccess.AccountOf(db, discordId));
 
+    /// <summary>
+    /// Dossier principal : celui du compte SIGTAO s'il est en activité, sinon le dossier actif modifié le plus récemment
+    /// (comme avant les profils). Un dossier « Parti » ou « Archivé » n'est jamais le dossier principal.
+    /// </summary>
     private static string? PrimaryId(IEnumerable<MilitaryRecord> linked, UserAccount? account)
     {
-        var list = linked.ToList();
-        if (account is not null && list.FirstOrDefault(r => r.Id == account.DossierId) is { } fromAccount) return fromAccount.Id;
-        return list.Where(IsActive).OrderBy(r => r.CreatedAt).ThenBy(r => r.Id, StringComparer.Ordinal).FirstOrDefault()?.Id
-               ?? list.OrderBy(r => r.CreatedAt).ThenBy(r => r.Id, StringComparer.Ordinal).FirstOrDefault()?.Id;
+        var active = linked.Where(IsActive).ToList();
+        if (account is not null && active.FirstOrDefault(r => r.Id == account.DossierId) is { } fromAccount) return fromAccount.Id;
+        return active.OrderByDescending(r => r.UpdatedAt).ThenBy(r => r.Id, StringComparer.Ordinal).FirstOrDefault()?.Id;
     }
 
     /// <summary>Identifiant ARGOS du titulaire d'un dossier (messagerie, notifications).</summary>
