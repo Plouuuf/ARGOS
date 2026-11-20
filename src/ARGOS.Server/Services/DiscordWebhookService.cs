@@ -114,11 +114,13 @@ public sealed class DiscordWebhookService(IOptionsMonitor<WebhookOptions> option
                 ? d.ToString("dddd d MMMM yyyy", CultureInfo.GetCultureInfo("fr-FR")) : feuille.Date;
             var fileName = $"Garde-{feuille.Date}.png";
             var chef = feuille.Service.FirstOrDefault(a => a.Poste == GardePostes.ChefDeGarde && a.Pourvu)?.Nom;
+            var officier = feuille.Service.FirstOrDefault(a => a.Poste == GardePostes.OfficierDeGarde && a.Pourvu)?.Nom;
             var armes = feuille.Engins.Where(e => e.Arme).Select(e => $"{e.Engin} ({e.Postes.Count(p => p.Pourvu)}/{e.Postes.Count})").ToList();
             var nonArmes = feuille.Engins.Where(e => !e.Arme).Select(e => e.Engin).ToList();
             var fields = new List<object>
             {
                 new { name = "Chef de garde incendie", value = Or(chef), inline = true },
+                new { name = "Officier de garde compagnie", value = Or(officier), inline = true },
                 new { name = "Effectif", value = feuille.Effectif.ToString(), inline = true },
                 new { name = "Horaires", value = Or(feuille.Horaires), inline = true },
                 new { name = "Engins armés", value = Limit(Or(string.Join("\n", armes)), 1024), inline = false }

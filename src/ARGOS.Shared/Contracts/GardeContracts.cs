@@ -19,11 +19,12 @@ public static class GardeStatuts
 public static class GardePostes
 {
     public const string ChefDeGarde = "Chef de garde incendie";
+    public const string OfficierDeGarde = "Officier de garde compagnie";
 
     /// <summary>Piquets complémentaires (personnels de service de la journée).</summary>
     public static readonly IReadOnlyList<string> Service =
     [
-        "Caporal de jour", "Sergent de jour", ChefDeGarde, "Garde remise", "Garde cuisine", "Sous-officier remise",
+        "Caporal de jour", "Sergent de jour", ChefDeGarde, OfficierDeGarde, "Garde remise", "Garde cuisine", "Sous-officier remise",
         "Stationnaire", "CSO"
     ];
 
@@ -50,6 +51,7 @@ public static class GardePostes
         "Caporal de jour" => "CPLJ",
         "Sergent de jour" => "SGTJ",
         ChefDeGarde => "CGI",
+        OfficierDeGarde => "OGC",
         "Garde remise" => "REM",
         "Garde cuisine" => "CUIS",
         "Sous-officier remise" => "SOREM",
