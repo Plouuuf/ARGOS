@@ -126,7 +126,8 @@ jobs:
           </plist>
           PLIST
           # Icône .icns depuis le logo (outil png2icns de libicns).
-          sudo apt-get install -y -qq icnsutils python3-pil >/dev/null
+          sudo apt-get update -qq >/dev/null || true
+          sudo apt-get install -y -qq --fix-missing icnsutils python3-pil >/dev/null
           python3 -c "
           from PIL import Image
           im = Image.open('src/ARGOS.App/Assets/argos-icon.png').convert('RGBA')
