@@ -479,6 +479,42 @@ public class SigtaoScreenshots
             Assert.Single(vm.ServiceCandidates);                                     // m3 seul n'est pas encore au casernement
             Capture(new Argos.Views.Apps.Sigtao.SigtaoAppView { DataContext = vm }, 1300, 640, "sigtao-services");
             Capture(new Argos.Views.Mobile.Sigtao.SigtaoMobileView { DataContext = vm }, 390, 844, "sigtao-services-iphone");
+
+            // Statistiques de présence aux gardes (réponse du serveur simulée, données fictives).
+            vm.CurrentPage = Argos.ViewModels.Sigtao.SigtaoAppViewModel.Page.Statistiques;
+            Assert.True(vm.IsStatistiques);
+            Assert.True(vm.IsStats30);                                              // période par défaut
+            string Jour(int offset) => DateTime.Today.AddDays(offset).ToString("yyyy-MM-dd");
+            StatistiqueMilitaire Stat(string id, string grade, string nom, string prenom, int rang, int gardes, int derniere, string poste, int fois) => new()
+            {
+                MilitaryId = id, Grade = grade, Nom = nom, Prenom = prenom, Rang = rang, Gardes = gardes,
+                DerniereGarde = derniere > 0 ? string.Empty : Jour(derniere), PosteFrequent = poste, PosteFrequentFois = fois
+            };
+            vm.ApplyStatistiques(new SigtaoStatistiques
+            {
+                Jours = 30, Du = Jour(-29), Au = Jour(0), GardesValidees = 28, MilitairesPresents = 9, MoyennePresents = 7.4,
+                Classement =
+                [
+                    Stat("m1", "Sergent", "Santos", "Diego", 1, 19, -2, "C/A VSAV", 14),
+                    Stat("m2", "Caporal", "Martin", "Paul", 2, 17, 0, "COND VSAV", 12),
+                    Stat("m4", "Caporal-chef", "Garnier", "Julie", 3, 15, 0, "C/A PSE", 9),
+                    Stat("m5", "Sapeur de 1re classe", "Rousseau", "Lucas", 3, 15, -1, "1CE PSE", 8),
+                    Stat("m3", "Capitaine", "Leroy", "Marc", 5, 11, 0, GardePostes.ChefDeGarde, 11),
+                    Stat("m6", "Sergent-chef", "Fontaine", "Hugo", 6, 8, -5, "Sous-officier remise", 6),
+                    Stat("m7", "Sapeur de 2e classe", "Lambert", "Emma", 7, 5, -3, "EQP VSAV", 5),
+                    Stat("m8", "Sapeur de 1re classe", "Moreau", "Théo", 8, 2, -18, "COND PSE", 2),
+                    Stat("m9", "Caporal", "Girard", "Inès", 9, 1, -26, "Renfort", 1),
+                    Stat("m10", "Sapeur de 2e classe", "Perrin", "Nathan", 0, 0, -45, "", 0),
+                    Stat("m11", "Sapeur de 1re classe", "Chevalier", "Lina", 0, 0, 1, "", 0)
+                ]
+            });
+            Assert.Equal(11, vm.StatsRows.Count);
+            Assert.Equal("28", vm.StatsGardes);
+            Assert.Equal("2", vm.StatsAbsents);
+            Assert.True(vm.StatsRows[^1].IsAbsent);
+            Assert.Equal("Aucune garde validée", vm.StatsRows[^1].DerniereGardeLong);
+            Capture(new Argos.Views.Apps.Sigtao.SigtaoAppView { DataContext = vm }, 1300, 820, "sigtao-statistiques");
+            Capture(new Argos.Views.Mobile.Sigtao.SigtaoMobileView { DataContext = vm }, 390, 844, "sigtao-statistiques-iphone");
             var feuille = Argos.Services.ArgosSession.Current.Sigtao.Snapshot.Gardes[0];
             Capture(new Argos.Views.Apps.Sigtao.GardePrintView { DataContext = new Argos.ViewModels.Sigtao.GardePrintViewModel(desktop, "p", feuille) },
                 900, 1250, "sigtao-feuille-de-garde-impression");

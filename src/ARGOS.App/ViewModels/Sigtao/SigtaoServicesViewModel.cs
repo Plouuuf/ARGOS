@@ -27,7 +27,7 @@ public sealed class ServiceItemVm(string id, string label, string roles, RelayCo
     public bool IsSelected { get => _isSelected; set => SetProperty(ref _isSelected, value); }
 }
 
-/// <summary>Un militaire affecté au service affiché : grade, nom, rôle (modifiable), observations (Casernement).</summary>
+/// <summary>Un militaire affecté au service affiché : grade, nom, rôle (modifiable), observations (texte libre).</summary>
 public sealed class ServiceMemberVm : ViewModelBase
 {
     private readonly Func<ServiceMemberVm, string, string, Task<bool>> _save;
@@ -36,13 +36,12 @@ public sealed class ServiceMemberVm : ViewModelBase
     private string _savedObservations;
     private bool _busy;
 
-    public ServiceMemberVm(string militaryId, IReadOnlyList<string> roles, bool canEdit, bool hasObservations,
+    public ServiceMemberVm(string militaryId, IReadOnlyList<string> roles, bool canEdit,
         Func<ServiceMemberVm, string, string, Task<bool>> save, Action<ServiceMemberVm> remove)
     {
         MilitaryId = militaryId;
         Roles = roles;
         CanEdit = canEdit;
-        HasObservations = hasObservations;
         _save = save;
         _role = string.Empty;
         _observations = _savedObservations = string.Empty;
@@ -54,7 +53,6 @@ public sealed class ServiceMemberVm : ViewModelBase
     public IReadOnlyList<string> Roles { get; }
     public bool CanEdit { get; }
     public bool IsReadOnly => !CanEdit;
-    public bool HasObservations { get; }
     public RelayCommand RemoveCommand { get; }
     public RelayCommand SaveObservationsCommand { get; }
 
@@ -171,7 +169,6 @@ public sealed partial class SigtaoAppViewModel
 
     public bool HasSelectedService => SelectedService is not null;
     public string SelectedServiceTitle => SelectedService?.Label ?? string.Empty;
-    public bool SelectedServiceHasObservations => SelectedService?.HasObservations == true;
     public IReadOnlyList<string> ServiceRoles => SelectedService?.Roles ?? Array.Empty<string>();
     public bool CanEditServices => Rights.ManageCompany;
     public bool HasServiceMembers => ServiceMembers.Count > 0;
@@ -214,7 +211,7 @@ public sealed partial class SigtaoAppViewModel
         ServiceNewMember = null;
         ServiceNewRole = SelectedService?.Roles.LastOrDefault();          // rôle de base du service par défaut
         ServiceMembers.Clear();
-        foreach (var n in new[] { nameof(HasSelectedService), nameof(SelectedServiceTitle), nameof(SelectedServiceHasObservations), nameof(ServiceRoles) })
+        foreach (var n in new[] { nameof(HasSelectedService), nameof(SelectedServiceTitle), nameof(ServiceRoles) })
             OnPropertyChanged(n);
         BuildServices();
     }
@@ -254,7 +251,7 @@ public sealed partial class SigtaoAppViewModel
         var rows = members.Select(x =>
         {
             if (!existing.TryGetValue(x.Member.MilitaryId, out var vm) || vm.CanEdit != CanEditServices)
-                vm = new ServiceMemberVm(x.Member.MilitaryId, def.Roles, CanEditServices, def.HasObservations, SaveServiceMemberAsync, RemoveServiceMember);
+                vm = new ServiceMemberVm(x.Member.MilitaryId, def.Roles, CanEditServices, SaveServiceMemberAsync, RemoveServiceMember);
             vm.Update(x.Record, x.Member);
             return vm;
         }).ToList();

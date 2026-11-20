@@ -539,6 +539,14 @@ public sealed class SigtaoService(OdeDatabase db, RealtimeHub hub)
     public FeuilleGarde? Garde(string id) => db.GetDoc<FeuilleGarde>(RemiseTables.Gardes, id);
 
     /// <summary>
+    /// Statistiques de présence aux gardes : feuilles validées des <paramref name="jours"/> derniers jours
+    /// (0 = depuis toujours), classement des dossiers en activité (y compris ceux sans garde).
+    /// </summary>
+    public SigtaoStatistiques Statistiques(int jours, DateTime? today = null)
+        => GardeStatistiquesCalcul.Compute(db.Docs<MilitaryRecord>(RemiseTables.Military), db.Docs<FeuilleGarde>(RemiseTables.Gardes),
+            jours, today ?? DateTime.Today);
+
+    /// <summary>
     /// Feuille validée : chaque militaire présent reçoit le jour de garde comme « dernière garde »,
     /// sauf s'il a déjà une garde plus récente (la date ne recule jamais).
     /// </summary>
@@ -565,7 +573,7 @@ public sealed class SigtaoService(OdeDatabase db, RealtimeHub hub)
     }
 
     /// <summary>
-    /// Ajoute un militaire (dossier en activité) à un service, change son rôle ou ses observations (Casernement),
+    /// Ajoute un militaire (dossier en activité) à un service, change son rôle ou ses observations (texte libre, tous services),
     /// ou l'en retire. Réservé à la gestion de la compagnie, comme les dossiers.
     /// </summary>
     public async Task<OdeResult> SaveServiceMemberAsync(ArgosUserDto user, ServiceMemberRequest request)
@@ -578,7 +586,7 @@ public sealed class SigtaoService(OdeDatabase db, RealtimeHub hub)
         var militaryId = (request.MilitaryId ?? string.Empty).Trim();
         if (militaryId.Length == 0)
             return new(false, "Choisis le militaire.");
-        var observations = def.HasObservations ? (request.Observations ?? string.Empty).Trim() : string.Empty;
+        var observations = (request.Observations ?? string.Empty).Trim();
         if (observations.Length > 2000)
             return new(false, "Observations trop longues (2 000 caractères maximum).");
 

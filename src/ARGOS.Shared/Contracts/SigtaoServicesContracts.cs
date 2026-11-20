@@ -6,7 +6,8 @@ namespace Argos.Shared.Contracts;
 // =====================================================================
 
 /// <summary>Un service de la compagnie et les rôles qu'on peut y tenir.</summary>
-public sealed record SigtaoServiceDefinition(string Id, string Label, IReadOnlyList<string> Roles, bool HasObservations);
+/// <remarks>Chaque membre, quel que soit le service, a une colonne « Observations » en texte libre.</remarks>
+public sealed record SigtaoServiceDefinition(string Id, string Label, IReadOnlyList<string> Roles);
 
 /// <summary>Services de la compagnie (liste fixe).</summary>
 public static class SigtaoServices
@@ -18,11 +19,10 @@ public static class SigtaoServices
 
     public static readonly IReadOnlyList<SigtaoServiceDefinition> All =
     [
-        new(Remise, "Service REMISE", ["Sous-officier de remise", "Caporal de remise", "Garde-remise"], false),
-        new(Instruction, "Service Instruction", ["Sous-officier d'instruction", "Caporal d'instruction", "Instructeur"], false),
-        // Casernement : une colonne « Observations » en texte libre par membre.
-        new(Casernement, "Service Casernement", ["Sous-officier de casernement", "Caporal de casernement", "Effectif"], true),
-        new(Soa, "Sous-officier d'active (SOA)", ["SOA CIE", "Secrétaire SOA"], false)
+        new(Remise, "Service REMISE", ["Sous-officier de remise", "Caporal de remise", "Garde-remise"]),
+        new(Instruction, "Service Instruction", ["Sous-officier d'instruction", "Caporal d'instruction", "Instructeur"]),
+        new(Casernement, "Service Casernement", ["Sous-officier de casernement", "Caporal de casernement", "Effectif"]),
+        new(Soa, "Sous-officier d'active (SOA)", ["SOA CIE", "Secrétaire SOA"])
     ];
 
     public static SigtaoServiceDefinition? Find(string? id) => All.FirstOrDefault(s => s.Id == id);
@@ -34,7 +34,7 @@ public sealed class ServiceMember
     /// <summary>Identifiant du dossier militaire.</summary>
     public string MilitaryId { get; set; } = string.Empty;
     public string Role { get; set; } = string.Empty;
-    /// <summary>Texte libre (service Casernement uniquement).</summary>
+    /// <summary>Texte libre (tous les services).</summary>
     public string Observations { get; set; } = string.Empty;
     public DateTimeOffset AddedAt { get; set; }
     public string UpdatedBy { get; set; } = string.Empty;

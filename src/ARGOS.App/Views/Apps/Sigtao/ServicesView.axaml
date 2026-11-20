@@ -79,7 +79,7 @@
                                 <TextBlock Text="Grade"/>
                                 <TextBlock Grid.Column="1" Text="Nom"/>
                                 <TextBlock Grid.Column="2" Text="Rôle dans le service"/>
-                                <TextBlock Grid.Column="3" Text="Observations" IsVisible="{Binding SelectedServiceHasObservations}"/>
+                                <TextBlock Grid.Column="3" Text="Observations"/>
                                 <TextBlock Grid.Column="4" Text=""/>
                             </Grid>
                         </Border>
@@ -103,9 +103,8 @@
                                                                   IsVisible="{Binding CanEdit}"/>
                                                         <TextBlock Classes="cell" Text="{Binding Role}" IsVisible="{Binding IsReadOnly}"/>
                                                     </Panel>
-                                                    <!-- Casernement uniquement : texte libre ; « Enregistrer » apparaît après modification. -->
-                                                    <Grid Grid.Column="3" ColumnDefinitions="*,Auto" Margin="0,0,10,0" VerticalAlignment="Center"
-                                                          IsVisible="{Binding HasObservations}">
+                                                    <!-- Observations : texte libre (tous les services) ; « Enregistrer » apparaît après modification. -->
+                                                    <Grid Grid.Column="3" ColumnDefinitions="*,Auto" Margin="0,0,10,0" VerticalAlignment="Center">
                                                         <TextBox Classes="sg" Text="{Binding Observations}" IsReadOnly="{Binding IsReadOnly}"
                                                                  AcceptsReturn="True" TextWrapping="Wrap" Watermark="Observations"/>
                                                         <Button Grid.Column="1" Classes="sg" Content="Enregistrer" Padding="8,4" FontSize="11.5" Margin="6,0,0,0"

@@ -1,0 +1,110 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="Argos.Views.Apps.Sigtao.StatistiquesView">
+    <!-- SIGTAO : présence aux gardes d'après les feuilles validées (DataContext = SigtaoAppViewModel). -->
+    <DockPanel Margin="22,18">
+        <StackPanel DockPanel.Dock="Top">
+            <TextBlock Classes="h1" Text="Statistiques de garde"/>
+            <TextBlock Classes="muted" Margin="0,-6,0,12" TextWrapping="Wrap"
+                       Text="Présence aux gardes d'après les feuilles de garde validées : une garde par feuille où le militaire apparaît, quel que soit le nombre de postes tenus. Les militaires sans garde sur la période sont en bas du classement."/>
+
+            <!-- Période -->
+            <Border Classes="card" Padding="12,10">
+                <Grid ColumnDefinitions="Auto,6,Auto,6,Auto,6,Auto,16,*">
+                    <Button Classes="sg" Classes.light="{Binding !IsStats7}" Content="7 jours" Command="{Binding StatsPeriodCommand}" CommandParameter="7"/>
+                    <Button Grid.Column="2" Classes="sg" Classes.light="{Binding !IsStats30}" Content="30 jours" Command="{Binding StatsPeriodCommand}" CommandParameter="30"/>
+                    <Button Grid.Column="4" Classes="sg" Classes.light="{Binding !IsStats90}" Content="90 jours" Command="{Binding StatsPeriodCommand}" CommandParameter="90"/>
+                    <Button Grid.Column="6" Classes="sg" Classes.light="{Binding !IsStatsAll}" Content="Depuis toujours" Command="{Binding StatsPeriodCommand}" CommandParameter="0"/>
+                    <TextBlock Grid.Column="8" Classes="muted" Text="{Binding StatsPeriodLabel}" VerticalAlignment="Center" TextWrapping="Wrap"/>
+                </Grid>
+            </Border>
+
+            <!-- Indicateurs -->
+            <Grid ColumnDefinitions="*,14,*,14,*,14,*">
+                <Border Classes="card">
+                    <StackPanel Spacing="2">
+                        <TextBlock Text="GARDES VALIDÉES" FontSize="10.5" FontWeight="Bold" Foreground="#8A96A5"/>
+                        <TextBlock Text="{Binding StatsGardes}" FontSize="26" FontWeight="Bold" Foreground="#13294B"/>
+                        <TextBlock Classes="muted" Text="feuilles de garde sur la période"/>
+                    </StackPanel>
+                </Border>
+                <Border Grid.Column="2" Classes="card">
+                    <StackPanel Spacing="2">
+                        <TextBlock Text="MILITAIRES PRÉSENTS" FontSize="10.5" FontWeight="Bold" Foreground="#8A96A5"/>
+                        <TextBlock Text="{Binding StatsPresents}" FontSize="26" FontWeight="Bold" Foreground="#1F5FAD"/>
+                        <TextBlock Classes="muted" Text="différents, au moins une garde"/>
+                    </StackPanel>
+                </Border>
+                <Border Grid.Column="4" Classes="card">
+                    <StackPanel Spacing="2">
+                        <TextBlock Text="MOYENNE PAR GARDE" FontSize="10.5" FontWeight="Bold" Foreground="#8A96A5"/>
+                        <TextBlock Text="{Binding StatsMoyenne}" FontSize="26" FontWeight="Bold" Foreground="#13294B"/>
+                        <TextBlock Classes="muted" Text="militaires présents par feuille"/>
+                    </StackPanel>
+                </Border>
+                <Border Grid.Column="6" Classes="card">
+                    <StackPanel Spacing="2">
+                        <TextBlock Text="SANS GARDE" FontSize="10.5" FontWeight="Bold" Foreground="#8A96A5"/>
+                        <TextBlock Text="{Binding StatsAbsents}" FontSize="26" FontWeight="Bold" Foreground="#C8102E"/>
+                        <TextBlock Classes="muted" Text="dossiers en activité absents"/>
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </StackPanel>
+
+        <!-- Classement -->
+        <Border Classes="card" Padding="0">
+            <DockPanel>
+                <Border DockPanel.Dock="Top" Classes="thead">
+                    <Grid ColumnDefinitions="56,140,*,80,170,120,220">
+                        <TextBlock Text="Rang"/>
+                        <TextBlock Grid.Column="1" Text="Grade"/>
+                        <TextBlock Grid.Column="2" Text="Nom"/>
+                        <TextBlock Grid.Column="3" Text="Gardes"/>
+                        <TextBlock Grid.Column="4" Text=""/>
+                        <TextBlock Grid.Column="5" Text="Dernière garde"/>
+                        <TextBlock Grid.Column="6" Text="Poste le plus tenu"/>
+                    </Grid>
+                </Border>
+                <ScrollViewer>
+                    <StackPanel>
+                        <ItemsControl ItemsSource="{Binding StatsRows}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Button Classes="trow" Command="{Binding OpenCommand}" Padding="10,6">
+                                        <Grid ColumnDefinitions="56,140,*,80,170,120,220">
+                                            <Panel HorizontalAlignment="Left" VerticalAlignment="Center">
+                                                <Border Background="#13294B" CornerRadius="11" MinWidth="22" Height="22" Padding="6,0" IsVisible="{Binding IsPodium}">
+                                                    <TextBlock Text="{Binding Rang}" Foreground="White" FontSize="11.5" FontWeight="Bold"
+                                                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                </Border>
+                                                <TextBlock Classes="cell" Text="{Binding Rang}" FontWeight="SemiBold" Foreground="#5E6B7A" Margin="7,0,0,0"
+                                                           IsVisible="{Binding !IsPodium}"/>
+                                            </Panel>
+                                            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                                                <Image Source="{Binding GradeIcon}" Width="22" Height="22"/>
+                                                <TextBlock Classes="cell" Text="{Binding GradeShort}" FontWeight="SemiBold"/>
+                                            </StackPanel>
+                                            <TextBlock Grid.Column="2" Classes="cell" Text="{Binding Name}" FontWeight="SemiBold" Foreground="#13294B"/>
+                                            <Panel Grid.Column="3" VerticalAlignment="Center">
+                                                <TextBlock Classes="cell" Text="{Binding Gardes}" FontSize="14" FontWeight="Bold" Foreground="#1F5FAD"
+                                                           IsVisible="{Binding !IsAbsent}"/>
+                                                <TextBlock Classes="cell" Text="0" FontSize="14" FontWeight="Bold" Foreground="#C8102E"
+                                                           IsVisible="{Binding IsAbsent}"/>
+                                            </Panel>
+                                            <ProgressBar Grid.Column="4" Minimum="0" Maximum="{Binding Max}" Value="{Binding Gardes}" Height="8" MinHeight="8"
+                                                         Margin="0,0,16,0" VerticalAlignment="Center" CornerRadius="4" Foreground="#1F5FAD" Background="#E3ECF8"/>
+                                            <TextBlock Grid.Column="5" Classes="cell" Text="{Binding DerniereGarde}"/>
+                                            <TextBlock Grid.Column="6" Classes="cell" Text="{Binding Poste}" Foreground="#5E6B7A"/>
+                                        </Grid>
+                                    </Button>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <TextBlock Classes="muted" Margin="12,10" Text="Aucun dossier en activité." IsVisible="{Binding !HasStatsRows}"/>
+                    </StackPanel>
+                </ScrollViewer>
+            </DockPanel>
+        </Border>
+    </DockPanel>
+</UserControl>

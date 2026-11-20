@@ -205,7 +205,7 @@ public sealed class SigtaoServiceTests : IDisposable
         Assert.True((await _sigtao.SaveServiceMemberAsync(Chef, new ServiceMemberRequest { ServiceId = SigtaoServices.Remise, MilitaryId = hugo, Role = "Caporal de remise" })).Ok);
         Assert.Equal("Caporal de remise", _sigtao.Snapshot(Chef).Services.Single(s => s.Id == SigtaoServices.Remise).Members.Single().Role);
 
-        // Casernement : observations libres ; ignorées dans les autres services.
+        // Observations libres dans tous les services (Casernement comme les autres), espaces retirés.
         var caserne = await _sigtao.SaveServiceMemberAsync(Chef, new ServiceMemberRequest
         {
             ServiceId = SigtaoServices.Casernement, MilitaryId = hugo, Role = "Effectif", Observations = "  Chambre 12, clés remises  "
@@ -213,11 +213,16 @@ public sealed class SigtaoServiceTests : IDisposable
         Assert.True(caserne.Ok, caserne.Error);
         Assert.True((await _sigtao.SaveServiceMemberAsync(Chef, new ServiceMemberRequest
         {
-            ServiceId = SigtaoServices.Instruction, MilitaryId = hugo, Role = "Instructeur", Observations = "Ignoré"
+            ServiceId = SigtaoServices.Instruction, MilitaryId = hugo, Role = "Instructeur", Observations = " Moniteur PSE1 "
         })).Ok);
         var services = _sigtao.Snapshot(Chef).Services;
         Assert.Equal("Chambre 12, clés remises", services.Single(s => s.Id == SigtaoServices.Casernement).Members.Single().Observations);
-        Assert.Equal("", services.Single(s => s.Id == SigtaoServices.Instruction).Members.Single().Observations);
+        Assert.Equal("Moniteur PSE1", services.Single(s => s.Id == SigtaoServices.Instruction).Members.Single().Observations);
+        // Limite de 2 000 caractères, quel que soit le service.
+        Assert.False((await _sigtao.SaveServiceMemberAsync(Chef, new ServiceMemberRequest
+        {
+            ServiceId = SigtaoServices.Instruction, MilitaryId = hugo, Role = "Instructeur", Observations = new string('x', 2001)
+        })).Ok);
         Assert.Equal(3, services.Count(s => s.Members.Any(m => m.MilitaryId == hugo)));
 
         // Retrait : uniquement du service visé ; second retrait refusé.
@@ -268,6 +273,93 @@ public sealed class SigtaoServiceTests : IDisposable
         dossier.DerniereGarde = "";
         Assert.True((await _sigtao.SaveMilitaryAsync(Chef, dossier)).Ok);
         Assert.Equal(j0, Derniere(lea));
+    }
+
+    [Fact]
+    public async Task Statistiques_de_presence_aux_gardes_validees()
+    {
+        await _sigtao.SaveMilitaryAsync(Chef, new MilitaryRecord { Nom = "Durand", Prenom = "Léa", Grade = "Caporal" });
+        await _sigtao.SaveMilitaryAsync(Chef, new MilitaryRecord { Nom = "Petit", Prenom = "Marc", Grade = "Sergent" });
+        await _sigtao.SaveMilitaryAsync(Chef, new MilitaryRecord { Nom = "Bernard", Prenom = "Hugo", Grade = "Sapeur de 1re classe" });
+        await _sigtao.SaveMilitaryAsync(Chef, new MilitaryRecord { Nom = "Leroy", Prenom = "Inès", Grade = "Caporal", Status = MilitaryStatuses.Parti });
+        var all = _sigtao.Snapshot(Chef).Military;
+        var lea = all.Single(m => m.Nom == "Durand").Id;
+        var marc = all.Single(m => m.Nom == "Petit").Id;
+        var hugo = all.Single(m => m.Nom == "Bernard").Id;
+        var ines = all.Single(m => m.Nom == "Leroy").Id;
+        var today = DateTime.Today;
+        string J(int offset) => today.AddDays(offset).ToString("yyyy-MM-dd");
+
+        static GardeEngin Engin(string nom, params (string Poste, string Id)[] postes) => new()
+        {
+            Engin = nom, Type = nom.Split(' ')[0],
+            Postes = postes.Select(p => new GardeAffectation { Poste = p.Poste, MilitaryId = p.Id }).ToList()
+        };
+        async Task Garde(int offset, bool valider, List<GardeEngin> engins, List<GardeAffectation>? service = null, List<GardeAffectation>? reserve = null)
+        {
+            var saved = await _sigtao.SaveGardeAsync(Chef, new FeuilleGarde
+            {
+                Date = J(offset), Centre = FeuilleGarde.TousCentres, Engins = engins, Service = service ?? [], Reserve = reserve ?? []
+            }, valider);
+            Assert.True(saved.Ok, saved.Error);
+        }
+
+        // J0 : Léa arme deux engins le même jour (une seule garde), Marc conducteur.
+        await Garde(0, true, [Engin("VSAV 947 CRET", ("C/A", lea), ("COND", marc)), Engin("PSE 212 CRET", ("C/A", lea))]);
+        // J-3 : Léa chef d'agrès VSAV, Marc chef de garde.
+        await Garde(-3, true, [Engin("VSAV 947 CRET", ("C/A", lea))], [new GardeAffectation { Poste = GardePostes.ChefDeGarde, MilitaryId = marc }]);
+        // J-1 : feuille NON validée (Hugo n'y gagne aucune garde).
+        await Garde(-1, false, [Engin("VSAV 947 CRET", ("C/A", hugo), ("COND", marc))]);
+        // J-10 : Léa conductrice ; Inès (dossier parti) en renfort.
+        await Garde(-10, true, [Engin("VSAV 947 CRET", ("COND", lea))], reserve: [new GardeAffectation { Poste = "Renfort", MilitaryId = ines }]);
+        // J-40 : Marc ; J+2 : garde validée à l'avance (pas encore effectuée).
+        await Garde(-40, true, [Engin("FPT 210 CRET", ("C/A", marc))]);
+        await Garde(2, true, [Engin("FPT 210 CRET", ("C/A", marc))]);
+
+        StatistiqueMilitaire Of(SigtaoStatistiques s, string id) => s.Classement.Single(c => c.MilitaryId == id);
+
+        // 7 derniers jours : J0 et J-3.
+        var s7 = _sigtao.Statistiques(7, today);
+        Assert.Equal((7, J(-6), J(0)), (s7.Jours, s7.Du, s7.Au));
+        Assert.Equal(2, s7.GardesValidees);
+        Assert.Equal(2, s7.MilitairesPresents);
+        Assert.Equal(2.0, s7.MoyennePresents);
+        Assert.Equal(2, Of(s7, lea).Gardes);                                  // deux engins à J0 = une garde
+        Assert.Equal("C/A VSAV", Of(s7, lea).PosteFrequent);
+        Assert.Equal(2, Of(s7, lea).PosteFrequentFois);
+        Assert.Equal(2, Of(s7, marc).Gardes);
+
+        // 30 derniers jours : + J-10 ; dossier parti exclu du classement mais compté parmi les présents.
+        var s30 = _sigtao.Statistiques(30, today);
+        Assert.Equal(3, s30.GardesValidees);
+        Assert.Equal(3, s30.MilitairesPresents);
+        Assert.Equal(2.0, s30.MoyennePresents);                               // (2 + 2 + 2) / 3
+        Assert.Equal(new[] { lea, marc, hugo }, s30.Classement.Select(c => c.MilitaryId));
+        Assert.Equal(new[] { 1, 2, 0 }, s30.Classement.Select(c => c.Rang));
+        Assert.DoesNotContain(s30.Classement, c => c.MilitaryId == ines);
+
+        // Militaire sans garde : présent, en bas, sans dernière garde ni poste.
+        var h = Of(s30, hugo);
+        Assert.Equal((0, 0, "", ""), (h.Gardes, h.Rang, h.DerniereGarde, h.PosteFrequent));
+        Assert.Same(h, s30.Classement[^1]);
+
+        // 90 jours et depuis toujours : + J-40 ; la garde de J+2 ne compte pas. Ex æquo = même rang.
+        foreach (var jours in new[] { 90, GardeStatistiquesPeriodes.DepuisToujours })
+        {
+            var s = _sigtao.Statistiques(jours, today);
+            Assert.Equal(4, s.GardesValidees);
+            Assert.Equal((3, 3), (Of(s, lea).Gardes, Of(s, marc).Gardes));
+            Assert.Equal((1, 1), (Of(s, lea).Rang, Of(s, marc).Rang));
+            Assert.Equal(hugo, s.Classement[^1].MilitaryId);
+        }
+        Assert.Equal("", _sigtao.Statistiques(0, today).Du);
+
+        // Dernière garde : la garde validée à l'avance (J+2) est ignorée.
+        Assert.Equal(J(0), Of(s30, marc).DerniereGarde);
+        Assert.Equal(J(0), Of(s30, lea).DerniereGarde);
+
+        // Période inconnue : 30 jours par défaut.
+        Assert.Equal(30, _sigtao.Statistiques(12, today).Jours);
     }
 
     public void Dispose()

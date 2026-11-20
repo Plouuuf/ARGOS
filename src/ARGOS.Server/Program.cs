@@ -370,6 +370,17 @@ public static class Program
             return user is null ? Results.Unauthorized() : Results.Ok(service.History(user));
         });
 
+        // Statistiques de présence aux gardes (feuilles validées) : quiconque a accès à SIGTAO.
+        sigtao.MapGet("/statistiques", async (int? jours, HttpContext context, DiscordOAuthService oauth, SigtaoService service) =>
+        {
+            var user = await AuthenticateAsync(context, oauth);
+            if (user is null) return Results.Unauthorized();
+            if (!AccessLevels.CanUse(user.Levels, ArgosApps.Sigtao))
+                return Results.Json(new OdeResult(false, $"Accès refusé : ton rôle Discord ne permet pas d'utiliser {AppLabel(ArgosApps.Sigtao)}."),
+                    statusCode: StatusCodes.Status403Forbidden);
+            return Results.Ok(service.Statistiques(jours ?? GardeStatistiquesPeriodes.Defaut));
+        });
+
         sigtao.MapPost("/military", async (MilitaryRecord record, HttpContext context, DiscordOAuthService oauth, SigtaoService service) =>
         {
             var user = await AuthenticateAsync(context, oauth);
@@ -426,7 +437,7 @@ public static class Program
             return user is null ? Results.Unauthorized() : ToResult(await service.SelfAssignAsync(user, request));
         });
 
-        // Services de la compagnie : ajout, rôle, observations (Casernement) ou retrait d'un militaire.
+        // Services de la compagnie : ajout, rôle, observations ou retrait d'un militaire.
         sigtao.MapPost("/services", async (ServiceMemberRequest request, HttpContext context, DiscordOAuthService oauth, SigtaoService service) =>
         {
             var user = await AuthenticateAsync(context, oauth);

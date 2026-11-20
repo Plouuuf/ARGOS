@@ -40,12 +40,12 @@ public sealed class HabilitationChoice(string code, string label, bool selected)
 }
 
 /// <summary>
-/// SIGTAO : tableau de bord, comptes-rendus, gestion de la compagnie, services, comptes et habilitations,
-/// annuaire, historique administratif.
+/// SIGTAO : tableau de bord, comptes-rendus, gestion de la compagnie, services, statistiques de garde,
+/// comptes et habilitations, annuaire, historique administratif.
 /// </summary>
 public sealed partial class SigtaoAppViewModel : ViewModelBase, IDisposable
 {
-    public enum Page { Accueil, ComptesRendus, Compagnie, Comptes, Annuaire, Historique, Garde, Planning, Services }
+    public enum Page { Accueil, ComptesRendus, Compagnie, Comptes, Annuaire, Historique, Garde, Planning, Services, Statistiques }
 
     private readonly DesktopViewModel _desktop;
     private Page _page = Page.Accueil;
@@ -94,6 +94,7 @@ public sealed partial class SigtaoAppViewModel : ViewModelBase, IDisposable
 
         InitGarde();
         InitServices();
+        InitStatistiques();
         SigtaoImages.AvatarLoaded += Build;
         if (ArgosSession.Current is { } session)
         {
@@ -119,6 +120,7 @@ public sealed partial class SigtaoAppViewModel : ViewModelBase, IDisposable
             Message = null;
             if (value == Page.Historique) _ = LoadHistoryAsync();
             if (value == Page.Services) OpenService(null);   // on repart de la liste des services
+            if (value == Page.Statistiques) _ = LoadStatistiquesAsync();
         }
     }
 
@@ -131,6 +133,7 @@ public sealed partial class SigtaoAppViewModel : ViewModelBase, IDisposable
     public bool IsGarde => CurrentPage == Page.Garde;
     public bool IsPlanning => CurrentPage == Page.Planning;
     public bool IsServices => CurrentPage == Page.Services;
+    public bool IsStatistiques => CurrentPage == Page.Statistiques;
 
     public RelayCommand NavigateCommand { get; }
     public RelayCommand NewReportCommand { get; }
@@ -245,6 +248,7 @@ public sealed partial class SigtaoAppViewModel : ViewModelBase, IDisposable
     {
         if (Store is { } store) await store.RefreshAsync();
         if (CurrentPage == Page.Historique) await LoadHistoryAsync();
+        if (CurrentPage == Page.Statistiques) await LoadStatistiquesAsync();
     }
 
     private void Build()

@@ -183,6 +183,13 @@
                                 <TextBlock Grid.Column="2" Classes="chevron"/>
                             </Grid>
                         </Button>
+                        <Button Classes="row" Command="{Binding NavigateCommand}" CommandParameter="Statistiques">
+                            <Grid ColumnDefinitions="Auto,*,Auto">
+                                <PathIcon Data="{StaticResource TabChart}" Width="20" Height="20" Foreground="{DynamicResource AppAccent}" Margin="0,0,12,0"/>
+                                <TextBlock Grid.Column="1" Classes="label" Text="Statistiques de garde"/>
+                                <TextBlock Grid.Column="2" Classes="chevron"/>
+                            </Grid>
+                        </Button>
                         <Button Classes="row" Command="{Binding NavigateCommand}" CommandParameter="Annuaire">
                             <Grid ColumnDefinitions="Auto,*,Auto">
                                 <PathIcon Data="{StaticResource TabBook}" Width="20" Height="20" Foreground="{DynamicResource AppAccent}" Margin="0,0,12,0"/>
@@ -812,11 +819,11 @@
                                                     <TextBlock Grid.Column="1" Classes="value" Text="{Binding Role}" HorizontalAlignment="Right"
                                                                Margin="12,0,0,0" IsVisible="{Binding IsReadOnly}"/>
                                                 </Grid>
-                                                <!-- Casernement uniquement -->
-                                                <StackPanel Spacing="2" IsVisible="{Binding HasObservations}">
+                                                <!-- Observations : texte libre, tous les services -->
+                                                <StackPanel Spacing="2">
                                                     <TextBlock Classes="caption" Text="OBSERVATIONS :" FontWeight="SemiBold"/>
                                                     <TextBox Classes="field" Text="{Binding Observations}" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="44"
-                                                             VerticalContentAlignment="Top" IsReadOnly="{Binding IsReadOnly}" Watermark="Chambre, matériel, remarques…"/>
+                                                             VerticalContentAlignment="Top" IsReadOnly="{Binding IsReadOnly}" Watermark="Remarques, matériel, disponibilités…"/>
                                                     <Button Classes="plain" FontSize="15" Content="Enregistrer les observations" HorizontalAlignment="Right"
                                                             Command="{Binding SaveObservationsCommand}" IsVisible="{Binding ObservationsDirty}"/>
                                                 </StackPanel>
@@ -856,6 +863,64 @@
                         <Button Classes="primary" Content="Ajouter au service" Command="{Binding ServiceAddCommand}" Margin="16,10,16,6"/>
                     </StackPanel>
                 </StackPanel>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- ===== Statistiques de présence aux gardes (depuis l'accueil, la barre d'onglets étant complète) ===== -->
+        <ScrollViewer Grid.Row="1" IsVisible="{Binding IsStatistiques}">
+            <StackPanel Margin="0,0,0,24">
+                <Button Classes="plain" Content="‹ Accueil" HorizontalAlignment="Left" Margin="8,6,0,0" Command="{Binding NavigateCommand}" CommandParameter="Accueil"/>
+                <TextBlock Classes="large" Text="Statistiques"/>
+                <Border Classes="segments">
+                    <UniformGrid Columns="4">
+                        <Button Classes="seg" Classes.selected="{Binding IsStats7}" Content="7 j" Command="{Binding StatsPeriodCommand}" CommandParameter="7"/>
+                        <Button Classes="seg" Classes.selected="{Binding IsStats30}" Content="30 j" Command="{Binding StatsPeriodCommand}" CommandParameter="30"/>
+                        <Button Classes="seg" Classes.selected="{Binding IsStats90}" Content="90 j" Command="{Binding StatsPeriodCommand}" CommandParameter="90"/>
+                        <Button Classes="seg" Classes.selected="{Binding IsStatsAll}" Content="Toujours" Command="{Binding StatsPeriodCommand}" CommandParameter="0"/>
+                    </UniformGrid>
+                </Border>
+                <TextBlock Classes="footnote" Text="{Binding StatsPeriodLabel}" TextWrapping="Wrap"/>
+
+                <UniformGrid Columns="2" Margin="11,4,11,0">
+                    <Border Classes="tile"><StackPanel><TextBlock Classes="big" Text="{Binding StatsGardes}"/><TextBlock Classes="caption" Text="Gardes validées" TextWrapping="Wrap"/></StackPanel></Border>
+                    <Border Classes="tile"><StackPanel><TextBlock Classes="big" Text="{Binding StatsPresents}" Foreground="{DynamicResource AppAccent}"/><TextBlock Classes="caption" Text="Militaires présents" TextWrapping="Wrap"/></StackPanel></Border>
+                    <Border Classes="tile"><StackPanel><TextBlock Classes="big" Text="{Binding StatsMoyenne}"/><TextBlock Classes="caption" Text="Présents par garde (moyenne)" TextWrapping="Wrap"/></StackPanel></Border>
+                    <Border Classes="tile"><StackPanel><TextBlock Classes="big" Text="{Binding StatsAbsents}" Foreground="#FF3B30"/><TextBlock Classes="caption" Text="Sans garde sur la période" TextWrapping="Wrap"/></StackPanel></Border>
+                </UniformGrid>
+
+                <TextBlock Classes="section" Text="CLASSEMENT DES PRÉSENCES"/>
+                <Border Classes="group">
+                    <StackPanel>
+                        <ItemsControl ItemsSource="{Binding StatsRows}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Button Classes="row" Command="{Binding OpenCommand}">
+                                        <Grid ColumnDefinitions="34,Auto,*,Auto">
+                                            <TextBlock Classes="subtitle" Text="{Binding Rang}" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                            <Image Grid.Column="1" Source="{Binding GradeIcon}" Width="24" Height="24" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                            <StackPanel Grid.Column="2" Spacing="2">
+                                                <TextBlock Classes="title" Text="{Binding Name}"/>
+                                                <TextBlock Classes="caption" Text="{Binding Resume}"/>
+                                                <ProgressBar Minimum="0" Maximum="{Binding Max}" Value="{Binding Gardes}" Height="5" MinHeight="5" CornerRadius="3"
+                                                             Margin="0,3,0,1" Foreground="{DynamicResource AppAccent}" Background="#E5E5EA"/>
+                                                <TextBlock Classes="caption" Text="{Binding DerniereGardeLong}"/>
+                                            </StackPanel>
+                                            <Panel Grid.Column="3" VerticalAlignment="Center" Margin="10,0,0,0">
+                                                <TextBlock Classes="big" FontSize="22" Text="{Binding Gardes}" IsVisible="{Binding !IsAbsent}"/>
+                                                <TextBlock Classes="big" FontSize="22" Text="0" Foreground="#FF3B30" IsVisible="{Binding IsAbsent}"/>
+                                            </Panel>
+                                        </Grid>
+                                    </Button>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <Border Classes="row" IsVisible="{Binding !HasStatsRows}">
+                            <TextBlock Classes="value" Text="Aucun dossier en activité."/>
+                        </Border>
+                    </StackPanel>
+                </Border>
+                <TextBlock Classes="footnote" TextWrapping="Wrap"
+                           Text="Une garde par feuille validée où le militaire apparaît, quel que soit le nombre de postes tenus. Les militaires sans garde sont en bas du classement."/>
             </StackPanel>
         </ScrollViewer>
 

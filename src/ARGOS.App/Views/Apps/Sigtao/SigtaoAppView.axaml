@@ -53,6 +53,7 @@
                     <Button Classes="menu" Classes.selected="{Binding IsComptesRendus}" Content="Comptes-rendus" Command="{Binding NavigateCommand}" CommandParameter="ComptesRendus"/>
                     <Button Classes="menu" Classes.selected="{Binding IsGarde}" Content="Feuille de garde" Command="{Binding NavigateCommand}" CommandParameter="Garde"/>
                     <Button Classes="menu" Classes.selected="{Binding IsPlanning}" Content="Planning de garde" Command="{Binding NavigateCommand}" CommandParameter="Planning"/>
+                    <Button Classes="menu" Classes.selected="{Binding IsStatistiques}" Content="Statistiques" Command="{Binding NavigateCommand}" CommandParameter="Statistiques"/>
                     <Button Classes="menu" Classes.selected="{Binding IsCompagnie}" Content="Gestion de la compagnie" Command="{Binding NavigateCommand}" CommandParameter="Compagnie"/>
                     <Button Classes="menu" Classes.selected="{Binding IsServices}" Content="Services" Command="{Binding NavigateCommand}" CommandParameter="Services"/>
                     <Button Classes="menu" Classes.selected="{Binding IsComptes}" Content="Comptes et habilitations" Command="{Binding NavigateCommand}" CommandParameter="Comptes"
@@ -444,6 +445,9 @@
 
             <!-- ===== Services de la compagnie ===== -->
             <sg:ServicesView Grid.Row="1" IsVisible="{Binding IsServices}"/>
+
+            <!-- ===== Statistiques de présence aux gardes ===== -->
+            <sg:StatistiquesView Grid.Row="1" IsVisible="{Binding IsStatistiques}"/>
 
             <!-- ===== Historique administratif ===== -->
             <DockPanel Grid.Row="1" IsVisible="{Binding IsHistorique}" Margin="22,18">
