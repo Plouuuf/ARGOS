@@ -8,7 +8,8 @@ namespace Argos.Server.Services;
 /// sont stockées une fois (data/mail) et ne sont servies qu'aux utilisateurs dont un message les référence.
 /// Personne (pas même l'administration) ne lit la boîte d'un autre.
 /// </summary>
-public sealed class MailService(OdeDatabase db, RealtimeHub hub)
+/// <param name="notifier">Messages privés Discord aux destinataires qui n'ont pas ARGOS ouvert (facultatif).</param>
+public sealed class MailService(OdeDatabase db, RealtimeHub hub, DiscordNotifier? notifier = null)
 {
     public const long MaxAttachmentBytes = 10 * 1024 * 1024;
     public const long MaxMessageBytes = 20 * 1024 * 1024;
@@ -197,7 +198,7 @@ public sealed class MailService(OdeDatabase db, RealtimeHub hub)
 
     public async Task<MailDraftResult> SendAsync(ArgosUserDto user, MailDraftRequest request)
     {
-        List<(string UserId, MailItem Copy)> deliveries;
+        List<(string UserId, string Address, MailItem Copy)> deliveries;
         MailItem sent;
         await _gate.WaitAsync();
         try
@@ -240,6 +241,7 @@ public sealed class MailService(OdeDatabase db, RealtimeHub hub)
             deliveries = [];
             foreach (var recipient in all.Select(a => resolver[a]).Distinct())
             {
+                var recipientAddress = all.First(a => resolver[a] == recipient);
                 var copy = new MailItem
                 {
                     Id = NewId(), OwnerId = recipient, Folder = MailFolders.Reception, MessageId = sent.MessageId,
@@ -249,7 +251,7 @@ public sealed class MailService(OdeDatabase db, RealtimeHub hub)
                     InReplyTo = sent.InReplyTo, SentAt = now, UpdatedAt = now
                 };
                 db.SaveDoc(RemiseTables.MailItems, copy.Id, now, copy);
-                deliveries.Add((recipient, copy));
+                deliveries.Add((recipient, recipientAddress, copy));
             }
 
             db.AddJournal(new JournalEntry
@@ -264,8 +266,9 @@ public sealed class MailService(OdeDatabase db, RealtimeHub hub)
         }
 
         await Signal(user.UserId);
-        foreach (var (recipient, copy) in deliveries)
+        foreach (var (recipient, address, copy) in deliveries)
         {
+            NotifyDiscord(user, recipient, address, copy);
             await hub.SendToUserAsync(recipient, new RealtimeMessage(RealtimeTypes.MailChanged));
             await hub.SendToUserAsync(recipient, new RealtimeMessage(RealtimeTypes.Notify,
                 Title: "Nouveau message" + (copy.Importance == MailImportance.Haute ? " (importance haute)" : string.Empty),
@@ -273,6 +276,24 @@ public sealed class MailService(OdeDatabase db, RealtimeHub hub)
                 AppId: ArgosApps.Mail));
         }
         return new MailDraftResult { Ok = true, Item = sent };
+    }
+
+    /// <summary>Message privé Discord « 📧 Nouveau mail » (jamais à l'expéditeur, même sur un autre de ses profils).</summary>
+    private void NotifyDiscord(ArgosUserDto sender, string recipient, string address, MailItem copy)
+    {
+        if (notifier is not { IsEnabled: true }) return;
+        if (ArgosUserDto.DiscordOf(recipient) == sender.DiscordId) return;
+        var subject = string.IsNullOrWhiteSpace(copy.Subject) ? "(sans objet)" : copy.Subject;
+        var text = "Objet : " + subject;
+        // Profil secondaire : on précise la boîte concernée (le joueur reçoit les MP de tous ses personnages).
+        if (recipient.Contains(ArgosUserDto.ProfileSeparator))
+        {
+            var name = db.GetDoc<MailProfile>(RemiseTables.MailProfiles, recipient)?.Name;
+            text += string.IsNullOrWhiteSpace(name) ? $"\nBoîte : {address}" : $"\nBoîte : {name} ({address})";
+        }
+        notifier.Notify(recipient, NotificationKind.Mail,
+            $"📧 Nouveau mail de {copy.FromName}" + (copy.Importance == MailImportance.Haute ? " (importance haute)" : string.Empty),
+            text);
     }
 
     private static void Fill(MailItem item, MailProfile profile, MailDraftRequest request, List<MailAttachment> attachments)

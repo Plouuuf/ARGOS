@@ -149,6 +149,12 @@ public sealed class FeuilleGarde
     public string ValidatedBy { get; set; } = string.Empty;
     public DateTimeOffset? ValidatedAt { get; set; }
 
+    /// <summary>
+    /// Notifications Discord déjà envoyées pour cette feuille : dossier militaire → texte envoyé.
+    /// Tenu par le serveur : une nouvelle validation ne renvoie un message qu'à ceux dont les postes ont changé.
+    /// </summary>
+    public Dictionary<string, string> NotifiesDiscord { get; set; } = new();
+
     public bool IsValidated => Statut == GardeStatuts.Validee;
 
     public static string BuildId(string date, string centre) => $"{date}-{centre.Trim().ToUpperInvariant()}";

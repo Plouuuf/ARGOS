@@ -130,6 +130,18 @@
                     <ToggleSwitch Content="Ne pas déranger (les notifications vont directement au centre de notifications)" IsChecked="{Binding DoNotDisturb}"
                                   OnContent="Activé" OffContent="Désactivé"/>
                     <Button Classes="plain" Content="Effacer toutes les notifications" Command="{Binding ClearNotificationsCommand}" Margin="0,10,0,0"/>
+
+                    <TextBlock Classes="sub" Text="Notifications Discord"/>
+                    <TextBlock Classes="hint" Text="{Binding DiscordHelp}"/>
+                    <ToggleSwitch Content="Recevoir les notifications ARGOS en message privé Discord" IsChecked="{Binding DiscordEnabled}"
+                                  IsEnabled="{Binding DiscordLoaded}" OnContent="Activé" OffContent="Désactivé"/>
+                    <StackPanel Spacing="2" Margin="0,2,0,0" IsEnabled="{Binding DiscordDetailsEnabled}">
+                        <CheckBox Content="Mails reçus" IsChecked="{Binding DiscordMail}"/>
+                        <CheckBox Content="Feuilles de garde (quand je suis de garde)" IsChecked="{Binding DiscordGarde}"/>
+                        <CheckBox Content="Comptes-rendus qui me sont adressés" IsChecked="{Binding DiscordCompteRendu}"/>
+                    </StackPanel>
+                    <Button Classes="plain" Content="Envoyer une notification de test" Command="{Binding DiscordTestCommand}" Margin="0,10,0,0"/>
+                    <TextBlock Classes="hint" Text="{Binding DiscordStatus}" IsVisible="{Binding HasDiscordStatus}"/>
                 </StackPanel>
 
                 <!-- Comptes -->

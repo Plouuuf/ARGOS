@@ -39,6 +39,15 @@ public static class Program
         builder.Services.AddSingleton<ProfileService>();
         builder.Services.AddSingleton<DiscordOAuthService>();
         builder.Services.AddSingleton<RealtimeHub>();
+        // Notifications par message privé Discord (bot ARGOS) quand le joueur n'a pas ARGOS ouvert.
+        builder.Services.AddSingleton<NotificationPreferencesService>();
+        builder.Services.AddSingleton<IDiscordDirectMessenger, DiscordBotMessenger>();
+        builder.Services.AddSingleton(sp => new DiscordNotifier(
+            sp.GetRequiredService<NotificationPreferencesService>(),
+            sp.GetRequiredService<IDiscordDirectMessenger>(),
+            sp.GetRequiredService<RealtimeHub>().IsDiscordUserConnected,
+            sp.GetRequiredService<ILogger<DiscordNotifier>>()));
+        builder.Services.AddHostedService(sp => sp.GetRequiredService<DiscordNotifier>());
         builder.Services.AddSingleton(_ => new OdeDatabase());
         builder.Services.AddSingleton<OdeService>();
         builder.Services.AddSingleton<RemiseService>();
@@ -552,6 +561,24 @@ public static class Program
         {
             var user = await AuthenticateAsync(context, oauth);
             return user is null ? Results.Unauthorized() : ToResult(await service.SaveIdentityAsync(user, request));
+        });
+
+        // ===== Notifications Discord (message privé du bot ARGOS) =====
+        app.MapGet("/api/me/notifications", async (HttpContext context, DiscordOAuthService oauth, NotificationPreferencesService preferences) =>
+        {
+            var user = await AuthenticateAsync(context, oauth);
+            return user is null ? Results.Unauthorized() : Results.Ok(preferences.Get(user.DiscordId));
+        });
+        app.MapPost("/api/me/notifications", async (NotificationPreferences request, HttpContext context, DiscordOAuthService oauth,
+            NotificationPreferencesService preferences) =>
+        {
+            var user = await AuthenticateAsync(context, oauth);
+            return user is null ? Results.Unauthorized() : ToResult(preferences.Save(user.DiscordId, request));
+        });
+        app.MapPost("/api/me/notifications/test", async (HttpContext context, DiscordOAuthService oauth, DiscordNotifier notifier) =>
+        {
+            var user = await AuthenticateAsync(context, oauth);
+            return user is null ? Results.Unauthorized() : ToResult(await notifier.SendTestAsync(user, context.RequestAborted));
         });
 
         var mail = app.MapGroup("/api/mail").AddEndpointFilter(AppWriteFilter(ArgosApps.Mail));

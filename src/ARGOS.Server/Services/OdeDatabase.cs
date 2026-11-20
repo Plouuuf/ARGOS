@@ -75,6 +75,8 @@ public sealed class OdeDatabase
             CREATE TABLE IF NOT EXISTS sigtao_gardes (id TEXT PRIMARY KEY, at TEXT NOT NULL, data TEXT NOT NULL);
             CREATE TABLE IF NOT EXISTS sigtao_services (id TEXT PRIMARY KEY, at TEXT NOT NULL, data TEXT NOT NULL);
             CREATE TABLE IF NOT EXISTS user_identities (id TEXT PRIMARY KEY, at TEXT NOT NULL, data TEXT NOT NULL);
+            -- Préférences de notification Discord (clé = identifiant Discord).
+            CREATE TABLE IF NOT EXISTS user_notifications (id TEXT PRIMARY KEY, at TEXT NOT NULL, data TEXT NOT NULL);
             -- Les mouvements de stock ne peuvent être ni modifiés ni effacés.
             CREATE TRIGGER IF NOT EXISTS movements_no_update BEFORE UPDATE ON remise_movements
                 BEGIN SELECT RAISE(ABORT, 'mouvements en lecture seule'); END;
@@ -232,6 +234,7 @@ public sealed class OdeDatabase
         public const string Gardes = "sigtao_gardes";
         public const string Services = "sigtao_services";
         public const string Identities = "user_identities";
+        public const string Notifications = "user_notifications";
     }
 
     public void SaveDoc(string table, string id, DateTimeOffset at, object document)

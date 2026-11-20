@@ -294,6 +294,45 @@
                     </Border>
                     <TextBlock Classes="footnote" Text="Avec « Ne pas déranger », les notifications vont directement au centre de notifications."/>
                     <Button Classes="destructive" Margin="16,18,16,0" Content="Effacer toutes les notifications" Command="{Binding ClearNotificationsCommand}"/>
+
+                    <TextBlock Classes="section" Text="NOTIFICATIONS DISCORD"/>
+                    <Border Classes="group">
+                        <StackPanel>
+                            <Border Classes="row">
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <TextBlock Classes="label" TextWrapping="Wrap" Text="Messages privés Discord"/>
+                                    <ToggleSwitch Grid.Column="1" IsChecked="{Binding DiscordEnabled}" IsEnabled="{Binding DiscordLoaded}"
+                                                  OnContent="" OffContent="" MinWidth="0" Margin="8,0,0,0"/>
+                                </Grid>
+                            </Border>
+                            <Border Classes="row">
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <TextBlock Classes="label" TextWrapping="Wrap" Text="Mails"/>
+                                    <ToggleSwitch Grid.Column="1" IsChecked="{Binding DiscordMail}" IsEnabled="{Binding DiscordDetailsEnabled}"
+                                                  OnContent="" OffContent="" MinWidth="0" Margin="8,0,0,0"/>
+                                </Grid>
+                            </Border>
+                            <Border Classes="row">
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <TextBlock Classes="label" TextWrapping="Wrap" Text="Feuilles de garde"/>
+                                    <ToggleSwitch Grid.Column="1" IsChecked="{Binding DiscordGarde}" IsEnabled="{Binding DiscordDetailsEnabled}"
+                                                  OnContent="" OffContent="" MinWidth="0" Margin="8,0,0,0"/>
+                                </Grid>
+                            </Border>
+                            <Border Classes="row">
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <TextBlock Classes="label" TextWrapping="Wrap" Text="Comptes-rendus"/>
+                                    <ToggleSwitch Grid.Column="1" IsChecked="{Binding DiscordCompteRendu}" IsEnabled="{Binding DiscordDetailsEnabled}"
+                                                  OnContent="" OffContent="" MinWidth="0" Margin="8,0,0,0"/>
+                                </Grid>
+                            </Border>
+                            <Button Classes="row" Command="{Binding DiscordTestCommand}">
+                                <TextBlock Classes="label" Foreground="{DynamicResource AppAccent}" Text="Envoyer une notification de test"/>
+                            </Button>
+                        </StackPanel>
+                    </Border>
+                    <TextBlock Classes="footnote" Text="{Binding DiscordHelp}"/>
+                    <TextBlock Classes="footnote" Text="{Binding DiscordStatus}" IsVisible="{Binding HasDiscordStatus}"/>
                 </StackPanel>
 
                 <!-- Comptes -->

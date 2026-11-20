@@ -105,6 +105,11 @@ public sealed class RealtimeHub(DiscordOAuthService oauth, ILogger<RealtimeHub> 
         return sent;
     }
 
+    /// <summary>Vrai si ce compte Discord a au moins un poste ARGOS ouvert (quel que soit le profil).</summary>
+    public bool IsDiscordUserConnected(string discordId)
+        => !string.IsNullOrWhiteSpace(discordId)
+           && _connections.Values.Any(c => ArgosUserDto.DiscordOf(c.UserId) == discordId);
+
     /// <summary>Envoie un message à tous les postes connectés.</summary>
     public async Task<int> BroadcastAsync(RealtimeMessage message, CancellationToken ct = default)
     {

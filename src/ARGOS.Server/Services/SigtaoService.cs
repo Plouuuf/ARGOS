@@ -39,7 +39,8 @@ public static class SigtaoAccess
 }
 
 /// <summary>SIGTAO : dossiers militaires, comptes et habilitations, comptes-rendus, annuaire, historique.</summary>
-public sealed class SigtaoService(OdeDatabase db, RealtimeHub hub)
+/// <param name="notifier">Messages privés Discord (garde validée, compte-rendu reçu) ; facultatif.</param>
+public sealed class SigtaoService(OdeDatabase db, RealtimeHub hub, DiscordNotifier? notifier = null)
 {
     private readonly SemaphoreSlim _gate = new(1, 1);
 
@@ -414,6 +415,7 @@ public sealed class SigtaoService(OdeDatabase db, RealtimeHub hub)
             if (string.IsNullOrWhiteSpace(cr.Synthese)) cr.Synthese = CrText.Synthese(cr);
             db.SaveDoc(RemiseTables.CrReports, cr.Id, now, cr);
             Journal(user, SigtaoJournal.CompteRendu, "N° " + cr.NumDoc, $"{cr.Objet} - destinataire {cr.DestGrade} {cr.DestNom}");
+            NotifyDestinataire(user, cr);
             await NotifyAsync();
             return new(true, null, cr.Id);
         }
@@ -507,6 +509,8 @@ public sealed class SigtaoService(OdeDatabase db, RealtimeHub hub)
 
             var existing = db.GetDoc<FeuilleGarde>(RemiseTables.Gardes, feuille.Id);
             var now = DateTimeOffset.UtcNow;
+            // Liste tenue par le serveur : on ignore celle envoyée par le poste.
+            feuille.NotifiesDiscord = existing?.NotifiesDiscord ?? new();
             feuille.UpdatedAt = now;
             feuille.UpdatedBy = user.DisplayName;
             if (valider)
@@ -521,6 +525,8 @@ public sealed class SigtaoService(OdeDatabase db, RealtimeHub hub)
                 feuille.ValidatedAt = existing?.ValidatedAt;
                 feuille.ValidatedBy = existing?.ValidatedBy ?? string.Empty;
             }
+            if (valider)
+                NotifyGarde(military, feuille);
             db.SaveDoc(RemiseTables.Gardes, feuille.Id, now, feuille);
             if (valider)
                 RecordDerniereGarde(military, feuille, now);
@@ -545,6 +551,51 @@ public sealed class SigtaoService(OdeDatabase db, RealtimeHub hub)
     public SigtaoStatistiques Statistiques(int jours, DateTime? today = null)
         => GardeStatistiquesCalcul.Compute(db.Docs<MilitaryRecord>(RemiseTables.Military), db.Docs<FeuilleGarde>(RemiseTables.Gardes),
             jours, today ?? DateTime.Today);
+
+    /// <summary>
+    /// Feuille validée : un message privé Discord par militaire présent (tous ses postes regroupés),
+    /// seulement s'il n'a pas déjà reçu ce même texte pour cette feuille (<see cref="FeuilleGarde.NotifiesDiscord"/>).
+    /// </summary>
+    private void NotifyGarde(Dictionary<string, MilitaryRecord> military, FeuilleGarde feuille)
+    {
+        if (notifier is not { IsEnabled: true }) return;
+        var owners = ProfileService.UserIdsByDossier(db);
+        var jour = DiscordNotifier.FormatDay(feuille.Date);
+        foreach (var group in feuille.Affectations().GroupBy(a => a.Affectation.MilitaryId))
+        {
+            if (!military.TryGetValue(group.Key, out var m) || string.IsNullOrWhiteSpace(m.DiscordUserId)) continue;
+            var postes = group.Select(a => a.Engin is null ? a.Affectation.Poste : $"{a.Affectation.Poste} {a.Engin}")
+                .Where(p => !string.IsNullOrWhiteSpace(p)).Distinct().ToList();
+            var text = $"Tu es de garde le {jour} : {string.Join(", ", postes)}."
+                       + (feuille.Centre == FeuilleGarde.TousCentres ? string.Empty : $"\nCentre : {feuille.Centre}")
+                       + (string.IsNullOrWhiteSpace(feuille.Horaires) ? string.Empty : $"\nHoraires : {feuille.Horaires}");
+            if (feuille.NotifiesDiscord.TryGetValue(m.Id, out var previous) && previous == text) continue;
+            feuille.NotifiesDiscord[m.Id] = text;
+            notifier.Notify(owners.TryGetValue(m.Id, out var owner) ? owner : m.DiscordUserId, NotificationKind.Garde,
+                "🚒 Feuille de garde validée", text);
+        }
+    }
+
+    /// <summary>
+    /// Compte-rendu transmis : message privé au destinataire, s'il correspond à un seul dossier relié à un joueur
+    /// (même NOM, et même prénom s'il est renseigné). Le rédacteur n'est jamais notifié de son propre envoi.
+    /// </summary>
+    private void NotifyDestinataire(ArgosUserDto author, CompteRendu cr)
+    {
+        if (notifier is not { IsEnabled: true }) return;
+        static bool Same(string? a, string? b) => string.Equals((a ?? string.Empty).Trim(), (b ?? string.Empty).Trim(), StringComparison.InvariantCultureIgnoreCase);
+        var matches = db.Docs<MilitaryRecord>(RemiseTables.Military)
+            .Where(m => !string.IsNullOrWhiteSpace(m.DiscordUserId) && Same(m.Nom, cr.DestNom)
+                        && (string.IsNullOrWhiteSpace(cr.DestPrenom) || Same(m.Prenom, cr.DestPrenom))
+                        && m.Status is not (MilitaryStatuses.Parti or MilitaryStatuses.Archive))
+            .ToList();
+        if (matches.Count != 1 || matches[0].DiscordUserId == author.DiscordId) return;
+        var dest = matches[0];
+        var owners = ProfileService.UserIdsByDossier(db);
+        var auteur = $"{cr.AuthorGrade} {cr.AuthorNom.ToUpperInvariant()} {cr.AuthorPrenom}".Replace("  ", " ").Trim();
+        notifier.Notify(owners.TryGetValue(dest.Id, out var owner) ? owner : dest.DiscordUserId, NotificationKind.CompteRendu,
+            "📝 Compte-rendu reçu", $"N° {cr.NumDoc} de {auteur} : {cr.Objet}");
+    }
 
     /// <summary>
     /// Feuille validée : chaque militaire présent reçoit le jour de garde comme « dernière garde »,

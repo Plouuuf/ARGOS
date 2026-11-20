@@ -116,3 +116,24 @@ cd C:\ARGOS
 ```
 
 L'adresse reste dans `appsettings.Local.json` (section `Webhooks:Ode`), jamais dans le dépôt.
+
+## Notifications Discord (messages privés)
+
+Quand un joueur n'a pas ARGOS ouvert, le bot ARGOS lui envoie un message privé Discord : nouveau mail,
+feuille de garde validée sur laquelle il figure, compte-rendu SIGTAO qui lui est adressé. Chacun règle ses
+notifications dans Paramètres › Notifications Discord (avec un bouton d'essai).
+
+1. Discord Developer Portal › application ARGOS (ou une nouvelle) › **Bot** › *Reset Token* › copier le jeton.
+   Aucun « Privileged Gateway Intent » n'est nécessaire.
+2. Inviter le bot sur le serveur VDMS : *OAuth2 › URL Generator*, scope `bot`, aucune permission
+   (`https://discord.com/oauth2/authorize?client_id=<ID>&scope=bot&permissions=0`).
+3. Sur le VPS :
+
+```powershell
+cd C:\ARGOS
+.\INSTALLER-ARGOS.cmd -DiscordBotToken "jeton du bot"
+```
+
+Le jeton reste dans `appsettings.Local.json` (section `Discord:BotToken`), jamais dans le dépôt ; sans jeton,
+les notifications sont simplement désactivées. Les joueurs doivent autoriser les messages privés des membres
+du serveur VDMS (sinon Discord refuse le message, erreur 50007).

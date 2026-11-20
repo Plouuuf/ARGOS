@@ -20,6 +20,11 @@ public sealed class ParametresViewModel : ViewModelBase, IDisposable
     private readonly DesktopViewModel _desktop;
     private SettingsPage _page;
     private string _networkTest = string.Empty;
+    private NotificationPreferences _discord = new();
+    private bool _discordLoaded;
+    private bool _discordBusy;
+    private string _discordStatus = string.Empty;
+    private readonly SemaphoreSlim _discordSave = new(1, 1);
 
     public ParametresViewModel(DesktopViewModel desktop)
     {
@@ -30,8 +35,10 @@ public sealed class ParametresViewModel : ViewModelBase, IDisposable
         SlideshowCommand = new RelayCommand(() => WindowsSettings.Update(s => s.Wallpaper = -1));
         TestNetworkCommand = new RelayCommand(() => _ = TestNetworkAsync());
         ClearNotificationsCommand = desktop.ClearNotificationsCommand;
+        DiscordTestCommand = new RelayCommand(() => _ = SendDiscordTestAsync(), () => _discordLoaded && !_discordBusy);
         WindowsSettings.Changed += OnChanged;
         _desktop.PropertyChanged += OnDesktopChanged;
+        _ = LoadDiscordAsync();
     }
 
     public IReadOnlyList<SettingsPage> Pages { get; } =
@@ -140,6 +147,98 @@ public sealed class ParametresViewModel : ViewModelBase, IDisposable
     public bool Notifications { get => WindowsSettings.Current.Notifications; set => WindowsSettings.Update(s => s.Notifications = value); }
     public bool DoNotDisturb { get => WindowsSettings.Current.DoNotDisturb; set => WindowsSettings.Update(s => s.DoNotDisturb = value); }
     public RelayCommand ClearNotificationsCommand { get; }
+
+    // ===== Notifications Discord (message privé du bot ARGOS quand l'application est fermée) =====
+
+    public string DiscordHelp =>
+        "Tu reçois un message privé du bot ARGOS sur Discord quand ARGOS est fermé. Autorise les messages privés des membres du serveur VDMS.";
+
+    /// <summary>Vrai une fois les préférences lues sur le serveur (les cases restent grisées avant).</summary>
+    public bool DiscordLoaded { get => _discordLoaded; private set { if (SetProperty(ref _discordLoaded, value)) RaiseDiscord(); } }
+
+    public bool DiscordEnabled { get => _discord.Enabled; set => SetDiscord(p => p.Enabled = value, _discord.Enabled != value); }
+    public bool DiscordMail { get => _discord.Mail; set => SetDiscord(p => p.Mail = value, _discord.Mail != value); }
+    public bool DiscordGarde { get => _discord.Garde; set => SetDiscord(p => p.Garde = value, _discord.Garde != value); }
+    public bool DiscordCompteRendu { get => _discord.CompteRendu; set => SetDiscord(p => p.CompteRendu = value, _discord.CompteRendu != value); }
+
+    /// <summary>Les cases par type ne servent que si l'interrupteur général est activé.</summary>
+    public bool DiscordDetailsEnabled => _discordLoaded && _discord.Enabled;
+
+    public string DiscordStatus { get => _discordStatus; private set { if (SetProperty(ref _discordStatus, value)) OnPropertyChanged(nameof(HasDiscordStatus)); } }
+    public bool HasDiscordStatus => _discordStatus.Length > 0;
+    public RelayCommand DiscordTestCommand { get; }
+
+    private async Task LoadDiscordAsync()
+    {
+        var session = ArgosSession.Current;
+        if (session is null) return;
+        try
+        {
+            _discord = await session.Api.GetAsync<NotificationPreferences>("api/me/notifications");
+            DiscordLoaded = true;
+        }
+        catch
+        {
+            DiscordStatus = "Réglages des notifications Discord indisponibles (serveur injoignable ou ancien).";
+        }
+    }
+
+    private void SetDiscord(Action<NotificationPreferences> change, bool changed)
+    {
+        if (!_discordLoaded || !changed) return;
+        change(_discord);
+        RaiseDiscord();
+        var copy = new NotificationPreferences
+        {
+            Enabled = _discord.Enabled, Mail = _discord.Mail, Garde = _discord.Garde, CompteRendu = _discord.CompteRendu
+        };
+        _ = SaveDiscordAsync(copy);
+    }
+
+    /// <summary>Enregistrement à chaque changement (un envoi à la fois, dans l'ordre des clics).</summary>
+    private async Task SaveDiscordAsync(NotificationPreferences preferences)
+    {
+        var session = ArgosSession.Current;
+        if (session is null) return;
+        await _discordSave.WaitAsync();
+        try
+        {
+            var result = await session.Api.SendAsync(HttpMethod.Post, "api/me/notifications", preferences);
+            DiscordStatus = result.Ok ? string.Empty : "Enregistrement impossible : " + (result.Error ?? "erreur du serveur.");
+        }
+        finally
+        {
+            _discordSave.Release();
+        }
+    }
+
+    private async Task SendDiscordTestAsync()
+    {
+        var session = ArgosSession.Current;
+        if (session is null || _discordBusy) return;
+        _discordBusy = true;
+        DiscordTestCommand.RaiseCanExecuteChanged();
+        DiscordStatus = "Envoi du message de test…";
+        try
+        {
+            var result = await session.Api.SendAsync(HttpMethod.Post, "api/me/notifications/test");
+            DiscordStatus = result.Ok
+                ? "Message envoyé : regarde tes messages privés Discord."
+                : result.Error ?? "L'envoi du message de test a échoué.";
+        }
+        finally
+        {
+            _discordBusy = false;
+            DiscordTestCommand.RaiseCanExecuteChanged();
+        }
+    }
+
+    private void RaiseDiscord()
+    {
+        foreach (var n in new[] { nameof(DiscordEnabled), nameof(DiscordMail), nameof(DiscordGarde), nameof(DiscordCompteRendu), nameof(DiscordDetailsEnabled) })
+            OnPropertyChanged(n);
+        DiscordTestCommand.RaiseCanExecuteChanged();
+    }
 
     // ===== Comptes =====
 

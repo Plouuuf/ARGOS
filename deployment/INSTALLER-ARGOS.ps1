@@ -32,6 +32,8 @@ param(
     [string]$OdeWebhookUrl = "",
     # Webhook du salon Discord qui reçoit les feuilles de garde imprimées (SIGTAO).
     [string]$GardeWebhookUrl = "",
+    # Jeton du bot Discord ARGOS (messages privés de notification). Laisser vide pour garder le réglage actuel.
+    [string]$DiscordBotToken = "",
     # Connexion MariaDB (lecture seule) à la base FiveM pour eFiBi, ex. "Server=127.0.0.1;Port=3306;Database=qbcore;User ID=argos_lecture;Password=…"
     [string]$EfibiConnection = "",
     # Jeton GitHub en lecture, seulement si le dépôt ARGOS est privé (mise à jour automatique).
@@ -117,6 +119,7 @@ if ($existing -and $existing.Discord.LevelRoles) {
     }
 }
 
+$discordBotToken = if ($DiscordBotToken) { $DiscordBotToken.Trim() } elseif ($existing -and $existing.Discord -and $existing.Discord.BotToken) { [string]$existing.Discord.BotToken } else { "" }
 $gardeWebhook = if ($GardeWebhookUrl) { $GardeWebhookUrl.Trim() } elseif ($existing -and $existing.Webhooks -and $existing.Webhooks.Garde) { [string]$existing.Webhooks.Garde } else { "" }
 $odeWebhook = if ($OdeWebhookUrl) { $OdeWebhookUrl.Trim() } elseif ($existing -and $existing.Webhooks) { [string]$existing.Webhooks.Ode } else { "" }
 
@@ -134,6 +137,7 @@ $settings = [ordered]@{
         GuildId = $guildId
         RequiredRoleId = $RequiredRoleId
         LevelRoles = $levels
+        BotToken = $discordBotToken
     }
     Webhooks = [ordered]@{ Ode = $odeWebhook; Garde = $gardeWebhook }
     Efibi = [ordered]@{ ConnectionString = $efibiConnection }
@@ -145,6 +149,8 @@ if ($efibiConnection) { Ok "eFiBi relié à la base des fiches bilans (lecture s
 else { Warn "eFiBi non relié : relancer avec -EfibiConnection ""Server=127.0.0.1;Port=3306;Database=…;User ID=…;Password=…""" }
 if ($gardeWebhook) { Ok "Feuilles de garde publiées sur Discord (webhook configuré)." }
 else { Warn "Pas de webhook Discord pour les feuilles de garde : relancer avec -GardeWebhookUrl ""https://discord.com/api/webhooks/…""" }
+if ($discordBotToken) { Ok "Notifications Discord par message privé activées (bot configuré)." }
+else { Warn "Pas de bot Discord pour les notifications : relancer avec -DiscordBotToken ""jeton du bot (Discord Developer Portal > Bot)""" }
 if ($odeWebhook) { Ok "ODE imprimés publiés sur Discord (webhook configuré)." }
 else { Warn "Pas de webhook Discord pour les ODE : relancer avec -OdeWebhookUrl ""https://discord.com/api/webhooks/…""" }
 

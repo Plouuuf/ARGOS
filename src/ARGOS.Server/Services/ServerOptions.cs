@@ -37,4 +37,10 @@ public sealed class DiscordOAuthOptions
     /// sans les rôles Discord habituels (il faut seulement être membre du Discord VDMS).
     /// </summary>
     public string DeveloperUserIds { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Jeton secret du bot Discord ARGOS (messages privés de notification). Uniquement dans appsettings.Local.json
+    /// sur le VPS (paramètre -DiscordBotToken du script d'installation) ; vide = notifications désactivées.
+    /// </summary>
+    public string BotToken { get; set; } = string.Empty;
 }
