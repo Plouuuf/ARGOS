@@ -176,6 +176,100 @@ public sealed class SigtaoServiceTests : IDisposable
         Assert.True((await _sigtao.SelfAssignAsync(Autre, new SelfGardeRequest { Date = date, Centre = "CRET" })).Ok);
     }
 
+    [Fact]
+    public async Task Services_ajout_role_observations_et_retrait()
+    {
+        await _sigtao.SaveMilitaryAsync(Chef, new MilitaryRecord { Nom = "Bernard", Prenom = "Hugo", Grade = "Sergent" });
+        await _sigtao.SaveMilitaryAsync(Chef, new MilitaryRecord { Nom = "Leroy", Prenom = "Inès", Grade = "Caporal", Status = MilitaryStatuses.Parti });
+        var all = _sigtao.Snapshot(Chef).Military;
+        var hugo = all.Single(m => m.Nom == "Bernard").Id;
+        var ines = all.Single(m => m.Nom == "Leroy").Id;
+
+        // Tous les services existent dans l'instantané, vides au départ ; tout le monde les lit.
+        Assert.Equal(SigtaoServices.All.Select(s => s.Id), _sigtao.Snapshot(Autre).Services.Select(s => s.Id));
+        Assert.All(_sigtao.Snapshot(Autre).Services, s => Assert.Empty(s.Members));
+
+        // Droits : gestion de la compagnie uniquement ; rôle obligatoire et propre au service ; dossier en activité.
+        var request = new ServiceMemberRequest { ServiceId = SigtaoServices.Remise, MilitaryId = hugo, Role = "Sous-officier de remise" };
+        Assert.False((await _sigtao.SaveServiceMemberAsync(Autre, request)).Ok);
+        Assert.False((await _sigtao.SaveServiceMemberAsync(Chef, new ServiceMemberRequest { ServiceId = SigtaoServices.Remise, MilitaryId = hugo, Role = "Instructeur" })).Ok);
+        Assert.False((await _sigtao.SaveServiceMemberAsync(Chef, new ServiceMemberRequest { ServiceId = "inconnu", MilitaryId = hugo, Role = "Instructeur" })).Ok);
+        Assert.False((await _sigtao.SaveServiceMemberAsync(Chef, new ServiceMemberRequest { ServiceId = SigtaoServices.Remise, MilitaryId = ines, Role = "Garde-remise" })).Ok);
+
+        var ok = await _sigtao.SaveServiceMemberAsync(Chef, request);
+        Assert.True(ok.Ok, ok.Error);
+        var remise = _sigtao.Snapshot(Autre).Services.Single(s => s.Id == SigtaoServices.Remise);
+        Assert.Equal(("Sous-officier de remise", ""), (remise.Members.Single().Role, remise.Members.Single().Observations));
+
+        // Changement de rôle ; un militaire peut appartenir à plusieurs services.
+        Assert.True((await _sigtao.SaveServiceMemberAsync(Chef, new ServiceMemberRequest { ServiceId = SigtaoServices.Remise, MilitaryId = hugo, Role = "Caporal de remise" })).Ok);
+        Assert.Equal("Caporal de remise", _sigtao.Snapshot(Chef).Services.Single(s => s.Id == SigtaoServices.Remise).Members.Single().Role);
+
+        // Casernement : observations libres ; ignorées dans les autres services.
+        var caserne = await _sigtao.SaveServiceMemberAsync(Chef, new ServiceMemberRequest
+        {
+            ServiceId = SigtaoServices.Casernement, MilitaryId = hugo, Role = "Effectif", Observations = "  Chambre 12, clés remises  "
+        });
+        Assert.True(caserne.Ok, caserne.Error);
+        Assert.True((await _sigtao.SaveServiceMemberAsync(Chef, new ServiceMemberRequest
+        {
+            ServiceId = SigtaoServices.Instruction, MilitaryId = hugo, Role = "Instructeur", Observations = "Ignoré"
+        })).Ok);
+        var services = _sigtao.Snapshot(Chef).Services;
+        Assert.Equal("Chambre 12, clés remises", services.Single(s => s.Id == SigtaoServices.Casernement).Members.Single().Observations);
+        Assert.Equal("", services.Single(s => s.Id == SigtaoServices.Instruction).Members.Single().Observations);
+        Assert.Equal(3, services.Count(s => s.Members.Any(m => m.MilitaryId == hugo)));
+
+        // Retrait : uniquement du service visé ; second retrait refusé.
+        Assert.True((await _sigtao.SaveServiceMemberAsync(Chef, new ServiceMemberRequest { ServiceId = SigtaoServices.Remise, MilitaryId = hugo, Retirer = true })).Ok);
+        Assert.False((await _sigtao.SaveServiceMemberAsync(Chef, new ServiceMemberRequest { ServiceId = SigtaoServices.Remise, MilitaryId = hugo, Retirer = true })).Ok);
+        services = _sigtao.Snapshot(Chef).Services;
+        Assert.Empty(services.Single(s => s.Id == SigtaoServices.Remise).Members);
+        Assert.Single(services.Single(s => s.Id == SigtaoServices.Casernement).Members);
+        Assert.Contains(_sigtao.History(Chef), j => j.Action == SigtaoJournal.Service);
+    }
+
+    [Fact]
+    public async Task Validation_de_la_garde_met_a_jour_la_derniere_garde()
+    {
+        await _sigtao.SaveMilitaryAsync(Chef, new MilitaryRecord { Nom = "Durand", Prenom = "Léa", Grade = "Caporal" });
+        await _sigtao.SaveMilitaryAsync(Chef, new MilitaryRecord { Nom = "Petit", Prenom = "Marc", Grade = "Sergent" });
+        var all = _sigtao.Snapshot(Chef).Military;
+        var lea = all.Single(m => m.Nom == "Durand").Id;
+        var marc = all.Single(m => m.Nom == "Petit").Id;
+        string Derniere(string id) => _sigtao.Snapshot(Chef).Military.Single(m => m.Id == id).DerniereGarde;
+        var j0 = DateTime.Today.ToString("yyyy-MM-dd");
+        var jMoins3 = DateTime.Today.AddDays(-3).ToString("yyyy-MM-dd");
+
+        FeuilleGarde Feuille(string date, params string[] ids) => new()
+        {
+            Date = date, Centre = "CRET",
+            Service = ids.Select((id, i) => new GardeAffectation { Poste = GardePostes.Service[i], MilitaryId = id }).ToList()
+        };
+
+        Assert.Equal("", Derniere(lea));
+
+        // Simple enregistrement : pas de mise à jour.
+        Assert.True((await _sigtao.SaveGardeAsync(Chef, Feuille(j0, lea), false)).Ok);
+        Assert.Equal("", Derniere(lea));
+
+        // Validation : date du jour de garde sur chaque présent.
+        Assert.True((await _sigtao.SaveGardeAsync(Chef, Feuille(j0, lea), true)).Ok);
+        Assert.Equal(j0, Derniere(lea));
+        Assert.Equal("", Derniere(marc));
+
+        // Garde plus ancienne validée ensuite : la date ne recule pas ; l'autre présent reçoit la sienne.
+        Assert.True((await _sigtao.SaveGardeAsync(Chef, Feuille(jMoins3, lea, marc), true)).Ok);
+        Assert.Equal(j0, Derniere(lea));
+        Assert.Equal(jMoins3, Derniere(marc));
+
+        // L'enregistrement du dossier depuis le poste ne touche pas à la date (tenue par le serveur).
+        var dossier = _sigtao.Snapshot(Chef).Military.Single(m => m.Id == lea);
+        dossier.DerniereGarde = "";
+        Assert.True((await _sigtao.SaveMilitaryAsync(Chef, dossier)).Ok);
+        Assert.Equal(j0, Derniere(lea));
+    }
+
     public void Dispose()
     {
         Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();

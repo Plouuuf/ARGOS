@@ -64,6 +64,17 @@ public sealed class DossierViewModel : ViewModelBase, IDisposable
     }
     public string ServiceTime => CrText.ServiceTime(_record.ArrivalDate, DateTimeOffset.Now) is { Length: > 0 } t ? "Temps de service : " + t : string.Empty;
 
+    /// <summary>Jour de la dernière garde validée (lecture seule, tenu par le serveur à la validation des feuilles de garde).</summary>
+    private DateTime? DerniereGardeDay
+        => DateTime.TryParseExact(_record.DerniereGarde, "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture,
+               System.Globalization.DateTimeStyles.None, out var day) ? day : null;
+
+    /// <summary>« 18/11/2026 » ou « Aucune garde enregistrée ».</summary>
+    public string DerniereGarde => DerniereGardeDay is { } d ? d.ToString("dd/MM/yyyy", System.Globalization.CultureInfo.InvariantCulture) : "Aucune garde enregistrée";
+
+    /// <summary>« Dernière garde : 18/11/2026 » ou « Aucune garde enregistrée ».</summary>
+    public string DerniereGardeText => DerniereGardeDay is not null ? "Dernière garde : " + DerniereGarde : DerniereGarde;
+
     public Bitmap? Photo { get => _photo; private set { SetProperty(ref _photo, value); OnPropertyChanged(nameof(HasPhoto)); } }
     public bool HasPhoto => Photo is not null;
     public void SetPhoto(string base64)
@@ -105,6 +116,9 @@ public sealed class DossierViewModel : ViewModelBase, IDisposable
         else if (record is not null)
         {
             _record.Entries = record.Entries;
+            _record.DerniereGarde = record.DerniereGarde;     // mise à jour par la validation d'une garde
+            OnPropertyChanged(nameof(DerniereGarde));
+            OnPropertyChanged(nameof(DerniereGardeText));
             BuildEntries();
         }
         foreach (var n in new[] { nameof(CanEdit), nameof(IsReadOnly) }) OnPropertyChanged(n);
@@ -115,7 +129,8 @@ public sealed class DossierViewModel : ViewModelBase, IDisposable
     {
         Record = record;
         Photo = SigtaoImages.Photo(record.PhotoData, record.AvatarUrl);
-        foreach (var n in new[] { nameof(GradeDate), nameof(ArrivalDate), nameof(ServiceTime), nameof(Title), nameof(IsNew), nameof(GradeIcon) })
+        foreach (var n in new[] { nameof(GradeDate), nameof(ArrivalDate), nameof(ServiceTime), nameof(Title), nameof(IsNew), nameof(GradeIcon),
+                                  nameof(DerniereGarde), nameof(DerniereGardeText) })
             OnPropertyChanged(n);
         BuildEntries();
     }

@@ -46,6 +46,19 @@
                     </StackPanel>
                 </StackPanel>
 
+                <!-- Garde (lecture seule : mise à jour par la validation des feuilles de garde) -->
+                <StackPanel IsVisible="{Binding !IsNew}">
+                    <TextBlock Classes="section" Text="GARDE"/>
+                    <Border Classes="group">
+                        <Border Classes="row">
+                            <Grid ColumnDefinitions="Auto,*">
+                                <TextBlock Classes="label" Text="Dernière garde"/>
+                                <TextBlock Grid.Column="1" Classes="value" Text="{Binding DerniereGarde}" HorizontalAlignment="Right" Margin="12,0,0,0"/>
+                            </Grid>
+                        </Border>
+                    </Border>
+                </StackPanel>
+
                 <!-- Identité -->
                 <StackPanel IsEnabled="{Binding CanEdit}">
                     <TextBlock Classes="section" Text="IDENTITÉ"/>

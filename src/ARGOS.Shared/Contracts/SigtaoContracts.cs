@@ -147,6 +147,11 @@ public sealed class MilitaryRecord
     public string Email { get; set; } = string.Empty;
     public string Telephone { get; set; } = string.Empty;
     public string DiscordUserId { get; set; } = string.Empty;       // joueur VDMS correspondant
+    /// <summary>
+    /// Jour de la dernière garde validée (« yyyy-MM-dd », vide = aucune). Tenu par le serveur à la validation
+    /// des feuilles de garde ; il ne recule jamais et n'est pas modifiable depuis le dossier.
+    /// </summary>
+    public string DerniereGarde { get; set; } = string.Empty;
     public List<DossierEntry> Entries { get; set; } = [];
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset UpdatedAt { get; set; }
@@ -246,6 +251,8 @@ public sealed class SigtaoSnapshot
     public List<CompteRendu> Reports { get; set; } = [];
     /// <summary>Feuilles de garde de J-62 à J+62.</summary>
     public List<FeuilleGarde> Gardes { get; set; } = [];
+    /// <summary>Membres des services de la compagnie (un élément par service de <see cref="SigtaoServices.All"/>).</summary>
+    public List<ServiceAffectations> Services { get; set; } = [];
     public SigtaoRights Rights { get; set; } = new();
     public string? MyDossierId { get; set; }
     public string? MyAccountId { get; set; }
@@ -274,8 +281,9 @@ public static class SigtaoJournal
     public const string Acces = "Accès réinitialisés";
     public const string CompteRendu = "Compte-rendu";
     public const string Garde = "Feuille de garde";
+    public const string Service = "Services";
 
-    public static readonly IReadOnlyList<string> Actions = [DossierCree, DossierModifie, Rubrique, CompteCree, CompteModifie, Acces, CompteRendu, Garde];
+    public static readonly IReadOnlyList<string> Actions = [DossierCree, DossierModifie, Rubrique, CompteCree, CompteModifie, Acces, CompteRendu, Garde, Service];
 }
 
 /// <summary>Synthèse automatique d'un compte-rendu : objet + premières phrases du corps.</summary>

@@ -16,7 +16,12 @@
                             <TextBlock Text="{Binding Title}" Foreground="White" FontSize="18" FontWeight="SemiBold"/>
                         </StackPanel>
                     </StackPanel>
-                    <TextBlock Grid.Column="1" Text="{Binding Record.Status}" Foreground="White" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding Record.Status}" Foreground="White" FontWeight="SemiBold" HorizontalAlignment="Right"/>
+                        <!-- Lecture seule : mise à jour par la validation des feuilles de garde. -->
+                        <TextBlock Text="{Binding DerniereGardeText}" Foreground="#AFC0D8" FontSize="11.5" HorizontalAlignment="Right"
+                                   IsVisible="{Binding !IsNew}" ToolTip.Tip="Mise à jour automatiquement à la validation d'une feuille de garde"/>
+                    </StackPanel>
                 </Grid>
             </Border>
             <Border Height="3" Background="#C8102E"/>

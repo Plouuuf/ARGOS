@@ -426,7 +426,14 @@ public static class Program
             return user is null ? Results.Unauthorized() : ToResult(await service.SelfAssignAsync(user, request));
         });
 
-        sigtao.MapPost("/reports/{id}/delete", async (string id, HttpContext context, DiscordOAuthService oauth, SigtaoService service) =>
+        // Services de la compagnie : ajout, rôle, observations (Casernement) ou retrait d'un militaire.
+        sigtao.MapPost("/services", async (ServiceMemberRequest request, HttpContext context, DiscordOAuthService oauth, SigtaoService service) =>
+        {
+            var user = await AuthenticateAsync(context, oauth);
+            return user is null ? Results.Unauthorized() : ToResult(await service.SaveServiceMemberAsync(user, request));
+        });
+
+        sigtao.MapPost("/reports/{id}/delete",async (string id, HttpContext context, DiscordOAuthService oauth, SigtaoService service) =>
         {
             var user = await AuthenticateAsync(context, oauth);
             return user is null ? Results.Unauthorized() : ToResult(await service.DeleteDraftAsync(user, id));

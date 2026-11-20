@@ -40,12 +40,12 @@ public sealed class HabilitationChoice(string code, string label, bool selected)
 }
 
 /// <summary>
-/// SIGTAO : tableau de bord, comptes-rendus, gestion de la compagnie, comptes et habilitations,
+/// SIGTAO : tableau de bord, comptes-rendus, gestion de la compagnie, services, comptes et habilitations,
 /// annuaire, historique administratif.
 /// </summary>
 public sealed partial class SigtaoAppViewModel : ViewModelBase, IDisposable
 {
-    public enum Page { Accueil, ComptesRendus, Compagnie, Comptes, Annuaire, Historique, Garde, Planning }
+    public enum Page { Accueil, ComptesRendus, Compagnie, Comptes, Annuaire, Historique, Garde, Planning, Services }
 
     private readonly DesktopViewModel _desktop;
     private Page _page = Page.Accueil;
@@ -93,6 +93,7 @@ public sealed partial class SigtaoAppViewModel : ViewModelBase, IDisposable
         ImportCommand = new RelayCommand(() => _ = ImportAsync(), () => Rights.ManageCompany);
 
         InitGarde();
+        InitServices();
         SigtaoImages.AvatarLoaded += Build;
         if (ArgosSession.Current is { } session)
         {
@@ -117,6 +118,7 @@ public sealed partial class SigtaoAppViewModel : ViewModelBase, IDisposable
             foreach (var p in Enum.GetNames<Page>()) OnPropertyChanged("Is" + p);
             Message = null;
             if (value == Page.Historique) _ = LoadHistoryAsync();
+            if (value == Page.Services) OpenService(null);   // on repart de la liste des services
         }
     }
 
@@ -128,6 +130,7 @@ public sealed partial class SigtaoAppViewModel : ViewModelBase, IDisposable
     public bool IsHistorique => CurrentPage == Page.Historique;
     public bool IsGarde => CurrentPage == Page.Garde;
     public bool IsPlanning => CurrentPage == Page.Planning;
+    public bool IsServices => CurrentPage == Page.Services;
 
     public RelayCommand NavigateCommand { get; }
     public RelayCommand NewReportCommand { get; }
@@ -294,6 +297,7 @@ public sealed partial class SigtaoAppViewModel : ViewModelBase, IDisposable
         BuildDirectory();
         BuildGarde();
         BuildPlanning();
+        BuildServices();
     }
 
     private ReportRow RowOf(CompteRendu r)

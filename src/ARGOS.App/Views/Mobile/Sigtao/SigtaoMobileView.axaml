@@ -176,6 +176,13 @@
                                 <TextBlock Grid.Column="2" Classes="chevron"/>
                             </Grid>
                         </Button>
+                        <Button Classes="row" Command="{Binding NavigateCommand}" CommandParameter="Services">
+                            <Grid ColumnDefinitions="Auto,*,Auto">
+                                <PathIcon Data="{StaticResource TabList}" Width="20" Height="20" Foreground="{DynamicResource AppAccent}" Margin="0,0,12,0"/>
+                                <TextBlock Grid.Column="1" Classes="label" Text="Services"/>
+                                <TextBlock Grid.Column="2" Classes="chevron"/>
+                            </Grid>
+                        </Button>
                         <Button Classes="row" Command="{Binding NavigateCommand}" CommandParameter="Annuaire">
                             <Grid ColumnDefinitions="Auto,*,Auto">
                                 <PathIcon Data="{StaticResource TabBook}" Width="20" Height="20" Foreground="{DynamicResource AppAccent}" Margin="0,0,12,0"/>
@@ -742,6 +749,113 @@
                         </Border>
                     </StackPanel>
                 </Border>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- ===== Services de la compagnie (depuis l'accueil, la barre d'onglets étant complète) ===== -->
+        <ScrollViewer Grid.Row="1" IsVisible="{Binding IsServices}">
+            <StackPanel Margin="0,0,0,24">
+                <!-- Liste des services -->
+                <StackPanel IsVisible="{Binding !HasSelectedService}">
+                    <Button Classes="plain" Content="‹ Accueil" HorizontalAlignment="Left" Margin="8,6,0,0" Command="{Binding NavigateCommand}" CommandParameter="Accueil"/>
+                    <TextBlock Classes="large" Text="Services"/>
+                    <TextBlock Classes="footnote" Text="Un militaire peut appartenir à plusieurs services."/>
+                    <TextBlock Classes="section" Text="SERVICES DE LA COMPAGNIE"/>
+                    <Border Classes="group">
+                        <ItemsControl ItemsSource="{Binding ServicesList}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Button Classes="row" Command="{Binding OpenCommand}">
+                                        <Grid ColumnDefinitions="Auto,*,Auto,Auto">
+                                            <PathIcon Data="{StaticResource TabPeople}" Width="20" Height="20" Foreground="{DynamicResource AppAccent}"
+                                                      Margin="0,0,12,0" VerticalAlignment="Center"/>
+                                            <StackPanel Grid.Column="1" Spacing="2">
+                                                <TextBlock Classes="title" Text="{Binding Label}"/>
+                                                <TextBlock Classes="caption" Text="{Binding Roles}" TextWrapping="Wrap" TextTrimming="None"/>
+                                            </StackPanel>
+                                            <TextBlock Grid.Column="2" Classes="caption" Text="{Binding CountText}" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                                            <TextBlock Grid.Column="3" Classes="chevron"/>
+                                        </Grid>
+                                    </Button>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </Border>
+                </StackPanel>
+
+                <!-- Membres du service choisi -->
+                <StackPanel IsVisible="{Binding HasSelectedService}">
+                    <Button Classes="plain" Content="‹ Services" HorizontalAlignment="Left" Margin="8,6,0,0" Command="{Binding ServiceBackCommand}"/>
+                    <TextBlock Classes="large" Text="{Binding SelectedServiceTitle}" TextWrapping="Wrap"/>
+                    <TextBlock Classes="section" Text="{Binding ServiceMembersCount}"/>
+                    <Border Classes="group">
+                        <StackPanel>
+                            <ItemsControl ItemsSource="{Binding ServiceMembers}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Classes="row">
+                                            <StackPanel Spacing="6">
+                                                <Grid ColumnDefinitions="Auto,*,Auto">
+                                                    <Image Source="{Binding GradeIcon}" Width="24" Height="24" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                                    <StackPanel Grid.Column="1" Spacing="1">
+                                                        <TextBlock Classes="title" Text="{Binding Name}"/>
+                                                        <TextBlock Classes="subtitle" Text="{Binding GradeShort}"/>
+                                                        <TextBlock Classes="caption" Text="{Binding Status}" Foreground="#FF3B30" IsVisible="{Binding IsInactive}"/>
+                                                    </StackPanel>
+                                                    <Button Grid.Column="2" Classes="plain" FontSize="15" Foreground="#FF3B30" Content="Retirer"
+                                                            VerticalAlignment="Center" Command="{Binding RemoveCommand}" IsVisible="{Binding CanEdit}"/>
+                                                </Grid>
+                                                <Grid ColumnDefinitions="Auto,*">
+                                                    <TextBlock Classes="label" Text="Rôle"/>
+                                                    <ComboBox Grid.Column="1" Classes="field" ItemsSource="{Binding Roles}" SelectedItem="{Binding Role}"
+                                                              HorizontalContentAlignment="Right" Margin="12,0,0,0" IsVisible="{Binding CanEdit}"/>
+                                                    <TextBlock Grid.Column="1" Classes="value" Text="{Binding Role}" HorizontalAlignment="Right"
+                                                               Margin="12,0,0,0" IsVisible="{Binding IsReadOnly}"/>
+                                                </Grid>
+                                                <!-- Casernement uniquement -->
+                                                <StackPanel Spacing="2" IsVisible="{Binding HasObservations}">
+                                                    <TextBlock Classes="caption" Text="OBSERVATIONS :" FontWeight="SemiBold"/>
+                                                    <TextBox Classes="field" Text="{Binding Observations}" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="44"
+                                                             VerticalContentAlignment="Top" IsReadOnly="{Binding IsReadOnly}" Watermark="Chambre, matériel, remarques…"/>
+                                                    <Button Classes="plain" FontSize="15" Content="Enregistrer les observations" HorizontalAlignment="Right"
+                                                            Command="{Binding SaveObservationsCommand}" IsVisible="{Binding ObservationsDirty}"/>
+                                                </StackPanel>
+                                            </StackPanel>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <Border Classes="row" IsVisible="{Binding !HasServiceMembers}">
+                                <TextBlock Classes="value" Text="Aucun militaire affecté à ce service."/>
+                            </Border>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Ajout d'un militaire (gestion de la compagnie) -->
+                    <StackPanel IsVisible="{Binding CanEditServices}">
+                        <TextBlock Classes="section" Text="AJOUTER UN MILITAIRE"/>
+                        <Border Classes="group">
+                            <StackPanel>
+                                <Border Classes="row">
+                                    <Grid ColumnDefinitions="Auto,*">
+                                        <TextBlock Classes="label" Text="Militaire"/>
+                                        <ComboBox Grid.Column="1" Classes="field" ItemsSource="{Binding ServiceCandidates}" SelectedItem="{Binding ServiceNewMember}"
+                                                  PlaceholderText="Choisir" HorizontalContentAlignment="Right" Margin="12,0,0,0"/>
+                                    </Grid>
+                                </Border>
+                                <Border Classes="row">
+                                    <Grid ColumnDefinitions="Auto,*">
+                                        <TextBlock Classes="label" Text="Rôle"/>
+                                        <ComboBox Grid.Column="1" Classes="field" ItemsSource="{Binding ServiceRoles}" SelectedItem="{Binding ServiceNewRole}"
+                                                  PlaceholderText="Choisir" HorizontalContentAlignment="Right" Margin="12,0,0,0"/>
+                                    </Grid>
+                                </Border>
+                            </StackPanel>
+                        </Border>
+                        <TextBlock Classes="footnote" Text="Seuls les dossiers en activité peuvent être affectés à un service."/>
+                        <Button Classes="primary" Content="Ajouter au service" Command="{Binding ServiceAddCommand}" Margin="16,10,16,6"/>
+                    </StackPanel>
+                </StackPanel>
             </StackPanel>
         </ScrollViewer>
 

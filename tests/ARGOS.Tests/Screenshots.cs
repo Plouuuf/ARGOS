@@ -405,6 +405,7 @@ public class SigtaoScreenshots
                 AuthorUserId = "1", CreatedAt = now
             };
             cr.Synthese = CrText.Synthese(cr);
+            me.DerniereGarde = DateTime.Today.AddDays(-2).ToString("yyyy-MM-dd");
             Argos.Services.ArgosSession.Current.Sigtao.Apply(new SigtaoSnapshot
             {
                 Military = [me,
@@ -435,6 +436,18 @@ public class SigtaoScreenshots
                         Observations = "Exercice ARI à 14h00."
                     }
                 ],
+                Services =
+                [
+                    new ServiceAffectations { Id = SigtaoServices.Remise, Members = [new ServiceMember { MilitaryId = "m1", Role = "Sous-officier de remise" }] },
+                    new ServiceAffectations
+                    {
+                        Id = SigtaoServices.Casernement, Members =
+                        [
+                            new ServiceMember { MilitaryId = "m1", Role = "Sous-officier de casernement", Observations = "Référent chambres 1 à 6" },
+                            new ServiceMember { MilitaryId = "m2", Role = "Effectif", Observations = "Chambre 4" }
+                        ]
+                    }
+                ],
                 Rights = new SigtaoRights { ManageAccounts = true, ManageCompany = true, ReadAllReports = true, ManageGarde = true, Habilitations = ["SADMIN", "SREMISE"] },
                 MyDossierId = "m1", MyAccountId = "a1"
             });
@@ -458,12 +471,21 @@ public class SigtaoScreenshots
             Capture(new Argos.Views.Apps.Sigtao.SigtaoAppView { DataContext = vm }, 1300, 600, "sigtao-planning-semaine");
             vm.PlanningMonthCommand.Execute(null);
             Capture(new Argos.Views.Apps.Sigtao.SigtaoAppView { DataContext = vm }, 1300, 600, "sigtao-planning-mois");
+            vm.CurrentPage = Argos.ViewModels.Sigtao.SigtaoAppViewModel.Page.Services;
+            Assert.Equal(2, vm.ServicesList.Single(x => x.Id == SigtaoServices.Casernement).Count);
+            vm.ServicesList.Single(x => x.Id == SigtaoServices.Casernement).OpenCommand.Execute(null);
+            Assert.Equal(2, vm.ServiceMembers.Count);
+            Assert.Equal("Sous-officier de casernement", vm.ServiceMembers[0].Role);
+            Assert.Single(vm.ServiceCandidates);                                     // m3 seul n'est pas encore au casernement
+            Capture(new Argos.Views.Apps.Sigtao.SigtaoAppView { DataContext = vm }, 1300, 640, "sigtao-services");
+            Capture(new Argos.Views.Mobile.Sigtao.SigtaoMobileView { DataContext = vm }, 390, 844, "sigtao-services-iphone");
             var feuille = Argos.Services.ArgosSession.Current.Sigtao.Snapshot.Gardes[0];
             Capture(new Argos.Views.Apps.Sigtao.GardePrintView { DataContext = new Argos.ViewModels.Sigtao.GardePrintViewModel(desktop, "p", feuille) },
                 900, 1250, "sigtao-feuille-de-garde-impression");
 
-            Capture(new Argos.Views.Apps.Sigtao.DossierView { DataContext = new Argos.ViewModels.Sigtao.DossierViewModel(desktop, "m1", "d") },
-                980, 900, "sigtao-dossier");
+            var dossier = new Argos.ViewModels.Sigtao.DossierViewModel(desktop, "m1", "d");
+            Assert.Equal("Dernière garde : " + DateTime.Today.AddDays(-2).ToString("dd/MM/yyyy", System.Globalization.CultureInfo.InvariantCulture), dossier.DerniereGardeText);
+            Capture(new Argos.Views.Apps.Sigtao.DossierView { DataContext = dossier }, 980, 900, "sigtao-dossier");
             Capture(new Argos.Views.Apps.Sigtao.CompteRenduView { DataContext = new Argos.ViewModels.Sigtao.CompteRenduViewModel(desktop, "c1", "r") },
                 820, 1150, "sigtao-compte-rendu");
             var draft = new Argos.ViewModels.Sigtao.CompteRenduViewModel(desktop, null, "n") { Body = cr.Body };

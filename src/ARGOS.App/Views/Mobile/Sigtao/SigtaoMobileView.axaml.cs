@@ -19,7 +19,7 @@ public sealed record PlanningAgendaDay(string Header, string Top, string Bottom,
 
 /// <summary>
 /// SIGTAO en version iPhone : onglets Accueil, Comptes-rendus, Garde, Planning, Annuaire
-/// (gestion de la compagnie et historique depuis l'accueil). Le planning, tableau militaire × jour sur le bureau,
+/// (gestion de la compagnie, services et historique depuis l'accueil). Le planning, tableau militaire × jour sur le bureau,
 /// est présenté ici jour par jour à partir des mêmes données du modèle (PlanningDays, PlanningRows, PlanningTotals).
 /// </summary>
 public partial class SigtaoMobileView : UserControl

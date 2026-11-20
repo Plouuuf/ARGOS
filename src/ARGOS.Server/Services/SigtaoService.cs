@@ -109,6 +109,7 @@ public sealed class SigtaoService(OdeDatabase db, RealtimeHub hub)
             Accounts = rights.ManageAccounts ? accounts : accounts.Where(a => a.DiscordUserId == user.DiscordId).ToList(),
             Reports = reports,
             Gardes = Gardes(DateTime.Today.AddDays(-62), DateTime.Today.AddDays(62)),
+            Services = Services(),
             Rights = rights,
             MyDossierId = myDossier?.Id,
             MyAccountId = mine?.Id,
@@ -155,6 +156,7 @@ public sealed class SigtaoService(OdeDatabase db, RealtimeHub hub)
                 incoming.Id = Guid.NewGuid().ToString("N");
                 incoming.CreatedAt = now;
                 incoming.Entries = [];
+                incoming.DerniereGarde = string.Empty;        // tenue par la validation des gardes
                 db.SaveDoc(RemiseTables.Military, incoming.Id, now, incoming);
                 Journal(user, SigtaoJournal.DossierCree, incoming.FullName, $"NID {Or(incoming.Nid)} - {incoming.Unite} {incoming.Affectation}");
             }
@@ -163,6 +165,7 @@ public sealed class SigtaoService(OdeDatabase db, RealtimeHub hub)
                 var changes = Changes(existing, incoming);
                 incoming.CreatedAt = existing.CreatedAt;
                 incoming.Entries = existing.Entries;          // les rubriques s'ajoutent une par une (traçabilité)
+                incoming.DerniereGarde = existing.DerniereGarde; // tenue par la validation des gardes
                 db.SaveDoc(RemiseTables.Military, incoming.Id, now, incoming);
                 if (changes.Count > 0)
                     Journal(user, SigtaoJournal.DossierModifie, incoming.FullName, string.Join(" ; ", changes));
@@ -519,6 +522,8 @@ public sealed class SigtaoService(OdeDatabase db, RealtimeHub hub)
                 feuille.ValidatedBy = existing?.ValidatedBy ?? string.Empty;
             }
             db.SaveDoc(RemiseTables.Gardes, feuille.Id, now, feuille);
+            if (valider)
+                RecordDerniereGarde(military, feuille, now);
             var nonArmes = feuille.Engins.Count(e => !e.Arme);
             Journal(user, SigtaoJournal.Garde, $"{feuille.Centre} {feuille.Date}",
                 $"{(valider ? "validée" : "enregistrée")} - effectif {feuille.Effectif}{(nonArmes > 0 ? $", {nonArmes} engin(s) non armé(s)" : string.Empty)}");
@@ -532,6 +537,110 @@ public sealed class SigtaoService(OdeDatabase db, RealtimeHub hub)
     }
 
     public FeuilleGarde? Garde(string id) => db.GetDoc<FeuilleGarde>(RemiseTables.Gardes, id);
+
+    /// <summary>
+    /// Feuille validée : chaque militaire présent reçoit le jour de garde comme « dernière garde »,
+    /// sauf s'il a déjà une garde plus récente (la date ne recule jamais).
+    /// </summary>
+    private void RecordDerniereGarde(Dictionary<string, MilitaryRecord> military, FeuilleGarde feuille, DateTimeOffset now)
+    {
+        foreach (var id in feuille.Affectations().Select(a => a.Affectation.MilitaryId).Distinct())
+        {
+            if (!military.TryGetValue(id, out var m)) continue;
+            if (string.CompareOrdinal(m.DerniereGarde ?? string.Empty, feuille.Date) >= 0) continue;
+            m.DerniereGarde = feuille.Date;
+            db.SaveDoc(RemiseTables.Military, m.Id, now, m);
+        }
+    }
+
+    // ===== Services de la compagnie =====
+
+    /// <summary>Membres de chaque service, dans l'ordre de <see cref="SigtaoServices.All"/> (service vide si rien d'enregistré).</summary>
+    public List<ServiceAffectations> Services()
+    {
+        var stored = db.Docs<ServiceAffectations>(RemiseTables.Services).ToDictionary(s => s.Id);
+        return SigtaoServices.All
+            .Select(def => stored.TryGetValue(def.Id, out var s) ? s : new ServiceAffectations { Id = def.Id })
+            .ToList();
+    }
+
+    /// <summary>
+    /// Ajoute un militaire (dossier en activité) à un service, change son rôle ou ses observations (Casernement),
+    /// ou l'en retire. Réservé à la gestion de la compagnie, comme les dossiers.
+    /// </summary>
+    public async Task<OdeResult> SaveServiceMemberAsync(ArgosUserDto user, ServiceMemberRequest request)
+    {
+        if (!Rights(user).ManageCompany)
+            return new(false, "Habilitation insuffisante (gestion de la compagnie).");
+        var def = SigtaoServices.Find(request.ServiceId);
+        if (def is null)
+            return new(false, "Service inconnu.");
+        var militaryId = (request.MilitaryId ?? string.Empty).Trim();
+        if (militaryId.Length == 0)
+            return new(false, "Choisis le militaire.");
+        var observations = def.HasObservations ? (request.Observations ?? string.Empty).Trim() : string.Empty;
+        if (observations.Length > 2000)
+            return new(false, "Observations trop longues (2 000 caractères maximum).");
+
+        await _gate.WaitAsync();
+        try
+        {
+            var record = db.GetDoc<MilitaryRecord>(RemiseTables.Military, militaryId);
+            if (record is null)
+                return new(false, "Dossier introuvable.");
+            var doc = db.GetDoc<ServiceAffectations>(RemiseTables.Services, def.Id) ?? new ServiceAffectations { Id = def.Id };
+            doc.Members ??= [];
+            var member = doc.Members.FirstOrDefault(m => m.MilitaryId == militaryId);
+            var now = DateTimeOffset.UtcNow;
+            string detail;
+
+            if (request.Retirer)
+            {
+                if (member is null)
+                    return new(false, $"{record.FullName} n'est pas affecté à « {def.Label} ».");
+                doc.Members.Remove(member);
+                detail = $"retiré de « {def.Label} »";
+            }
+            else
+            {
+                var role = (request.Role ?? string.Empty).Trim();
+                if (!def.Roles.Contains(role))
+                    return new(false, $"Choisis le rôle dans « {def.Label} » ({string.Join(", ", def.Roles)}).");
+                if (member is null)
+                {
+                    if (record.Status != MilitaryStatuses.Actif)
+                        return new(false, $"Le dossier de {record.FullName} n'est pas en activité.");
+                    member = new ServiceMember { MilitaryId = militaryId, AddedAt = now };
+                    doc.Members.Add(member);
+                    detail = $"ajouté à « {def.Label} » : {role}";
+                }
+                else
+                {
+                    var changes = new List<string>();
+                    if (member.Role != role) changes.Add($"rôle : {Or(member.Role)} → {role}");
+                    if (member.Observations != observations) changes.Add("observations");
+                    if (changes.Count == 0)
+                        return new(true, null, def.Id);
+                    detail = $"« {def.Label} » - {string.Join(" ; ", changes)}";
+                }
+                member.Role = role;
+                member.Observations = observations;
+                member.UpdatedAt = now;
+                member.UpdatedBy = user.DisplayName;
+            }
+
+            doc.UpdatedAt = now;
+            doc.UpdatedBy = user.DisplayName;
+            db.SaveDoc(RemiseTables.Services, doc.Id, now, doc);
+            Journal(user, SigtaoJournal.Service, record.FullName, detail);
+            await NotifyAsync();
+            return new(true, null, def.Id);
+        }
+        finally
+        {
+            _gate.Release();
+        }
+    }
 
     /// <summary>
     /// Inscription personnelle sur une garde, dans son centre ou en renfort dans un autre : poste libre uniquement,
